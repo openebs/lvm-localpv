@@ -1,0 +1,57 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: openebs-lvmsc
+allowVolumeExpansion: true
+parameters:
+  volgroup: "lvmvg"
+provisioner: local.csi.openebs.io
+#allowedTopologies:
+#- matchLabelExpressions:
+#  - key: kubernetes.io/hostname
+#    values:
+#      - pawan-node-1
+#      - pawan-node-2
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: csi-lvmpvc
+spec:
+  storageClassName: openebs-lvmsc
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 4Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fio
+  labels:
+    name: fio
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: fio
+  template:
+    metadata:
+      labels:
+        name: fio
+    spec:
+      containers:
+        - resources:
+          name: perfrunner
+          image: openebs/tests-fio
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/bash"]
+          args: ["-c", "while true ;do sleep 50; done"]
+          volumeMounts:
+            - mountPath: /datadir
+              name: fio-vol
+      volumes:
+        - name: fio-vol
+          persistentVolumeClaim:
+            claimName: csi-lvmpvc

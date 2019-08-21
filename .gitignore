@@ -1,0 +1,8 @@
+/bin
+buildscripts/lvm-driver/lvm-driver
+cscope*
+tags
+*.swp
+*.swo
+*.swn
+*.idea
