@@ -44,8 +44,8 @@ var (
 )
 
 const (
-	versionFile   string = "/src/github.com/pawanpraka1/dynamic-lvm/VERSION"
-	buildMetaFile string = "/src/github.com/pawanpraka1/dynamic-lvm/BUILDMETA"
+	versionFile   string = "/src/github.com/openebs/lvm-localpv/VERSION"
+	buildMetaFile string = "/src/github.com/openebs/lvm-localpv/BUILDMETA"
 )
 
 // Current returns current version of csi driver

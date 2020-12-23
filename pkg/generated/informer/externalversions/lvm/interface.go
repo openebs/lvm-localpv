@@ -19,8 +19,8 @@ limitations under the License.
 package local
 
 import (
-	internalinterfaces "github.com/pawanpraka1/dynamic-lvm/pkg/generated/informer/externalversions/internalinterfaces"
-	v1alpha1 "github.com/pawanpraka1/dynamic-lvm/pkg/generated/informer/externalversions/lvm/v1alpha1"
+	internalinterfaces "github.com/openebs/lvm-localpv/pkg/generated/informer/externalversions/internalinterfaces"
+	v1alpha1 "github.com/openebs/lvm-localpv/pkg/generated/informer/externalversions/lvm/v1alpha1"
 )
 
 // Interface provides access to each of this group's versions.

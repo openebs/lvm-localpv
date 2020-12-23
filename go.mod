@@ -1,4 +1,4 @@
-module github.com/pawanpraka1/dynamic-lvm
+module github.com/openebs/lvm-localpv
 
 go 1.14
 

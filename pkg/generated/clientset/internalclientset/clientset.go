@@ -19,7 +19,7 @@ limitations under the License.
 package internalclientset
 
 import (
-	localv1alpha1 "github.com/pawanpraka1/dynamic-lvm/pkg/generated/clientset/internalclientset/typed/lvm/v1alpha1"
+	localv1alpha1 "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset/typed/lvm/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

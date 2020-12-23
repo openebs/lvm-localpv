@@ -22,10 +22,10 @@ import (
 	"log"
 	"os"
 
-	config "github.com/pawanpraka1/dynamic-lvm/pkg/config"
-	"github.com/pawanpraka1/dynamic-lvm/pkg/driver"
-	"github.com/pawanpraka1/dynamic-lvm/pkg/lvm"
-	"github.com/pawanpraka1/dynamic-lvm/pkg/version"
+	config "github.com/openebs/lvm-localpv/pkg/config"
+	"github.com/openebs/lvm-localpv/pkg/driver"
+	"github.com/openebs/lvm-localpv/pkg/lvm"
+	"github.com/openebs/lvm-localpv/pkg/version"
 	"github.com/spf13/cobra"
 	"k8s.io/klog"
 )

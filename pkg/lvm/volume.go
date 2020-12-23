@@ -17,8 +17,8 @@ package lvm
 import (
 	"os"
 
-	apis "github.com/pawanpraka1/dynamic-lvm/pkg/apis/openebs.io/lvm/v1alpha1"
-	"github.com/pawanpraka1/dynamic-lvm/pkg/builder/volbuilder"
+	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
+	"github.com/openebs/lvm-localpv/pkg/builder/volbuilder"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
 )

@@ -18,8 +18,8 @@ import (
 	"encoding/json"
 
 	client "github.com/openebs/lib-csi/pkg/common/kubernetes/client"
-	apis "github.com/pawanpraka1/dynamic-lvm/pkg/apis/openebs.io/lvm/v1alpha1"
-	clientset "github.com/pawanpraka1/dynamic-lvm/pkg/generated/clientset/internalclientset"
+	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
+	clientset "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

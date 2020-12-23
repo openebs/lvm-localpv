@@ -21,7 +21,7 @@ package internalinterfaces
 import (
 	time "time"
 
-	internalclientset "github.com/pawanpraka1/dynamic-lvm/pkg/generated/clientset/internalclientset"
+	internalclientset "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	cache "k8s.io/client-go/tools/cache"

@@ -19,7 +19,7 @@ package usage
 import (
 	k8sapi "github.com/openebs/lib-csi/pkg/client/k8s"
 	env "github.com/openebs/lib-csi/pkg/common/env"
-	openebsversion "github.com/pawanpraka1/dynamic-lvm/pkg/version"
+	openebsversion "github.com/openebs/lvm-localpv/pkg/version"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
 )

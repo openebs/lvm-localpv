@@ -21,10 +21,10 @@ package v1alpha1
 import (
 	time "time"
 
-	lvmv1alpha1 "github.com/pawanpraka1/dynamic-lvm/pkg/apis/openebs.io/lvm/v1alpha1"
-	internalclientset "github.com/pawanpraka1/dynamic-lvm/pkg/generated/clientset/internalclientset"
-	internalinterfaces "github.com/pawanpraka1/dynamic-lvm/pkg/generated/informer/externalversions/internalinterfaces"
-	v1alpha1 "github.com/pawanpraka1/dynamic-lvm/pkg/generated/lister/lvm/v1alpha1"
+	lvmv1alpha1 "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
+	internalclientset "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset"
+	internalinterfaces "github.com/openebs/lvm-localpv/pkg/generated/informer/externalversions/internalinterfaces"
+	v1alpha1 "github.com/openebs/lvm-localpv/pkg/generated/lister/lvm/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"

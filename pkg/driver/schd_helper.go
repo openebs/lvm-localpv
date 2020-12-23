@@ -17,10 +17,10 @@ limitations under the License.
 package driver
 
 import (
-	"github.com/pawanpraka1/dynamic-lvm/pkg/builder/volbuilder"
+	"github.com/openebs/lvm-localpv/pkg/builder/volbuilder"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/pawanpraka1/dynamic-lvm/pkg/lvm"
+	"github.com/openebs/lvm-localpv/pkg/lvm"
 )
 
 // scheduling algorithm constants

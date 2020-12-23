@@ -18,7 +18,7 @@ package volbuilder
 
 import (
 	"github.com/openebs/lib-csi/pkg/common/errors"
-	apis "github.com/pawanpraka1/dynamic-lvm/pkg/apis/openebs.io/lvm/v1alpha1"
+	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 )
 
 // Builder is the builder object for LVMVolume

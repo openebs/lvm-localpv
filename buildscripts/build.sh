@@ -25,9 +25,9 @@ DIR="$( cd -P "$( dirname "$SOURCE" )/../" && pwd )"
 cd "$DIR"
 
 # Get the git commit
-if [ -f $GOPATH/src/github.com/pawanpraka1/dynamic-lvm/GITCOMMIT ];
+if [ -f $GOPATH/src/github.com/openebs/lvm-localpv/GITCOMMIT ];
 then
-    GIT_COMMIT="$(cat $GOPATH/src/github.com/pawanpraka1/dynamic-lvm/GITCOMMIT)"
+    GIT_COMMIT="$(cat $GOPATH/src/github.com/openebs/lvm-localpv/GITCOMMIT)"
 else
     GIT_COMMIT="$(git rev-parse HEAD)"
 fi
@@ -97,10 +97,10 @@ if [ $GOOS = "windows" ]; then
     output_name+='.exe'
 fi
 env GOOS=$GOOS GOARCH=$GOARCH go build -ldflags \
-    "-X github.com/pawanpraka1/dynamic-lvm/pkg/version.GitCommit=${GIT_COMMIT} \
+    "-X github.com/openebs/lvm-localpv/pkg/version.GitCommit=${GIT_COMMIT} \
     -X main.CtlName='${CTLNAME}' \
-    -X github.com/pawanpraka1/dynamic-lvm/pkg/version.Version=${VERSION} \
-    -X github.com/pawanpraka1/dynamic-lvm/pkg/version.VersionMeta=${VERSION_META}"\
+    -X github.com/openebs/lvm-localpv/pkg/version.Version=${VERSION} \
+    -X github.com/openebs/lvm-localpv/pkg/version.VersionMeta=${VERSION_META}"\
     -o $output_name\
     ./cmd
 

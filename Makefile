@@ -59,7 +59,7 @@ DBUILD_DATE=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 
 # Specify the docker arg for repository url
 ifeq (${DBUILD_REPO_URL}, )
-  DBUILD_REPO_URL="https://github.com/pawanpraka1/dynamic-lvm"
+  DBUILD_REPO_URL="https://github.com/openebs/lvm-localpv"
   export DBUILD_REPO_URL
 endif
 
@@ -145,7 +145,7 @@ controller-gen:
 	TMP_DIR=$(shell mktemp -d) && cd $$TMP_DIR && go mod init tmp && go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.8 && rm -rf $$TMP_DIR;
 
 # SRC_PKG is the path of code files
-SRC_PKG := github.com/pawanpraka1/dynamic-lvm/pkg
+SRC_PKG := github.com/openebs/lvm-localpv/pkg
 
 # code generation for custom resources
 .PHONY: kubegen

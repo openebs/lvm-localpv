@@ -23,8 +23,8 @@ import (
 
 	"time"
 
-	clientset "github.com/pawanpraka1/dynamic-lvm/pkg/generated/clientset/internalclientset"
-	informers "github.com/pawanpraka1/dynamic-lvm/pkg/generated/informer/externalversions"
+	clientset "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset"
+	informers "github.com/openebs/lvm-localpv/pkg/generated/informer/externalversions"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"

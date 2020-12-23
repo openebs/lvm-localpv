@@ -19,8 +19,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/pawanpraka1/dynamic-lvm/pkg/apis/openebs.io/lvm/v1alpha1"
-	"github.com/pawanpraka1/dynamic-lvm/pkg/generated/clientset/internalclientset/scheme"
+	v1alpha1 "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
+	"github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset/scheme"
 	rest "k8s.io/client-go/rest"
 )
 

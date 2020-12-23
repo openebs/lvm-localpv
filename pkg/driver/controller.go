@@ -32,10 +32,10 @@ import (
 	errors "github.com/openebs/lib-csi/pkg/common/errors"
 	"github.com/openebs/lib-csi/pkg/common/helpers"
 	schd "github.com/openebs/lib-csi/pkg/scheduler"
-	"github.com/pawanpraka1/dynamic-lvm/pkg/builder/volbuilder"
-	"github.com/pawanpraka1/dynamic-lvm/pkg/lvm"
-	csipayload "github.com/pawanpraka1/dynamic-lvm/pkg/response"
-	analytics "github.com/pawanpraka1/dynamic-lvm/pkg/usage"
+	"github.com/openebs/lvm-localpv/pkg/builder/volbuilder"
+	"github.com/openebs/lvm-localpv/pkg/lvm"
+	csipayload "github.com/openebs/lvm-localpv/pkg/response"
+	analytics "github.com/openebs/lvm-localpv/pkg/usage"
 )
 
 // size constants
@@ -244,7 +244,7 @@ func (cs *controller) CreateVolume(
 		}
 	}
 
-	sendEventOrIgnore(pvcName, volName, strconv.FormatInt(int64(size), 10), "dynamic-lvm", analytics.VolumeProvision)
+	sendEventOrIgnore(pvcName, volName, strconv.FormatInt(int64(size), 10), "lvm-localpv", analytics.VolumeProvision)
 
 	topology := map[string]string{lvm.LVMTopologyKey: selected}
 	cntx := map[string]string{lvm.VolGroupKey: vg}
@@ -302,7 +302,7 @@ func (cs *controller) DeleteVolume(
 		)
 	}
 
-	sendEventOrIgnore("", volumeID, vol.Spec.Capacity, "dynamic-lvm", analytics.VolumeDeprovision)
+	sendEventOrIgnore("", volumeID, vol.Spec.Capacity, "lvm-localpv", analytics.VolumeDeprovision)
 
 deleteResponse:
 	return csipayload.NewDeleteVolumeResponseBuilder().Build(), nil

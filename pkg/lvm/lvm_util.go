@@ -21,7 +21,7 @@ import (
 
 	"strings"
 
-	apis "github.com/pawanpraka1/dynamic-lvm/pkg/apis/openebs.io/lvm/v1alpha1"
+	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	"k8s.io/klog"
 )
 

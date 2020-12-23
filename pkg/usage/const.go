@@ -46,7 +46,7 @@ const (
 	DefaultReplicaCount string = "replica:1"
 
 	// DefaultCASType Event application name constant for volume event
-	DefaultCASType string = "dynamic-lvm"
+	DefaultCASType string = "lvm-localpv"
 
 	// LocalPVReplicaCount is the constant used by usage to represent
 	// replication factor in LocalPV

@@ -713,12 +713,12 @@ spec:
           lifecycle:
             preStop:
               exec:
-                command: ["/bin/sh", "-c", "rm -rf /registration/dynamic-lvm /registration/dynamic-lvm-reg.sock"]
+                command: ["/bin/sh", "-c", "rm -rf /registration/lvm-localpv /registration/lvm-localpv-reg.sock"]
           env:
             - name: ADDRESS
               value: /plugin/csi.sock
             - name: DRIVER_REG_SOCK_PATH
-              value: /var/lib/kubelet/plugins/dynamic-lvm/csi.sock
+              value: /var/lib/kubelet/plugins/lvm-localpv/csi.sock
             - name: KUBE_NODE_NAME
               valueFrom:
                 fieldRef:
@@ -772,7 +772,7 @@ spec:
             type: DirectoryOrCreate
         - name: plugin-dir
           hostPath:
-            path: /var/lib/kubelet/plugins/dynamic-lvm/
+            path: /var/lib/kubelet/plugins/lvm-localpv/
             type: DirectoryOrCreate
         - name: pods-mount-dir
           hostPath:

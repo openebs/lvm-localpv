@@ -23,9 +23,9 @@ import (
 	sync "sync"
 	time "time"
 
-	internalclientset "github.com/pawanpraka1/dynamic-lvm/pkg/generated/clientset/internalclientset"
-	internalinterfaces "github.com/pawanpraka1/dynamic-lvm/pkg/generated/informer/externalversions/internalinterfaces"
-	lvm "github.com/pawanpraka1/dynamic-lvm/pkg/generated/informer/externalversions/lvm"
+	internalclientset "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset"
+	internalinterfaces "github.com/openebs/lvm-localpv/pkg/generated/informer/externalversions/internalinterfaces"
+	lvm "github.com/openebs/lvm-localpv/pkg/generated/informer/externalversions/lvm"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

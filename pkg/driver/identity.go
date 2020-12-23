@@ -18,7 +18,7 @@ package driver
 
 import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/pawanpraka1/dynamic-lvm/pkg/version"
+	"github.com/openebs/lvm-localpv/pkg/version"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

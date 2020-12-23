@@ -19,9 +19,9 @@ limitations under the License.
 package fake
 
 import (
-	clientset "github.com/pawanpraka1/dynamic-lvm/pkg/generated/clientset/internalclientset"
-	localv1alpha1 "github.com/pawanpraka1/dynamic-lvm/pkg/generated/clientset/internalclientset/typed/lvm/v1alpha1"
-	fakelocalv1alpha1 "github.com/pawanpraka1/dynamic-lvm/pkg/generated/clientset/internalclientset/typed/lvm/v1alpha1/fake"
+	clientset "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset"
+	localv1alpha1 "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset/typed/lvm/v1alpha1"
+	fakelocalv1alpha1 "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset/typed/lvm/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"

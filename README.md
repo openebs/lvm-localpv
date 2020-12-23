@@ -2,7 +2,7 @@
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/3523/badge)](https://bestpractices.coreinfrastructure.org/en/projects/3523)
 [![Slack](https://img.shields.io/badge/chat!!!-slack-ff1493.svg?style=flat-square)](https://openebsslacksignup.herokuapp.com/)
 [![Community Meetings](https://img.shields.io/badge/Community-Meetings-blue)](https://hackmd.io/yJb407JWRyiwLU-XDndOLA?view)
-[![Go Report](https://goreportcard.com/badge/github.com/pawanpraka1/dynamic-lvm)](https://goreportcard.com/report/github.com/pawanpraka1/dynamic-lvm)
+[![Go Report](https://goreportcard.com/badge/github.com/openebs/lvm-localpv)](https://goreportcard.com/report/github.com/openebs/lvm-localpv)
 
 <img width="300" align="right" alt="OpenEBS Logo" src="https://raw.githubusercontent.com/cncf/artwork/master/projects/openebs/stacked/color/openebs-stacked-color.png" xmlns="http://www.w3.org/1999/html">
 
@@ -54,7 +54,7 @@ sudo vgcreate lvmvg /dev/loop0
 Deploy the Operator yaml 
 
 ```
-kubectl apply -f https://raw.githubusercontent.com/pawanpraka1/dynamic-lvm/master/deploy/lvm-operator.yaml
+kubectl apply -f https://raw.githubusercontent.com/openebs/lvm-localpv/master/deploy/lvm-operator.yaml
 ```
 
 ### Deployment
@@ -62,7 +62,7 @@ kubectl apply -f https://raw.githubusercontent.com/pawanpraka1/dynamic-lvm/maste
 deploy the sample fio application 
 
 ```
-kubectl apply -f https://raw.githubusercontent.com/pawanpraka1/dynamic-lvm/master/deploy/sample/fio.yaml
+kubectl apply -f https://raw.githubusercontent.com/openebs/lvm-localpv/master/deploy/sample/fio.yaml
 ```
 
 Features

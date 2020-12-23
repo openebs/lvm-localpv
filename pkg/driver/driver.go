@@ -18,7 +18,7 @@ package driver
 
 import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	config "github.com/pawanpraka1/dynamic-lvm/pkg/config"
+	config "github.com/openebs/lvm-localpv/pkg/config"
 	"k8s.io/klog"
 )
 
