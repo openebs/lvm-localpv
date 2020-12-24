@@ -282,8 +282,37 @@ func (ns *node) NodeExpandVolume(
 	ctx context.Context,
 	req *csi.NodeExpandVolumeRequest,
 ) (*csi.NodeExpandVolumeResponse, error) {
+	volumeID := req.GetVolumeId()
+	if req.GetVolumePath() == "" || volumeID == "" {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			"path not provided for NodeExpandVolume Request %s",
+			volumeID,
+		)
+	}
 
-	return nil, status.Error(codes.Unimplemented, "")
+	vol, err := lvm.GetLVMVolume(volumeID)
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.NotFound,
+			"failed to handle NodeExpandVolume Request for %s, {%s}",
+			req.VolumeId,
+			err.Error(),
+		)
+	}
+	if err = lvm.ResizeLVMVolume(vol, req.GetVolumePath()); err != nil {
+		return nil, status.Errorf(
+			codes.Internal,
+			"failed to handle NodeExpandVolume Request for %s, {%s}",
+			req.VolumeId,
+			err.Error(),
+		)
+	}
+
+	return &csi.NodeExpandVolumeResponse{
+		CapacityBytes: req.GetCapacityRange().GetRequiredBytes(),
+	}, nil
 }
 
 // NodeGetVolumeStats returns statistics for the

@@ -477,6 +477,9 @@ rules:
   - apiGroups: [""]
     resources: ["nodes"]
     verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch", "update", "patch"]
   - apiGroups: ["*"]
     resources: ["lvmvolumes"]
     verbs: ["*"]
@@ -532,6 +535,19 @@ spec:
       priorityClassName: system-cluster-critical
       serviceAccount: openebs-lvm-controller-sa
       containers:
+        - name: csi-resizer
+          image: quay.io/k8scsi/csi-resizer:v1.1.0
+          args:
+            - "--v=5"
+            - "--csi-address=$(ADDRESS)"
+            - "--leader-election"
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-provisioner
           image: k8s.gcr.io/sig-storage/csi-provisioner:v2.1.0
           imagePullPolicy: IfNotPresent
