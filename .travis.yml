@@ -20,6 +20,11 @@ addons:
 before_install:
   - sudo apt-get update -qq
 install:
+  - if [ "$TRAVIS_BUILD_DIR" != "$GOPATH/src/github.com/openebs/lvm-localpv" ]; then
+    mkdir -p $GOPATH/src/github.com/openebs/;
+    mv $TRAVIS_BUILD_DIR $GOPATH/src/github.com/openebs;
+    cd $GOPATH/src/github.com/openebs/lvm-localpv;
+    fi
   - make bootstrap
   - make format
   - make license-check
