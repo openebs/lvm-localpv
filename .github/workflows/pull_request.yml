@@ -28,6 +28,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Format test
+        run: make format
+
+      - name: License test
+        run: make license-check
+
+      - name: Lint test
+        run: make golint
+
       - name: Shellcheck
         uses: reviewdog/action-shellcheck@v1
         with:
