@@ -396,7 +396,7 @@ func (cs *controller) ControllerExpandVolume(
 	if err != nil {
 		return nil, status.Errorf(
 			codes.Internal,
-			"ControllerExpandVolumeRequest: failed to get ZFSVolume in for %s, {%s}",
+			"ControllerExpandVolumeRequest: failed to get LVMVolume for %s, {%s}",
 			volumeID,
 			err.Error(),
 		)
