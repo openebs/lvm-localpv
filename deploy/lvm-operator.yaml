@@ -629,7 +629,7 @@ rules:
   - apiGroups: [""]
     resources: ["pods"]
     verbs: ["get", "list", "watch", "update", "patch"]
-  - apiGroups: ["*"]
+  - apiGroups: ["local.openebs.io"]
     resources: ["lvmvolumes"]
     verbs: ["*"]
 ---
@@ -818,7 +818,7 @@ rules:
   - apiGroups: [""]
     resources: ["persistentvolumes", "nodes", "services"]
     verbs: ["get", "list"]
-  - apiGroups: ["*"]
+  - apiGroups: ["local.openebs.io"]
     resources: ["lvmvolumes"]
     verbs: ["get", "list", "watch", "create", "update", "patch"]
 
