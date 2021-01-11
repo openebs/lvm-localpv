@@ -31,59 +31,59 @@ import (
 	cache "k8s.io/client-go/tools/cache"
 )
 
-// LVMVolumeInformer provides access to a shared informer and lister for
-// LVMVolumes.
-type LVMVolumeInformer interface {
+// LVMSnapshotInformer provides access to a shared informer and lister for
+// LVMSnapshots.
+type LVMSnapshotInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.LVMVolumeLister
+	Lister() v1alpha1.LVMSnapshotLister
 }
 
-type lVMVolumeInformer struct {
+type lVMSnapshotInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 	namespace        string
 }
 
-// NewLVMVolumeInformer constructs a new informer for LVMVolume type.
+// NewLVMSnapshotInformer constructs a new informer for LVMSnapshot type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewLVMVolumeInformer(client internalclientset.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredLVMVolumeInformer(client, namespace, resyncPeriod, indexers, nil)
+func NewLVMSnapshotInformer(client internalclientset.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredLVMSnapshotInformer(client, namespace, resyncPeriod, indexers, nil)
 }
 
-// NewFilteredLVMVolumeInformer constructs a new informer for LVMVolume type.
+// NewFilteredLVMSnapshotInformer constructs a new informer for LVMSnapshot type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredLVMVolumeInformer(client internalclientset.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredLVMSnapshotInformer(client internalclientset.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.LocalV1alpha1().LVMVolumes(namespace).List(options)
+				return client.LocalV1alpha1().LVMSnapshots(namespace).List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.LocalV1alpha1().LVMVolumes(namespace).Watch(options)
+				return client.LocalV1alpha1().LVMSnapshots(namespace).Watch(options)
 			},
 		},
-		&lvmv1alpha1.LVMVolume{},
+		&lvmv1alpha1.LVMSnapshot{},
 		resyncPeriod,
 		indexers,
 	)
 }
 
-func (f *lVMVolumeInformer) defaultInformer(client internalclientset.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredLVMVolumeInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+func (f *lVMSnapshotInformer) defaultInformer(client internalclientset.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	return NewFilteredLVMSnapshotInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
-func (f *lVMVolumeInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&lvmv1alpha1.LVMVolume{}, f.defaultInformer)
+func (f *lVMSnapshotInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&lvmv1alpha1.LVMSnapshot{}, f.defaultInformer)
 }
 
-func (f *lVMVolumeInformer) Lister() v1alpha1.LVMVolumeLister {
-	return v1alpha1.NewLVMVolumeLister(f.Informer().GetIndexer())
+func (f *lVMSnapshotInformer) Lister() v1alpha1.LVMSnapshotLister {
+	return v1alpha1.NewLVMSnapshotLister(f.Informer().GetIndexer())
 }
