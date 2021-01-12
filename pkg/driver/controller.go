@@ -381,7 +381,59 @@ func (cs *controller) ControllerExpandVolume(
 	req *csi.ControllerExpandVolumeRequest,
 ) (*csi.ControllerExpandVolumeResponse, error) {
 
-	return nil, status.Error(codes.Unimplemented, "")
+	volumeID := strings.ToLower(req.GetVolumeId())
+	if volumeID == "" {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			"ControllerExpandVolume: no volumeID provided",
+		)
+	}
+
+	/* round off the new size */
+	updatedSize := getRoundedCapacity(req.GetCapacityRange().GetRequiredBytes())
+
+	vol, err := lvm.GetLVMVolume(volumeID)
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Internal,
+			"ControllerExpandVolumeRequest: failed to get LVMVolume for %s, {%s}",
+			volumeID,
+			err.Error(),
+		)
+	}
+
+	volsize, err := strconv.ParseInt(vol.Spec.Capacity, 10, 64)
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Internal,
+			"ControllerExpandVolumeRequest: failed to parse volsize in for %s, {%s}",
+			volumeID,
+			err.Error(),
+		)
+	}
+	/*
+	 * Controller expand volume must be idempotent. If a volume corresponding
+	 * to the specified volume ID is already larger than or equal to the target
+	 * capacity of the expansion request, the plugin should reply 0 OK.
+	 */
+	if volsize >= updatedSize {
+		return csipayload.NewControllerExpandVolumeResponseBuilder().
+			WithCapacityBytes(volsize).
+			Build(), nil
+	}
+
+	if err := lvm.ResizeVolume(vol, updatedSize); err != nil {
+		return nil, status.Errorf(
+			codes.Internal,
+			"failed to handle ControllerExpandVolumeRequest for %s, {%s}",
+			volumeID,
+			err.Error(),
+		)
+	}
+	return csipayload.NewControllerExpandVolumeResponseBuilder().
+		WithCapacityBytes(updatedSize).
+		WithNodeExpansionRequired(true).
+		Build(), nil
 }
 
 // CreateSnapshot creates a snapshot for given volume
@@ -530,6 +582,7 @@ func newControllerCapabilities() []*csi.ControllerServiceCapability {
 	var capabilities []*csi.ControllerServiceCapability
 	for _, cap := range []csi.ControllerServiceCapability_RPC_Type{
 		csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME,
+		csi.ControllerServiceCapability_RPC_EXPAND_VOLUME,
 	} {
 		capabilities = append(capabilities, fromType(cap))
 	}

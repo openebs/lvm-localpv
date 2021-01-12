@@ -34,9 +34,6 @@ jobs:
       - name: License test
         run: make license-check
 
-      - name: Lint test
-        run: make golint
-
       - name: Shellcheck
         uses: reviewdog/action-shellcheck@v1
         with:

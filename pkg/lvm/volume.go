@@ -16,6 +16,7 @@ package lvm
 
 import (
 	"os"
+	"strconv"
 
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	"github.com/openebs/lvm-localpv/pkg/builder/volbuilder"
@@ -143,6 +144,15 @@ func UpdateVolInfo(vol *apis.LVMVolume) error {
 // RemoveVolFinalizer adds finalizer to LVMVolume CR
 func RemoveVolFinalizer(vol *apis.LVMVolume) error {
 	vol.Finalizers = nil
+
+	_, err := volbuilder.NewKubeclient().WithNamespace(LvmNamespace).Update(vol)
+	return err
+}
+
+// ResizeVolume resizes the lvm volume
+func ResizeVolume(vol *apis.LVMVolume, newSize int64) error {
+
+	vol.Spec.Capacity = strconv.FormatInt(int64(newSize), 10)
 
 	_, err := volbuilder.NewKubeclient().WithNamespace(LvmNamespace).Update(vol)
 	return err

@@ -36,6 +36,7 @@ const (
 	VGCreate = "vgcreate"
 	LVCreate = "lvcreate"
 	LVRemove = "lvremove"
+	LVExtend = "lvextend"
 )
 
 // builldLVMCreateArgs returns lvcreate command for the volume
@@ -118,4 +119,33 @@ func GetVolumeDevPath(vol *apis.LVMVolume) (string, error) {
 	dev := DevMapperPath + vg + "-" + lv
 
 	return dev, nil
+}
+
+// builldVolumeResizeArgs returns resize command for the lvm volume
+func buildVolumeResizeArgs(vol *apis.LVMVolume) []string {
+	var LVMVolArg []string
+
+	dev := DevPath + vol.Spec.VolGroup + "/" + vol.Name
+	size := vol.Spec.Capacity + "b"
+
+	LVMVolArg = append(LVMVolArg, dev, "-L", size, "-r")
+
+	return LVMVolArg
+}
+
+// ResizeLVMVolume resizes the volume
+func ResizeLVMVolume(vol *apis.LVMVolume, mountpath string) error {
+	volume := vol.Spec.VolGroup + "/" + vol.Name
+
+	args := buildVolumeResizeArgs(vol)
+	cmd := exec.Command(LVExtend, args...)
+	out, err := cmd.CombinedOutput()
+
+	if err != nil {
+		klog.Errorf(
+			"lvm: could not resize the volume %v cmd %v error: %s", volume, args, string(out),
+		)
+	}
+
+	return err
 }
