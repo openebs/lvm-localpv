@@ -115,7 +115,8 @@ func (ns *node) NodePublishVolume(
 	// If the access type is block, do nothing for stage
 	switch req.GetVolumeCapability().GetAccessType().(type) {
 	case *csi.VolumeCapability_Block:
-		return nil, status.Error(codes.Unimplemented, "")
+		// attempt block mount operation on the requested path
+		err = lvm.MountBlock(vol, mountInfo)
 	case *csi.VolumeCapability_Mount:
 		// attempt filesystem mount operation on the requested path
 		err = lvm.MountFilesystem(vol, mountInfo)

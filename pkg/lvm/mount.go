@@ -199,3 +199,32 @@ func MountFilesystem(vol *apis.LVMVolume, mount *MountInfo) error {
 
 	return MountVolume(vol, mount)
 }
+
+// MountBlock mounts the block disk to the specified path
+func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo) error {
+	target := mountinfo.MountPath
+	volume := vol.Spec.VolGroup + "/" + vol.Name
+	devicePath := DevPath + volume
+
+	mountopt := []string{"bind"}
+
+	mounter := &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: mount.NewOsExec()}
+
+	// Create the mount point as a file since bind mount device node requires it to be a file
+	err := mounter.MakeFile(target)
+	if err != nil {
+		return status.Errorf(codes.Internal, "Could not create target file %q: %v", target, err)
+	}
+
+	// do the bind mount of the device at the target path
+	if err := mounter.Mount(devicePath, target, "", mountopt); err != nil {
+		if removeErr := os.Remove(target); removeErr != nil {
+			return status.Errorf(codes.Internal, "Could not remove mount target %q: %v", target, removeErr)
+		}
+		return status.Errorf(codes.Internal, "mount failed at %v err : %v", target, err)
+	}
+
+	klog.Infof("NodePublishVolume mounted block device %s at %s", devicePath, target)
+
+	return nil
+}
