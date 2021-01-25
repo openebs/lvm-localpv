@@ -187,3 +187,71 @@ func ResizeLVMVolume(vol *apis.LVMVolume, resizefs bool) error {
 
 	return err
 }
+
+func buildLVMSnapCreateArgs(snap *apis.LVMSnapshot) []string {
+	var LVMSnapArg []string
+
+	volName := snap.Labels[LVMVolKey]
+
+	volPath := DevPath + snap.Spec.VolGroup + "/" + volName
+
+	// snapshot argument
+	LVMSnapArg = append(LVMSnapArg, "--snapshot")
+
+	// name of snapshot
+	LVMSnapArg = append(LVMSnapArg, "--name", snap.Name)
+
+	// TODO add size with --size
+
+	// volume to snapshot
+	LVMSnapArg = append(LVMSnapArg, volPath)
+
+	return LVMSnapArg
+}
+
+func buildLVMSnapDestroyArgs(snap *apis.LVMSnapshot) []string {
+	var LVMSnapArg []string
+
+	dev := DevPath + snap.Spec.VolGroup + "/" + snap.Name
+
+	LVMSnapArg = append(LVMSnapArg, "-y", dev)
+
+	return LVMSnapArg
+}
+
+func CreateSnapshot(snap *apis.LVMSnapshot) error {
+
+	volume := snap.Labels[LVMVolKey]
+
+	snapVolume := snap.Spec.VolGroup + "/" + snap.Name
+
+	args := buildLVMSnapCreateArgs(snap)
+	cmd := exec.Command(LVCreate, args...)
+	out, err := cmd.CombinedOutput()
+
+	if err != nil {
+		klog.Errorf("lvm: could not create snapshot %s cmd %v error: %s", snapVolume, args, string(out))
+		return err
+	}
+
+	klog.Infof("created snapshot %s from %s", snapVolume, volume)
+	return nil
+
+}
+
+func DestroySnapshot(snap *apis.LVMSnapshot) error {
+	snapVolume := snap.Spec.VolGroup + "/" + snap.Name
+
+	args := buildLVMSnapDestroyArgs(snap)
+	cmd := exec.Command(LVRemove, args...)
+	out, err := cmd.CombinedOutput()
+
+	if err != nil {
+		klog.Errorf("lvm: could not remove snapshot %s cmd %v error: %s", snapVolume, args, string(out))
+		return err
+	}
+
+	klog.Infof("removed snapshot %s", snapVolume)
+	return nil
+
+}

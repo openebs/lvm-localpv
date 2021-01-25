@@ -18,6 +18,7 @@ package driver
 
 import (
 	"fmt"
+	"github.com/openebs/lvm-localpv/pkg/builder/snapbuilder"
 	"strconv"
 	"strings"
 	"time"
@@ -444,7 +445,68 @@ func (cs *controller) CreateSnapshot(
 	req *csi.CreateSnapshotRequest,
 ) (*csi.CreateSnapshotResponse, error) {
 
-	return nil, status.Error(codes.Unimplemented, "")
+	klog.Infof("CreateSnapshot volume %s for %s", req.Name, req.SourceVolumeId)
+
+	snapTimeStamp := time.Now().Unix()
+	state, err := lvm.GetLVMSnapshotStatus(req.Name)
+
+	if err == nil {
+		return csipayload.NewCreateSnapshotResponseBuilder().
+			WithSourceVolumeID(req.SourceVolumeId).
+			// TODO should be from volgroup / name?
+			WithSnapshotID(req.Name).
+			WithCreationTime(snapTimeStamp, 0).
+			WithReadyToUse(state == lvm.LVMStatusReady).
+			Build(), nil
+	}
+
+	vol, err := lvm.GetLVMVolume(req.SourceVolumeId)
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Internal,
+			"CreateSnapshot not able to get volume %s: %s, {%s}",
+			req.SourceVolumeId, req.Name,
+			err.Error(),
+		)
+	}
+
+	labels := map[string]string{
+		lvm.LVMVolKey: vol.Name,
+	}
+
+	snapObj, err := snapbuilder.NewBuilder().
+		WithName(req.Name).
+		WithLabels(labels).Build()
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Internal,
+			"failed to create snapshotobject for %s: %s, {%s}",
+			req.SourceVolumeId, req.Name,
+			err.Error(),
+		)
+	}
+
+	snapObj.Spec = vol.Spec
+	snapObj.Status.State = lvm.LVMStatusPending
+
+	if err := lvm.ProvisionSnapshot(snapObj); err != nil {
+		return nil, status.Errorf(
+			codes.Internal,
+			"failed to handle CreateSnapshotRequest for %s: %s, {%s}",
+			req.SourceVolumeId, req.Name,
+			err.Error(),
+		)
+	}
+
+	state, _ = lvm.GetLVMSnapshotStatus(req.Name)
+
+	return csipayload.NewCreateSnapshotResponseBuilder().
+		WithSourceVolumeID(req.SourceVolumeId).
+		WithSnapshotID(req.Name).
+		WithCreationTime(snapTimeStamp, 0).
+		WithReadyToUse(state == lvm.LVMStatusReady).
+		Build(), nil
 }
 
 // DeleteSnapshot deletes given snapshot
@@ -455,7 +517,18 @@ func (cs *controller) DeleteSnapshot(
 	req *csi.DeleteSnapshotRequest,
 ) (*csi.DeleteSnapshotResponse, error) {
 
-	return nil, status.Error(codes.Unimplemented, "")
+	klog.Infof("DeleteSnapshot request for %s", req.SnapshotId)
+
+	if err := lvm.DeleteSnapshot(req.SnapshotId); err != nil {
+		return nil, status.Errorf(
+			codes.Internal,
+			"failed to handle DeleteSnapshot for %s, {%s}",
+			req.SnapshotId,
+			err.Error(),
+		)
+	}
+
+	return &csi.DeleteSnapshotResponse{}, nil
 }
 
 // ListSnapshots lists all snapshots for the
@@ -583,6 +656,7 @@ func newControllerCapabilities() []*csi.ControllerServiceCapability {
 	for _, cap := range []csi.ControllerServiceCapability_RPC_Type{
 		csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME,
 		csi.ControllerServiceCapability_RPC_EXPAND_VOLUME,
+		csi.ControllerServiceCapability_RPC_CREATE_DELETE_SNAPSHOT,
 	} {
 		capabilities = append(capabilities, fromType(cap))
 	}

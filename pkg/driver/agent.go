@@ -27,6 +27,7 @@ import (
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	"github.com/openebs/lvm-localpv/pkg/builder/volbuilder"
 	"github.com/openebs/lvm-localpv/pkg/lvm"
+	"github.com/openebs/lvm-localpv/pkg/mgmt/snapshot"
 	"github.com/openebs/lvm-localpv/pkg/mgmt/volume"
 	"golang.org/x/net/context"
 	"golang.org/x/sys/unix"
@@ -56,6 +57,14 @@ func NewNode(d *CSIDriver) csi.NodeServer {
 		err := volume.Start(&ControllerMutex, stopCh)
 		if err != nil {
 			klog.Fatalf("Failed to start LVM volume management controller: %s", err.Error())
+		}
+	}()
+
+	// start the lvm snapshot watcher
+	go func() {
+		err := snapshot.Start(&ControllerMutex, stopCh)
+		if err != nil {
+			klog.Fatalf("Failed to start ZFS volume snapshot management controller: %s", err.Error())
 		}
 	}()
 
