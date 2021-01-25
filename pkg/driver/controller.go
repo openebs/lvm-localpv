@@ -453,8 +453,7 @@ func (cs *controller) CreateSnapshot(
 	if err == nil {
 		return csipayload.NewCreateSnapshotResponseBuilder().
 			WithSourceVolumeID(req.SourceVolumeId).
-			// TODO should be from volgroup / name?
-			WithSnapshotID(req.Name).
+			WithSnapshotID(req.SourceVolumeId+"@"+req.Name).
 			WithCreationTime(snapTimeStamp, 0).
 			WithReadyToUse(state == lvm.LVMStatusReady).
 			Build(), nil
@@ -503,7 +502,7 @@ func (cs *controller) CreateSnapshot(
 
 	return csipayload.NewCreateSnapshotResponseBuilder().
 		WithSourceVolumeID(req.SourceVolumeId).
-		WithSnapshotID(req.Name).
+		WithSnapshotID(req.SourceVolumeId+"@"+req.Name).
 		WithCreationTime(snapTimeStamp, 0).
 		WithReadyToUse(state == lvm.LVMStatusReady).
 		Build(), nil
