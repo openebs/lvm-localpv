@@ -122,22 +122,26 @@ func GetVolumeDevPath(vol *apis.LVMVolume) (string, error) {
 }
 
 // builldVolumeResizeArgs returns resize command for the lvm volume
-func buildVolumeResizeArgs(vol *apis.LVMVolume) []string {
+func buildVolumeResizeArgs(vol *apis.LVMVolume, resizefs bool) []string {
 	var LVMVolArg []string
 
 	dev := DevPath + vol.Spec.VolGroup + "/" + vol.Name
 	size := vol.Spec.Capacity + "b"
 
-	LVMVolArg = append(LVMVolArg, dev, "-L", size, "-r")
+	LVMVolArg = append(LVMVolArg, dev, "-L", size)
+
+	if resizefs == true {
+		LVMVolArg = append(LVMVolArg, "-r")
+	}
 
 	return LVMVolArg
 }
 
 // ResizeLVMVolume resizes the volume
-func ResizeLVMVolume(vol *apis.LVMVolume, mountpath string) error {
+func ResizeLVMVolume(vol *apis.LVMVolume, resizefs bool) error {
 	volume := vol.Spec.VolGroup + "/" + vol.Name
 
-	args := buildVolumeResizeArgs(vol)
+	args := buildVolumeResizeArgs(vol, resizefs)
 	cmd := exec.Command(LVExtend, args...)
 	out, err := cmd.CombinedOutput()
 
