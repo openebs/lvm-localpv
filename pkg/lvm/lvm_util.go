@@ -192,19 +192,21 @@ func buildLVMSnapCreateArgs(snap *apis.LVMSnapshot) []string {
 	var LVMSnapArg []string
 
 	volName := snap.Labels[LVMVolKey]
-
 	volPath := DevPath + snap.Spec.VolGroup + "/" + volName
+	size := snap.Spec.Capacity + "b"
 
-	// snapshot argument
-	LVMSnapArg = append(LVMSnapArg, "--snapshot")
-
-	// name of snapshot
-	LVMSnapArg = append(LVMSnapArg, "--name", snap.Name)
-
-	// TODO add size with --size
-
-	// volume to snapshot
-	LVMSnapArg = append(LVMSnapArg, volPath)
+	LVMSnapArg = append(LVMSnapArg,
+		// snapshot argument
+		"--snapshot",
+		// name of snapshot
+		"--name", snap.Name,
+		// size of the snapshot, will be same as source volume
+		"--size", size,
+		// set the persmission to make the snapshot read-only. By default LVM snapshots are RW
+		"--permission", "r",
+		// volume to snapshot
+		volPath,
+	)
 
 	return LVMSnapArg
 }

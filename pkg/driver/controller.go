@@ -475,7 +475,11 @@ func (cs *controller) CreateSnapshot(
 
 	snapObj, err := snapbuilder.NewBuilder().
 		WithName(req.Name).
-		WithLabels(labels).Build()
+		WithLabels(labels).
+		// the capacity of the snapshot will be set as same as the capacity of the
+		// origin volume so that overflow does not occur and snapshot is not dropped
+		WithCapacity(vol.Spec.Capacity).
+		Build()
 
 	if err != nil {
 		return nil, status.Errorf(

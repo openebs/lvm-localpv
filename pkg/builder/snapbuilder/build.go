@@ -108,6 +108,21 @@ func (b *Builder) WithFinalizer(finalizer []string) *Builder {
 	return b
 }
 
+// WithCapacity sets the Capacity of lvm snapshot
+func (b *Builder) WithCapacity(capacity string) *Builder {
+	if capacity == "" {
+		b.errs = append(
+			b.errs,
+			errors.New(
+				"failed to build lvm volume object: missing capacity",
+			),
+		)
+		return b
+	}
+	b.snap.Object.Spec.Capacity = capacity
+	return b
+}
+
 // Build returns LVMSnapshot API object
 func (b *Builder) Build() (*apis.LVMSnapshot, error) {
 	if len(b.errs) > 0 {
