@@ -113,7 +113,7 @@ func (ns *node) NodePublishVolume(
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	// If the access type is block, do nothing for stage
+
 	switch req.GetVolumeCapability().GetAccessType().(type) {
 	case *csi.VolumeCapability_Block:
 		// attempt block mount operation on the requested path
