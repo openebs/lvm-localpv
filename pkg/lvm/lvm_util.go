@@ -202,7 +202,7 @@ func buildLVMSnapCreateArgs(snap *apis.LVMSnapshot) []string {
 		"--name", snap.Name,
 		// size of the snapshot, will be same as source volume
 		"--size", size,
-		// set the persmission to make the snapshot read-only. By default LVM snapshots are RW
+		// set the permission to make the snapshot read-only. By default LVM snapshots are RW
 		"--permission", "r",
 		// volume to snapshot
 		volPath,
