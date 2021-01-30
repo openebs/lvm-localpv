@@ -17,6 +17,7 @@ limitations under the License.
 package driver
 
 import (
+	"os"
 	"strings"
 	"sync"
 
@@ -112,10 +113,11 @@ func (ns *node) NodePublishVolume(
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	// If the access type is block, do nothing for stage
+
 	switch req.GetVolumeCapability().GetAccessType().(type) {
 	case *csi.VolumeCapability_Block:
-		return nil, status.Error(codes.Unimplemented, "")
+		// attempt block mount operation on the requested path
+		err = lvm.MountBlock(vol, mountInfo)
 	case *csi.VolumeCapability_Mount:
 		// attempt filesystem mount operation on the requested path
 		err = lvm.MountFilesystem(vol, mountInfo)
@@ -301,7 +303,21 @@ func (ns *node) NodeExpandVolume(
 			err.Error(),
 		)
 	}
-	if err = lvm.ResizeLVMVolume(vol, req.GetVolumePath()); err != nil {
+
+	// find if it is block device so that we don't attempt filesystem resize
+	st, err := os.Stat(req.GetVolumePath())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to stat mountpath %s", err.Error())
+	}
+
+	resizefs := false
+	// doing this dirty check as volume capabilities are not passed for NodeExpandVolume
+	if st.IsDir() {
+		// it is not a block device, resize the filesystem
+		resizefs = true
+	}
+
+	if err = lvm.ResizeLVMVolume(vol, resizefs); err != nil {
 		return nil, status.Errorf(
 			codes.Internal,
 			"failed to handle NodeExpandVolume Request for %s, {%s}",
