@@ -24,7 +24,7 @@ import (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +resource:path=lvmsnapshot
 
-// LVMSnapshot represents a ZFS Snapshot of the zfsvolume
+// LVMSnapshot represents an LVM Snapshot of the lvm volume
 type LVMSnapshot struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

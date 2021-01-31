@@ -64,7 +64,7 @@ func NewNode(d *CSIDriver) csi.NodeServer {
 	go func() {
 		err := snapshot.Start(&ControllerMutex, stopCh)
 		if err != nil {
-			klog.Fatalf("Failed to start ZFS volume snapshot management controller: %s", err.Error())
+			klog.Fatalf("Failed to start LVM volume snapshot management controller: %s", err.Error())
 		}
 	}()
 
