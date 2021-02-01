@@ -17,6 +17,7 @@ limitations under the License.
 package lvm
 
 import (
+	"os"
 	"os/exec"
 
 	"strings"
@@ -74,6 +75,15 @@ func buildLVMDestroyArgs(vol *apis.LVMVolume) []string {
 func CreateVolume(vol *apis.LVMVolume) error {
 	volume := vol.Spec.VolGroup + "/" + vol.Name
 
+	volExists, err := CheckVolumeExists(vol)
+	if err != nil {
+		return err
+	}
+	if volExists {
+		klog.Infof("lvm: volume (%s) already exists, skipping its creation", volume)
+		return nil
+	}
+
 	args := buildLVMCreateArgs(vol)
 	cmd := exec.Command(LVCreate, args...)
 	out, err := cmd.CombinedOutput()
@@ -93,6 +103,15 @@ func CreateVolume(vol *apis.LVMVolume) error {
 func DestroyVolume(vol *apis.LVMVolume) error {
 	volume := vol.Spec.VolGroup + "/" + vol.Name
 
+	volExists, err := CheckVolumeExists(vol)
+	if err != nil {
+		return err
+	}
+	if !volExists {
+		klog.Infof("lvm: volume (%s) doesn't exists, skipping its deletion", volume)
+		return nil
+	}
+
 	args := buildLVMDestroyArgs(vol)
 	cmd := exec.Command(LVRemove, args...)
 	out, err := cmd.CombinedOutput()
@@ -107,6 +126,21 @@ func DestroyVolume(vol *apis.LVMVolume) error {
 	klog.Infof("lvm: destroyed volume %s", volume)
 
 	return nil
+}
+
+// CheckVolumeExists validates if lvm volume exists
+func CheckVolumeExists(vol *apis.LVMVolume) (bool, error) {
+	devPath, err := GetVolumeDevPath(vol)
+	if err != nil {
+		return false, err
+	}
+	if _, err = os.Stat(devPath); err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }
 
 // GetVolumeDevPath returns devpath for the given volume
