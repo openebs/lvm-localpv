@@ -68,7 +68,7 @@ func (b *CreateSnapshotResponseBuilder) WithCreationTime(tsec, tnsec int64) *Cre
 	return b
 }
 
-// WithReadyToUse sets the readyToUse feild against the
+// WithReadyToUse sets the readyToUse field against the
 // CreateSnapshotResponse instance
 func (b *CreateSnapshotResponseBuilder) WithReadyToUse(readyToUse bool) *CreateSnapshotResponseBuilder {
 	b.response.Snapshot.ReadyToUse = readyToUse

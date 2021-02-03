@@ -522,7 +522,20 @@ func (cs *controller) DeleteSnapshot(
 
 	klog.Infof("DeleteSnapshot request for %s", req.SnapshotId)
 
-	if err := lvm.DeleteSnapshot(req.SnapshotId); err != nil {
+	// snapshodID is formed as <volname>@<snapname>
+	// parsing them here
+	snapshotID := strings.Split(req.SnapshotId, "@")
+
+	if len(snapshotID) != 2 {
+		return nil, status.Errorf(
+			codes.Internal,
+			"failed to handle DeleteSnapshot for %s, {%s}",
+			req.SnapshotId,
+			"failed to get the snapshot name, Manual intervention required",
+		)
+	}
+
+	if err := lvm.DeleteSnapshot(snapshotID[1]); err != nil {
 		return nil, status.Errorf(
 			codes.Internal,
 			"failed to handle DeleteSnapshot for %s, {%s}",
