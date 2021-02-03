@@ -148,12 +148,6 @@ func (b *Builder) WithVolGroup(vg string) *Builder {
 	return b
 }
 
-// WithSnapshot sets Snapshot name for creating clone volume
-func (b *Builder) WithSnapshot(snap string) *Builder {
-	b.volume.Object.Spec.SnapName = snap
-	return b
-}
-
 // WithNodeName sets NodeID for creating the volume
 func (b *Builder) WithNodeName(name string) *Builder {
 	if name == "" {

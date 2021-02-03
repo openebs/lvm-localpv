@@ -65,8 +65,6 @@ type VolumeInfo struct {
 	// +kubebuilder:validation:MinLength=1
 	VolGroup string `json:"volGroup"`
 
-	SnapName string `json:"snapName,omitempty"`
-
 	// Capacity of the volume
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength=1
