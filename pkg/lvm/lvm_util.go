@@ -221,6 +221,7 @@ func buildLVMSnapDestroyArgs(snap *apis.LVMSnapshot) []string {
 	return LVMSnapArg
 }
 
+// CreateSnapshot creates the lvm volume snapshot
 func CreateSnapshot(snap *apis.LVMSnapshot) error {
 
 	volume := snap.Labels[LVMVolKey]
@@ -241,6 +242,7 @@ func CreateSnapshot(snap *apis.LVMSnapshot) error {
 
 }
 
+// DestroySnapshot deletes the lvm volume snapshot
 func DestroySnapshot(snap *apis.LVMSnapshot) error {
 	snapVolume := snap.Spec.VolGroup + "/" + snap.Name
 

@@ -44,6 +44,7 @@ type LVMSnapshotList struct {
 	Items []LVMSnapshot `json:"items"`
 }
 
+// SnapStatus string that reflects if the snapshot was created successfully
 type SnapStatus struct {
 	State string `json:"state,omitempty"`
 }

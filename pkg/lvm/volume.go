@@ -161,6 +161,7 @@ func ResizeVolume(vol *apis.LVMVolume, newSize int64) error {
 	return err
 }
 
+// ProvisionSnapshot creates a LVMSnapshot CR
 func ProvisionSnapshot(snap *apis.LVMSnapshot) error {
 	_, err := snapbuilder.NewKubeclient().WithNamespace(LvmNamespace).Create(snap)
 	if err == nil {
@@ -169,6 +170,7 @@ func ProvisionSnapshot(snap *apis.LVMSnapshot) error {
 	return err
 }
 
+// DeleteSnapshot deletes the LVMSnapshot CR
 func DeleteSnapshot(snapName string) error {
 	err := snapbuilder.NewKubeclient().WithNamespace(LvmNamespace).Delete(snapName)
 	if err == nil {
@@ -178,12 +180,14 @@ func DeleteSnapshot(snapName string) error {
 	return err
 }
 
+// GetLVMSnapshot fetches the given LVM snapshot
 func GetLVMSnapshot(snapID string) (*apis.LVMSnapshot, error) {
 	getOptions := metav1.GetOptions{}
 	snap, err := snapbuilder.NewKubeclient().WithNamespace(LvmNamespace).Get(snapID, getOptions)
 	return snap, err
 }
 
+// GetLVMSnapshotStatus returns the status of LVMSnapshot
 func GetLVMSnapshotStatus(snapID string) (string, error) {
 	getOptions := metav1.GetOptions{}
 	snap, err := snapbuilder.NewKubeclient().WithNamespace(LvmNamespace).Get(snapID, getOptions)
@@ -194,6 +198,7 @@ func GetLVMSnapshotStatus(snapID string) (string, error) {
 	return snap.Status.State, nil
 }
 
+// UpdateSnapInfo updates LVMSnapshot CR with node id and finalizer
 func UpdateSnapInfo(snap *apis.LVMSnapshot) error {
 	finalizers := []string{LVMFinalizer}
 	labels := map[string]string{
@@ -219,6 +224,7 @@ func UpdateSnapInfo(snap *apis.LVMSnapshot) error {
 	return err
 }
 
+// RemoveSnapFinalizer adds finalizer to LVMSnapshot CR
 func RemoveSnapFinalizer(snap *apis.LVMSnapshot) error {
 	snap.Finalizers = nil
 
