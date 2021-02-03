@@ -29,7 +29,7 @@ spec:
   scope: Namespaced
   validation:
     openAPIV3Schema:
-      description: LVMSnapshot represents a ZFS Snapshot of the zfsvolume
+      description: LVMSnapshot represents an LVM Snapshot of the lvm volume
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -64,8 +64,6 @@ spec:
               - "yes"
               - "no"
               type: string
-            snapName:
-              type: string
             volGroup:
               description: VolGroup specifies the name of the volume group where the
                 volume has been created.
@@ -77,6 +75,8 @@ spec:
           - volGroup
           type: object
         status:
+          description: SnapStatus string that reflects if the snapshot was created
+            successfully
           properties:
             state:
               type: string
