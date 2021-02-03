@@ -226,7 +226,7 @@ func CreateSnapshot(snap *apis.LVMSnapshot) error {
 
 	volume := snap.Labels[LVMVolKey]
 
-	snapVolume := snap.Spec.VolGroup + "/" + snap.Name
+	snapVolume := snap.Spec.VolGroup + "/" + getLVMSnapName(snap.Name)
 
 	args := buildLVMSnapCreateArgs(snap)
 	cmd := exec.Command(LVCreate, args...)
@@ -244,7 +244,7 @@ func CreateSnapshot(snap *apis.LVMSnapshot) error {
 
 // DestroySnapshot deletes the lvm volume snapshot
 func DestroySnapshot(snap *apis.LVMSnapshot) error {
-	snapVolume := snap.Spec.VolGroup + "/" + snap.Name
+	snapVolume := snap.Spec.VolGroup + "/" + getLVMSnapName(snap.Name)
 
 	args := buildLVMSnapDestroyArgs(snap)
 	cmd := exec.Command(LVRemove, args...)
@@ -258,4 +258,10 @@ func DestroySnapshot(snap *apis.LVMSnapshot) error {
 	klog.Infof("removed snapshot %s", snapVolume)
 	return nil
 
+}
+
+// getSnapName is used to remove the snapshot prefix from the snapname. since names starting
+// with "snapshot" are reserved in lvm2
+func getLVMSnapName(snapName string) string {
+	return strings.TrimPrefix(snapName, "snapshot-")
 }
