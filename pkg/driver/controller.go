@@ -712,3 +712,38 @@ func (cs *controller) validateVolumeCreateReq(req *csi.CreateVolumeRequest) erro
 	}
 	return nil
 }
+
+func (cs *controller) validateSnapshotRequest(req *csi.CreateSnapshotRequest) error {
+	snapName := strings.ToLower(req.GetName())
+	volumeID := strings.ToLower(req.GetSourceVolumeId())
+
+	if snapName == "" || volumeID == "" {
+		return status.Errorf(
+			codes.InvalidArgument,
+			"CreateSnapshot error invalid request %s: %s",
+			volumeID, snapName,
+		)
+	}
+
+	snap, err := lvm.GetLVMSnapshot(snapName)
+
+	if err != nil {
+		if k8serror.IsNotFound(err) {
+			return nil
+		}
+		return status.Errorf(
+			codes.NotFound,
+			"CreateSnapshot error snap %s %s get failed : %s",
+			snapName, volumeID, err.Error(),
+		)
+	}
+
+	if snap.Labels[lvm.LVMVolKey] != volumeID {
+		return status.Errorf(
+			codes.AlreadyExists,
+			"CreateSnapshot error snapshot %s already exist for different source vol %s: %s",
+			snapName, snap.Labels[lvm.LVMVolKey], volumeID,
+		)
+	}
+	return nil
+}
