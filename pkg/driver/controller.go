@@ -390,6 +390,28 @@ func (cs *controller) ControllerExpandVolume(
 		)
 	}
 
+	// get the list of snapshots for the volume
+	snapList, err := lvm.GetSnapshotForVolume(volumeID)
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.NotFound,
+			"failed to handle NodeExpandVolume Request for %s, {%s}",
+			req.VolumeId,
+			err.Error(),
+		)
+	}
+
+	// resize is not supported if there are any snapshots present for the volume
+	if len(snapList.Items) != 0 {
+		return nil, status.Errorf(
+			codes.FailedPrecondition,
+			"unable to resize volume %s with %d active snapshots",
+			req.VolumeId,
+			len(snapList.Items),
+		)
+	}
+
 	/* round off the new size */
 	updatedSize := getRoundedCapacity(req.GetCapacityRange().GetRequiredBytes())
 
