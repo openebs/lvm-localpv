@@ -313,6 +313,27 @@ func (ns *node) NodeExpandVolume(
 		)
 	}
 
+	snapList, err := lvm.GetSnapshotForVolume(volumeID)
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.NotFound,
+			"failed to handle NodeExpandVolume Request for %s, {%s}",
+			req.VolumeId,
+			err.Error(),
+		)
+	}
+
+	// resize is not supported if there are any snapshots present for the volume
+	if len(snapList.Items) != 0 {
+		return nil, status.Errorf(
+			codes.FailedPrecondition,
+			"unable to resize volume %s with %d active snapshots",
+			req.VolumeId,
+			len(snapList.Items),
+		)
+	}
+
 	// find if it is block device so that we don't attempt filesystem resize
 	st, err := os.Stat(req.GetVolumePath())
 	if err != nil {

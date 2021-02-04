@@ -187,6 +187,15 @@ func GetLVMSnapshot(snapID string) (*apis.LVMSnapshot, error) {
 	return snap, err
 }
 
+// GetSnapshotForVolume fetches all the snapshots for the given volume
+func GetSnapshotForVolume(volumeID string) (*apis.LVMSnapshotList, error) {
+	listOptions := metav1.ListOptions{
+		LabelSelector: LVMVolKey + "=" + volumeID,
+	}
+	snapList, err := snapbuilder.NewKubeclient().WithNamespace(LvmNamespace).List(listOptions)
+	return snapList, err
+}
+
 // GetLVMSnapshotStatus returns the status of LVMSnapshot
 func GetLVMSnapshotStatus(snapID string) (string, error) {
 	getOptions := metav1.GetOptions{}
