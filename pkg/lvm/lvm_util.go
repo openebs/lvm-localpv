@@ -199,7 +199,7 @@ func buildLVMSnapCreateArgs(snap *apis.LVMSnapshot) []string {
 		// snapshot argument
 		"--snapshot",
 		// name of snapshot
-		"--name", snap.Name,
+		"--name", getLVMSnapName(snap.Name),
 		// size of the snapshot, will be same as source volume
 		"--size", size,
 		// set the permission to make the snapshot read-only. By default LVM snapshots are RW
@@ -214,7 +214,7 @@ func buildLVMSnapCreateArgs(snap *apis.LVMSnapshot) []string {
 func buildLVMSnapDestroyArgs(snap *apis.LVMSnapshot) []string {
 	var LVMSnapArg []string
 
-	dev := DevPath + snap.Spec.VolGroup + "/" + snap.Name
+	dev := DevPath + snap.Spec.VolGroup + "/" + getLVMSnapName(snap.Name)
 
 	LVMSnapArg = append(LVMSnapArg, "-y", dev)
 
