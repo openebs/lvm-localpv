@@ -396,7 +396,7 @@ func (cs *controller) ControllerExpandVolume(
 	if err != nil {
 		return nil, status.Errorf(
 			codes.NotFound,
-			"failed to handle NodeExpandVolume Request for %s, {%s}",
+			"failed to handle ControllerExpandVolume Request for %s, {%s}",
 			req.VolumeId,
 			err.Error(),
 		)
