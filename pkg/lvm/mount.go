@@ -49,6 +49,8 @@ type MountInfo struct {
 	MountOptions []string `json:"mountOptions"`
 }
 
+// PodInfo contains the pod related info that
+// will use the mounted volume
 type PodInfo struct {
 	// UID is the Uid of the pod
 	UID string
