@@ -50,8 +50,8 @@ type MountInfo struct {
 }
 
 type PodInfo struct {
-	// Uid is the Uid of the pod
-	Uid string
+	// UID is the Uid of the pod
+	UID string
 
 	// ContainerRuntime is the container runtime use to create the pod
 	ContainerRuntime string
@@ -248,7 +248,7 @@ func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo, podinfo *PodInfo) err
 func setIOLimits(podinfo *PodInfo, devicePath string) error {
 	_ = iolimit.SetIOLimits(&iolimit.Request{
 		DeviceName:       devicePath,
-		PodUid:           podinfo.Uid,
+		PodUid:           podinfo.UID,
 		ContainerRuntime: podinfo.ContainerRuntime,
 		IOLimit:          &iolimit.IOMax{
 			Riops: 100,

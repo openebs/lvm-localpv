@@ -96,7 +96,7 @@ func GetVolAndMountInfo(
 func getPodInfo(req *csi.NodePublishVolumeRequest) (*lvm.PodInfo, error) {
 	var podinfo lvm.PodInfo
 	var ok bool
-	if podinfo.Uid, ok = req.VolumeContext["csi.storage.k8s.io/pod.uid"]; !ok {
+	if podinfo.UID, ok = req.VolumeContext["csi.storage.k8s.io/pod.uid"]; !ok {
 		return nil, errors.New("pod Uid not found, csi.storage.k8s.io/pod.uid key missing in VolumeContext")
 	}
 	podinfo.ContainerRuntime = "containerd"
