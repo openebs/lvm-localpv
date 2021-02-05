@@ -469,6 +469,11 @@ func (cs *controller) CreateSnapshot(
 
 	klog.Infof("CreateSnapshot volume %s for %s", req.Name, req.SourceVolumeId)
 
+	err := validateSnapshotRequest(req)
+	if err != nil {
+		return nil, err
+	}
+
 	snapTimeStamp := time.Now().Unix()
 	state, err := lvm.GetLVMSnapshotStatus(req.Name)
 
@@ -748,7 +753,7 @@ func (cs *controller) validateVolumeCreateReq(req *csi.CreateVolumeRequest) erro
 	return nil
 }
 
-func (cs *controller) validateSnapshotRequest(req *csi.CreateSnapshotRequest) error {
+func validateSnapshotRequest(req *csi.CreateSnapshotRequest) error {
 	snapName := strings.ToLower(req.GetName())
 	volumeID := strings.ToLower(req.GetSourceVolumeId())
 
