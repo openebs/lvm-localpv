@@ -405,8 +405,8 @@ func (cs *controller) ControllerExpandVolume(
 	// resize is not supported if there are any snapshots present for the volume
 	if len(snapList.Items) != 0 {
 		return nil, status.Errorf(
-			codes.FailedPrecondition,
-			"unable to resize volume %s with %d active snapshots",
+			codes.Internal,
+			"ControllerExpandVolume: unable to resize volume %s with %d active snapshots",
 			req.VolumeId,
 			len(snapList.Items),
 		)
