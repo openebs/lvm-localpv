@@ -17,6 +17,7 @@ limitations under the License.
 package driver
 
 import (
+	"errors"
 	"os"
 	"strings"
 	"sync"
@@ -92,6 +93,16 @@ func GetVolAndMountInfo(
 	return vol, &mountinfo, nil
 }
 
+func getPodInfo(req *csi.NodePublishVolumeRequest) (*lvm.PodInfo, error) {
+	var podinfo lvm.PodInfo
+	var ok bool
+	if podinfo.Uid, ok = req.VolumeContext["csi.storage.k8s.io/pod.uid"]; !ok {
+		return nil, errors.New("pod Uid not found, csi.storage.k8s.io/pod.uid key missing in VolumeContext")
+	}
+	podinfo.ContainerRuntime = "containerd"
+	return &podinfo, nil
+}
+
 // NodePublishVolume publishes (mounts) the volume
 // at the corresponding node at a given path
 //
@@ -114,18 +125,23 @@ func (ns *node) NodePublishVolume(
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	podinfo, err := getPodInfo(req)
+	if err != nil {
+		klog.Infof("Pod Info could not be obtained, will skip setting io limits")
+	}
 	switch req.GetVolumeCapability().GetAccessType().(type) {
 	case *csi.VolumeCapability_Block:
 		// attempt block mount operation on the requested path
-		err = lvm.MountBlock(vol, mountInfo)
+		err = lvm.MountBlock(vol, mountInfo, podinfo)
 	case *csi.VolumeCapability_Mount:
 		// attempt filesystem mount operation on the requested path
-		err = lvm.MountFilesystem(vol, mountInfo)
+		err = lvm.MountFilesystem(vol, mountInfo, podinfo)
 	}
 
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 

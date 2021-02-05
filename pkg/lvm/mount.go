@@ -17,6 +17,7 @@ package lvm
 
 import (
 	"fmt"
+	"github.com/openebs/lib-csi/pkg/device/iolimit"
 	"os"
 
 	mnt "github.com/openebs/lib-csi/pkg/mount"
@@ -46,6 +47,14 @@ type MountInfo struct {
 	// MountOptions specifies the options with
 	// which mount needs to be attempted
 	MountOptions []string `json:"mountOptions"`
+}
+
+type PodInfo struct {
+	// Uid is the Uid of the pod
+	Uid string
+
+	// ContainerRuntime is the container runtime use to create the pod
+	ContainerRuntime string
 }
 
 // FormatAndMountVol formats and mounts the created volume to the desired mount path
@@ -167,7 +176,7 @@ func verifyMountRequest(vol *apis.LVMVolume, mountpath string) (bool, error) {
 }
 
 // MountVolume mounts the disk to the specified path
-func MountVolume(vol *apis.LVMVolume, mount *MountInfo) error {
+func MountVolume(vol *apis.LVMVolume, mount *MountInfo, podinfo *PodInfo) error {
 	volume := vol.Spec.VolGroup + "/" + vol.Name
 	mounted, err := verifyMountRequest(vol, mount.MountPath)
 	if err != nil {
@@ -187,21 +196,24 @@ func MountVolume(vol *apis.LVMVolume, mount *MountInfo) error {
 	}
 
 	klog.Infof("lvm: volume %v mounted %v fs %v", volume, mount.MountPath, mount.FSType)
-
-	return err
+	if err:= setIOLimits(podinfo, devicePath); err != nil {
+		klog.Warningf("lvm: error setting io limits: volume %v mounted %v", volume, mount.MountPath)
+	}
+	klog.Infof("lvm: io limits set for volume %v mounted %v", volume, mount.MountPath)
+	return nil
 }
 
 // MountFilesystem mounts the disk to the specified path
-func MountFilesystem(vol *apis.LVMVolume, mount *MountInfo) error {
+func MountFilesystem(vol *apis.LVMVolume, mount *MountInfo, podinfo *PodInfo) error {
 	if err := os.MkdirAll(mount.MountPath, 0755); err != nil {
 		return status.Errorf(codes.Internal, "Could not create dir {%q}, err: %v", mount.MountPath, err)
 	}
 
-	return MountVolume(vol, mount)
+	return MountVolume(vol, mount, podinfo)
 }
 
 // MountBlock mounts the block disk to the specified path
-func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo) error {
+func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo, podinfo *PodInfo) error {
 	target := mountinfo.MountPath
 	volume := vol.Spec.VolGroup + "/" + vol.Name
 	devicePath := DevPath + volume
@@ -225,6 +237,25 @@ func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo) error {
 	}
 
 	klog.Infof("NodePublishVolume mounted block device %s at %s", devicePath, target)
+	if err:= setIOLimits(podinfo, devicePath); err != nil {
+		klog.Warningf(": error setting io limits: block device %s at %s", devicePath, target)
+	}
+	klog.Infof("lvm: io limits set for block device %s at %s", devicePath, target)
 
+	return nil
+}
+
+func setIOLimits(podinfo *PodInfo, devicePath string) error {
+	_ = iolimit.SetIOLimits(&iolimit.Request{
+		DeviceName:       devicePath,
+		PodUid:           podinfo.Uid,
+		ContainerRuntime: podinfo.ContainerRuntime,
+		IOLimit:          &iolimit.IOMax{
+			Riops: 100,
+			Wiops: 100,
+			Rbps:  100,
+			Wbps:  100,
+		},
+	})
 	return nil
 }

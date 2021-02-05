@@ -71,3 +71,5 @@ require (
 	k8s.io/kubernetes v1.15.12
 	sigs.k8s.io/controller-runtime v0.2.0
 )
+
+replace github.com/openebs/lib-csi => github.com/abhranilc/lib-csi v0.0.0-20210201134537-ab81fa0c64e3
