@@ -53,7 +53,7 @@ type LVMVolumeList struct {
 // VolumeInfo defines LVM info
 type VolumeInfo struct {
 
-	// OwnerNodeID is the Node ID where the ZPOOL is running which is where
+	// OwnerNodeID is the Node ID where the volume group is present which is where
 	// the volume has been provisioned.
 	// OwnerNodeID can not be edited after the volume has been provisioned.
 	// +kubebuilder:validation:MinLength=1
