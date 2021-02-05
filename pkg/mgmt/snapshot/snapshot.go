@@ -82,9 +82,9 @@ func (c *SnapController) syncSnap(snap *apis.LVMSnapshot) error {
 			lvm.RemoveSnapFinalizer(snap)
 		}
 	} else {
-		// if finalizer is not set then it means we are creating
-		// the lvm snapshot.
-		if snap.Finalizers == nil {
+		// if the status of the snapshot resource is Pending, then
+		// we create the snapshot on the machine
+		if snap.Status.State == lvm.LVMStatusPending {
 			err = lvm.CreateSnapshot(snap)
 			if err == nil {
 				err = lvm.UpdateSnapInfo(snap)
