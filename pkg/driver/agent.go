@@ -127,7 +127,7 @@ func (ns *node) NodePublishVolume(
 
 	podinfo, err := getPodInfo(req)
 	if err != nil {
-		klog.Infof("Pod Info could not be obtained, will skip setting io limits")
+		klog.Infof("Pod Info could not be obtained")
 	}
 	switch req.GetVolumeCapability().GetAccessType().(type) {
 	case *csi.VolumeCapability_Block:

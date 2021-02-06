@@ -16,6 +16,7 @@ limitations under the License.
 package lvm
 
 import (
+	"errors"
 	"fmt"
 	"github.com/openebs/lib-csi/pkg/device/iolimit"
 	"os"
@@ -242,12 +243,14 @@ func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo, podinfo *PodInfo) err
 	if err:= setIOLimits(podinfo, devicePath); err != nil {
 		klog.Warningf(": error setting io limits: block device %s at %s", devicePath, target)
 	}
-	klog.Infof("lvm: io limits set for block device %s at %s", devicePath, target)
 
 	return nil
 }
 
 func setIOLimits(podinfo *PodInfo, devicePath string) error {
+	if podinfo == nil {
+		return errors.New("PodInfo is nil. Skipping setting IOLimits")
+	}
 	_ = iolimit.SetIOLimits(&iolimit.Request{
 		DeviceName:       devicePath,
 		PodUid:           podinfo.UID,
