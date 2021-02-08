@@ -19,15 +19,14 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
-	"os"
-
 	config "github.com/openebs/lvm-localpv/pkg/config"
 	"github.com/openebs/lvm-localpv/pkg/driver"
 	"github.com/openebs/lvm-localpv/pkg/lvm"
 	"github.com/openebs/lvm-localpv/pkg/version"
 	"github.com/spf13/cobra"
 	"k8s.io/klog"
+	"log"
+	"os"
 )
 
 /*
@@ -74,6 +73,22 @@ func main() {
 		&config.PluginType, "plugin", "csi-plugin", "Type of this driver i.e. controller or node",
 	)
 
+	cmd.PersistentFlags().BoolVar(
+		&config.SetIOLimits, "setiolimits", false,
+		"Whether to set iops, bps rate limit for pods accessing volumes",
+	)
+
+	config.VGIopsLimitPerKB = cmd.PersistentFlags().StringSlice(
+		"vgiops-per-kb", []string{},
+		"IOPS per KB limit to use for each volume group prefix, " +
+			"--vgiops-per-kb=\"vg1-prefix=100,vg2-prefix=200\"",
+			)
+
+	config.VGBpsLimitPerKB = cmd.PersistentFlags().StringSlice(
+		"vgbps-per-kb", []string{}, "BPS per KB limit to use for each volume group prefix, " +
+			"--vgbps-per-kb=\"vg1-prefix=100,vg2-prefix=200\"",
+		)
+
 	err := cmd.Execute()
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "%s", err.Error())
@@ -94,6 +109,10 @@ func run(config *config.Config) {
 		config.Endpoint,
 		config.NodeID,
 	)
+
+	if config.SetIOLimits {
+		lvm.SetIORateLimits(config)
+	}
 
 	err := driver.New(config).Run()
 	if err != nil {

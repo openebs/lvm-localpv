@@ -50,11 +50,13 @@ type MountInfo struct {
 	MountOptions []string `json:"mountOptions"`
 }
 
-// PodInfo contains the pod related info that
-// will use the mounted volume
-type PodInfo struct {
+// PodLVInfo contains the pod, LVGroup related info
+type PodLVInfo struct {
 	// UID is the Uid of the pod
 	UID string
+
+	// LVGroup is the LVM vg name in which lv needs to be provisioned
+	LVGroup string
 
 	// ContainerRuntime is the container runtime use to create the pod
 	ContainerRuntime string
@@ -100,7 +102,7 @@ func UmountVolume(vol *apis.LVMVolume, targetPath string,
 	}
 
 	if pathExists, pathErr := mount.PathExists(targetPath); pathErr != nil {
-		return fmt.Errorf("Error checking if path exists: %v", pathErr)
+		return fmt.Errorf("error checking if path exists: %v", pathErr)
 	} else if !pathExists {
 		klog.Warningf(
 			"Warning: Unmount skipped because path does not exist: %v",
@@ -179,7 +181,7 @@ func verifyMountRequest(vol *apis.LVMVolume, mountpath string) (bool, error) {
 }
 
 // MountVolume mounts the disk to the specified path
-func MountVolume(vol *apis.LVMVolume, mount *MountInfo, podinfo *PodInfo) error {
+func MountVolume(vol *apis.LVMVolume, mount *MountInfo, podLVinfo *PodLVInfo) error {
 	volume := vol.Spec.VolGroup + "/" + vol.Name
 	mounted, err := verifyMountRequest(vol, mount.MountPath)
 	if err != nil {
@@ -199,7 +201,7 @@ func MountVolume(vol *apis.LVMVolume, mount *MountInfo, podinfo *PodInfo) error 
 	}
 
 	klog.Infof("lvm: volume %v mounted %v fs %v", volume, mount.MountPath, mount.FSType)
-	if err:= setIOLimits(podinfo, devicePath); err != nil {
+	if err:= setIOLimits(podLVinfo, devicePath); err != nil {
 		klog.Warningf("lvm: error setting io limits: volume %v mounted %v", volume, mount.MountPath)
 	}
 	klog.Infof("lvm: io limits set for volume %v mounted %v", volume, mount.MountPath)
@@ -207,7 +209,7 @@ func MountVolume(vol *apis.LVMVolume, mount *MountInfo, podinfo *PodInfo) error 
 }
 
 // MountFilesystem mounts the disk to the specified path
-func MountFilesystem(vol *apis.LVMVolume, mount *MountInfo, podinfo *PodInfo) error {
+func MountFilesystem(vol *apis.LVMVolume, mount *MountInfo, podinfo *PodLVInfo) error {
 	if err := os.MkdirAll(mount.MountPath, 0755); err != nil {
 		return status.Errorf(codes.Internal, "Could not create dir {%q}, err: %v", mount.MountPath, err)
 	}
@@ -216,7 +218,7 @@ func MountFilesystem(vol *apis.LVMVolume, mount *MountInfo, podinfo *PodInfo) er
 }
 
 // MountBlock mounts the block disk to the specified path
-func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo, podinfo *PodInfo) error {
+func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo, podinfo *PodLVInfo) error {
 	target := mountinfo.MountPath
 	volume := vol.Spec.VolGroup + "/" + vol.Name
 	devicePath := DevPath + volume
@@ -247,19 +249,22 @@ func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo, podinfo *PodInfo) err
 	return nil
 }
 
-func setIOLimits(podinfo *PodInfo, devicePath string) error {
-	if podinfo == nil {
-		return errors.New("PodInfo is nil. Skipping setting IOLimits")
+func setIOLimits(podLVinfo *PodLVInfo, devicePath string) error {
+	if podLVinfo == nil {
+		return errors.New("PodLVInfo is missing. Skipping setting IOLimits")
 	}
+	iops := getIopsPerKB(podLVinfo.LVGroup)
+	bps := getBpsPerKB(podLVinfo.LVGroup)
+
 	_ = iolimit.SetIOLimits(&iolimit.Request{
 		DeviceName:       devicePath,
-		PodUid:           podinfo.UID,
-		ContainerRuntime: podinfo.ContainerRuntime,
+		PodUid:           podLVinfo.UID,
+		ContainerRuntime: podLVinfo.ContainerRuntime,
 		IOLimit:          &iolimit.IOMax{
-			Riops: 100,
-			Wiops: 100,
-			Rbps:  100,
-			Wbps:  100,
+			Riops: *iops,
+			Wiops: *iops,
+			Rbps:  *bps,
+			Wbps:  *bps,
 		},
 	})
 	return nil

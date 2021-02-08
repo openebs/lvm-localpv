@@ -93,11 +93,14 @@ func GetVolAndMountInfo(
 	return vol, &mountinfo, nil
 }
 
-func getPodInfo(req *csi.NodePublishVolumeRequest) (*lvm.PodInfo, error) {
+func getPodVolInfo(req *csi.NodePublishVolumeRequest) (*lvm.PodVolInfo, error) {
 	var podinfo lvm.PodInfo
 	var ok bool
 	if podinfo.UID, ok = req.VolumeContext["csi.storage.k8s.io/pod.uid"]; !ok {
-		return nil, errors.New("pod Uid not found, csi.storage.k8s.io/pod.uid key missing in VolumeContext")
+		return nil, errors.New("csi.storage.k8s.io/pod.uid key missing in VolumeContext")
+	}
+	if podinfo.UID, ok = req.VolumeContext["openebs.io/volgroup"]; !ok {
+		return nil, errors.New("openebs.io/volgroup key missing in VolumeContext")
 	}
 	podinfo.ContainerRuntime = "containerd"
 	return &podinfo, nil
