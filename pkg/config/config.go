@@ -49,6 +49,11 @@ type Config struct {
 	// CSIDriver.Spec.podInfoOnMount must be set to 'true'
 	SetIOLimits bool
 
+	// ContainerRuntime informs the driver of the container runtime
+	// used on the node, so that the driver can make assumptions
+	// about the cgroup path for a pod requesting a volume mount
+	ContainerRuntime string
+
 	// VGIopsLimitPerKB provides iops rate limits per volume group type
 	// as a string slice, in the form ["vg1-prefix=100", "vg2-prefix=200"]
 	VGIopsLimitPerKB *[]string

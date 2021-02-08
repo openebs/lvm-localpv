@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/openebs/lib-csi/pkg/device/iolimit"
 	"os"
+	"strconv"
 
 	mnt "github.com/openebs/lib-csi/pkg/mount"
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
@@ -57,9 +58,6 @@ type PodLVInfo struct {
 
 	// LVGroup is the LVM vg name in which lv needs to be provisioned
 	LVGroup string
-
-	// ContainerRuntime is the container runtime use to create the pod
-	ContainerRuntime string
 }
 
 // FormatAndMountVol formats and mounts the created volume to the desired mount path
@@ -201,7 +199,7 @@ func MountVolume(vol *apis.LVMVolume, mount *MountInfo, podLVinfo *PodLVInfo) er
 	}
 
 	klog.Infof("lvm: volume %v mounted %v fs %v", volume, mount.MountPath, mount.FSType)
-	if err:= setIOLimits(podLVinfo, devicePath); err != nil {
+	if err:= setIOLimits(vol, podLVinfo, devicePath); err != nil {
 		klog.Warningf("lvm: error setting io limits: volume %v mounted %v", volume, mount.MountPath)
 	}
 	klog.Infof("lvm: io limits set for volume %v mounted %v", volume, mount.MountPath)
@@ -218,7 +216,7 @@ func MountFilesystem(vol *apis.LVMVolume, mount *MountInfo, podinfo *PodLVInfo) 
 }
 
 // MountBlock mounts the block disk to the specified path
-func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo, podinfo *PodLVInfo) error {
+func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo, podLVinfo *PodLVInfo) error {
 	target := mountinfo.MountPath
 	volume := vol.Spec.VolGroup + "/" + vol.Name
 	devicePath := DevPath + volume
@@ -242,29 +240,35 @@ func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo, podinfo *PodLVInfo) e
 	}
 
 	klog.Infof("NodePublishVolume mounted block device %s at %s", devicePath, target)
-	if err:= setIOLimits(podinfo, devicePath); err != nil {
+	if err:= setIOLimits(vol, podLVinfo, devicePath); err != nil {
 		klog.Warningf(": error setting io limits: block device %s at %s", devicePath, target)
 	}
 
 	return nil
 }
 
-func setIOLimits(podLVinfo *PodLVInfo, devicePath string) error {
+func setIOLimits(vol *apis.LVMVolume, podLVinfo *PodLVInfo, devicePath string) error {
 	if podLVinfo == nil {
 		return errors.New("PodLVInfo is missing. Skipping setting IOLimits")
 	}
-	iops := getIopsPerKB(podLVinfo.LVGroup)
-	bps := getBpsPerKB(podLVinfo.LVGroup)
-
+	capacityGB, err := strconv.ParseUint(vol.Spec.Capacity, 10, 64)
+	if err != nil {
+		klog.Warningf("error parsing LVMVolume.Spec.Capacity. Skipping setting IOLimits", err)
+		return err
+	}
+	capacityKB := capacityGB * 1024 * 1024
+	iopsPerKB := getIopsPerKB(podLVinfo.LVGroup)
+	bpsPerKB := getBpsPerKB(podLVinfo.LVGroup)
+	
 	_ = iolimit.SetIOLimits(&iolimit.Request{
 		DeviceName:       devicePath,
 		PodUid:           podLVinfo.UID,
-		ContainerRuntime: podLVinfo.ContainerRuntime,
+		ContainerRuntime: getContainerRuntime(),
 		IOLimit:          &iolimit.IOMax{
-			Riops: *iops,
-			Wiops: *iops,
-			Rbps:  *bps,
-			Wbps:  *bps,
+			Riops: *iopsPerKB * capacityKB,
+			Wiops: *iopsPerKB * capacityKB,
+			Rbps:  *bpsPerKB * capacityKB,
+			Wbps:  *bpsPerKB * capacityKB,
 		},
 	})
 	return nil

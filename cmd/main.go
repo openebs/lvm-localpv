@@ -78,6 +78,11 @@ func main() {
 		"Whether to set iops, bps rate limit for pods accessing volumes",
 	)
 
+	cmd.PersistentFlags().StringVar(
+		&config.ContainerRuntime, "setiolimits", "containerd",
+		"Whether to set iops, bps rate limit for pods accessing volumes",
+	)
+
 	config.VGIopsLimitPerKB = cmd.PersistentFlags().StringSlice(
 		"vgiops-per-kb", []string{},
 		"IOPS per KB limit to use for each volume group prefix, " +

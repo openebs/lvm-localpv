@@ -93,17 +93,16 @@ func GetVolAndMountInfo(
 	return vol, &mountinfo, nil
 }
 
-func getPodVolInfo(req *csi.NodePublishVolumeRequest) (*lvm.PodVolInfo, error) {
-	var podinfo lvm.PodInfo
+func getPodLVInfo(req *csi.NodePublishVolumeRequest) (*lvm.PodLVInfo, error) {
+	var podLVInfo lvm.PodLVInfo
 	var ok bool
-	if podinfo.UID, ok = req.VolumeContext["csi.storage.k8s.io/pod.uid"]; !ok {
+	if podLVInfo.UID, ok = req.VolumeContext["csi.storage.k8s.io/pod.uid"]; !ok {
 		return nil, errors.New("csi.storage.k8s.io/pod.uid key missing in VolumeContext")
 	}
-	if podinfo.UID, ok = req.VolumeContext["openebs.io/volgroup"]; !ok {
+	if podLVInfo.UID, ok = req.VolumeContext["openebs.io/volgroup"]; !ok {
 		return nil, errors.New("openebs.io/volgroup key missing in VolumeContext")
 	}
-	podinfo.ContainerRuntime = "containerd"
-	return &podinfo, nil
+	return &podLVInfo, nil
 }
 
 // NodePublishVolume publishes (mounts) the volume
@@ -128,17 +127,17 @@ func (ns *node) NodePublishVolume(
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	podinfo, err := getPodInfo(req)
+	podLVinfo, err := getPodLVInfo(req)
 	if err != nil {
 		klog.Infof("Pod Info could not be obtained")
 	}
 	switch req.GetVolumeCapability().GetAccessType().(type) {
 	case *csi.VolumeCapability_Block:
 		// attempt block mount operation on the requested path
-		err = lvm.MountBlock(vol, mountInfo, podinfo)
+		err = lvm.MountBlock(vol, mountInfo, podLVinfo)
 	case *csi.VolumeCapability_Mount:
 		// attempt filesystem mount operation on the requested path
-		err = lvm.MountFilesystem(vol, mountInfo, podinfo)
+		err = lvm.MountFilesystem(vol, mountInfo, podLVinfo)
 	}
 
 	if err != nil {

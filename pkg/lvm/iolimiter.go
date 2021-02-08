@@ -12,6 +12,7 @@ import (
 var(
 	set = false
 	ioLimitsEnabled = false
+	containerRuntime string
 	iopsRate map[string]*uint64
 	bpsRate map[string]*uint64
 	rwlock sync.RWMutex
@@ -72,6 +73,7 @@ func SetIORateLimits(config *config.Config) {
 	}
 
 	ioLimitsEnabled = true
+	containerRuntime = config.ContainerRuntime
 	setValues(config)
 	set = true
 }
@@ -98,4 +100,10 @@ func getIopsPerKB(vgName string) *uint64 {
 // getBpsPerKB returns the bps per KB limit for a volume group name
 func getBpsPerKB(vgName string) *uint64 {
 	return getRatePerKB(vgName, bpsRate)
+}
+
+func getContainerRuntime() string {
+	rwlock.RLock()
+	defer rwlock.RUnlock()
+	return containerRuntime
 }
