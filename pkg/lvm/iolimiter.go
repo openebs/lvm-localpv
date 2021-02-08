@@ -9,13 +9,15 @@ import (
 	"sync"
 )
 
-var(
-	set = false
-	ioLimitsEnabled = false
+var (
+	set              = false
+	ioLimitsEnabled  = false
 	containerRuntime string
-	iopsRate map[string]*uint64
-	bpsRate map[string]*uint64
-	rwlock sync.RWMutex
+	riopsPerGB       map[string]uint64
+	wiopsPerGB       map[string]uint64
+	rbpsPerGB        map[string]uint64
+	wbpsPerGB        map[string]uint64
+	rwlock           sync.RWMutex
 )
 
 func isSet() bool {
@@ -27,8 +29,8 @@ func isSet() bool {
 	return false
 }
 
-func extractRateValues(rateVals *[]string) (map[string]*uint64, error) {
-	rate := map[string]*uint64{}
+func extractRateValues(rateVals *[]string) (map[string]uint64, error) {
+	rate := map[string]uint64{}
 	for _, kv := range *rateVals {
 		parts := strings.Split(kv, "=")
 		key := parts[0]
@@ -36,26 +38,40 @@ func extractRateValues(rateVals *[]string) (map[string]*uint64, error) {
 		if err != nil {
 			return nil, err
 		}
-		rate[key] = &value
+		rate[key] = value
 	}
 	return rate, nil
 }
 
 func setValues(config *config.Config) {
 	var err error
-	iopsVals := config.VGIopsLimitPerKB
-	bpsVals := config.VGBpsLimitPerKB
+	riopsVals := config.RIopsLimitPerGB
+	wiopsVals := config.WIopsLimitPerGB
+	rbpsVals := config.RBpsLimitPerGB
+	wbpsVals := config.WBpsLimitPerGB
 
-	iopsRate, err = extractRateValues(iopsVals)
+	riopsPerGB, err = extractRateValues(riopsVals)
 	if err != nil {
-		klog.Warningf("IOPS limit rates could not be extracted from config", err)
-		iopsRate = map[string]*uint64{}
+		klog.Warning("Read IOPS limit rates could not be extracted from config", err)
+		riopsPerGB = map[string]uint64{}
 	}
 
-	bpsRate, err = extractRateValues(bpsVals)
+	wiopsPerGB, err = extractRateValues(wiopsVals)
 	if err != nil {
-		klog.Warningf("BPS limit rates could not be extracted from config", err)
-		bpsRate = map[string]*uint64{}
+		klog.Warning("Write IOPS limit rates could not be extracted from config", err)
+		wiopsPerGB = map[string]uint64{}
+	}
+
+	rbpsPerGB, err = extractRateValues(rbpsVals)
+	if err != nil {
+		klog.Warning("Read BPS limit rates could not be extracted from config", err)
+		rbpsPerGB = map[string]uint64{}
+	}
+
+	wbpsPerGB, err = extractRateValues(wbpsVals)
+	if err != nil {
+		klog.Warning("Write BPS limit rates could not be extracted from config", err)
+		wbpsPerGB = map[string]uint64{}
 	}
 }
 
@@ -78,7 +94,7 @@ func SetIORateLimits(config *config.Config) {
 	set = true
 }
 
-func getRatePerKB(vgName string, rateMap map[string]*uint64) *uint64 {
+func getRatePerGB(vgName string, rateMap map[string]uint64) uint64 {
 	rwlock.RLock()
 	defer rwlock.RUnlock()
 	if ptr, ok := rateMap[vgName]; ok {
@@ -89,17 +105,23 @@ func getRatePerKB(vgName string, rateMap map[string]*uint64) *uint64 {
 			return v
 		}
 	}
-	return nil
+	return uint64(0)
 }
 
-// getIopsPerKB returns the iops per KB limit for a volume group name
-func getIopsPerKB(vgName string) *uint64 {
-	return getRatePerKB(vgName, iopsRate)
+func getRIopsPerGB(vgName string) uint64 {
+	return getRatePerGB(vgName, riopsPerGB)
 }
 
-// getBpsPerKB returns the bps per KB limit for a volume group name
-func getBpsPerKB(vgName string) *uint64 {
-	return getRatePerKB(vgName, bpsRate)
+func getWIopsPerGB(vgName string) uint64 {
+	return getRatePerGB(vgName, wiopsPerGB)
+}
+
+func getRBpsPerGB(vgName string) uint64 {
+	return getRatePerGB(vgName, rbpsPerGB)
+}
+
+func getWBpsPerGB(vgName string) uint64 {
+	return getRatePerGB(vgName, wbpsPerGB)
 }
 
 func getContainerRuntime() string {

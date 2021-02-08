@@ -199,9 +199,13 @@ func MountVolume(vol *apis.LVMVolume, mount *MountInfo, podLVinfo *PodLVInfo) er
 	}
 
 	klog.Infof("lvm: volume %v mounted %v fs %v", volume, mount.MountPath, mount.FSType)
-	if err:= setIOLimits(vol, podLVinfo, devicePath); err != nil {
-		klog.Warningf("lvm: error setting io limits: volume %v mounted %v", volume, mount.MountPath)
+
+	if ioLimitsEnabled {
+		if err := setIOLimits(vol, podLVinfo, devicePath); err != nil {
+			klog.Warningf("lvm: error setting io limits: volume %v mounted %v", volume, mount.MountPath)
+		}
 	}
+
 	klog.Infof("lvm: io limits set for volume %v mounted %v", volume, mount.MountPath)
 	return nil
 }
@@ -240,10 +244,12 @@ func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo, podLVinfo *PodLVInfo)
 	}
 
 	klog.Infof("NodePublishVolume mounted block device %s at %s", devicePath, target)
-	if err:= setIOLimits(vol, podLVinfo, devicePath); err != nil {
-		klog.Warningf(": error setting io limits: block device %s at %s", devicePath, target)
-	}
 
+	if ioLimitsEnabled {
+		if err := setIOLimits(vol, podLVinfo, devicePath); err != nil {
+			klog.Warningf(": error setting io limits: block device %s at %s", devicePath, target)
+		}
+	}
 	return nil
 }
 
@@ -253,23 +259,22 @@ func setIOLimits(vol *apis.LVMVolume, podLVinfo *PodLVInfo, devicePath string) e
 	}
 	capacityGB, err := strconv.ParseUint(vol.Spec.Capacity, 10, 64)
 	if err != nil {
-		klog.Warningf("error parsing LVMVolume.Spec.Capacity. Skipping setting IOLimits", err)
+		klog.Warning("error parsing LVMVolume.Spec.Capacity. Skipping setting IOLimits", err)
 		return err
 	}
-	capacityKB := capacityGB * 1024 * 1024
-	iopsPerKB := getIopsPerKB(podLVinfo.LVGroup)
-	bpsPerKB := getBpsPerKB(podLVinfo.LVGroup)
-	
-	_ = iolimit.SetIOLimits(&iolimit.Request{
+	err = iolimit.SetIOLimits(&iolimit.Request{
 		DeviceName:       devicePath,
 		PodUid:           podLVinfo.UID,
 		ContainerRuntime: getContainerRuntime(),
-		IOLimit:          &iolimit.IOMax{
-			Riops: *iopsPerKB * capacityKB,
-			Wiops: *iopsPerKB * capacityKB,
-			Rbps:  *bpsPerKB * capacityKB,
-			Wbps:  *bpsPerKB * capacityKB,
+		IOLimit: &iolimit.IOMax{
+			Riops: getRIopsPerGB(podLVinfo.LVGroup) * capacityGB,
+			Wiops: getWIopsPerGB(podLVinfo.LVGroup) * capacityGB,
+			Rbps:  getRBpsPerGB(podLVinfo.LVGroup) * capacityGB,
+			Wbps:  getWBpsPerGB(podLVinfo.LVGroup) * capacityGB,
 		},
 	})
+	if err != nil {
+		return err
+	}
 	return nil
 }

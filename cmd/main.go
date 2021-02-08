@@ -83,16 +83,29 @@ func main() {
 		"Whether to set iops, bps rate limit for pods accessing volumes",
 	)
 
-	config.VGIopsLimitPerKB = cmd.PersistentFlags().StringSlice(
-		"vgiops-per-kb", []string{},
-		"IOPS per KB limit to use for each volume group prefix, " +
-			"--vgiops-per-kb=\"vg1-prefix=100,vg2-prefix=200\"",
-			)
+	config.RIopsLimitPerGB = cmd.PersistentFlags().StringSlice(
+		"riops-per-gb", []string{},
+		"Read IOPS per GB limit to use for each volume group prefix, "+
+			"--riops-per-gb=\"vg1-prefix=100,vg2-prefix=200\"",
+	)
 
-	config.VGBpsLimitPerKB = cmd.PersistentFlags().StringSlice(
-		"vgbps-per-kb", []string{}, "BPS per KB limit to use for each volume group prefix, " +
-			"--vgbps-per-kb=\"vg1-prefix=100,vg2-prefix=200\"",
-		)
+	config.WIopsLimitPerGB = cmd.PersistentFlags().StringSlice(
+		"wiops-per-gb", []string{},
+		"Write IOPS per GB limit to use for each volume group prefix, "+
+			"--wiops-per-gb=\"vg1-prefix=100,vg2-prefix=200\"",
+	)
+
+	config.RBpsLimitPerGB = cmd.PersistentFlags().StringSlice(
+		"rbps-per-gb", []string{},
+		"Read BPS per GB limit to use for each volume group prefix, "+
+			"--rbps-per-gb=\"vg1-prefix=100,vg2-prefix=200\"",
+	)
+
+	config.WBpsLimitPerGB = cmd.PersistentFlags().StringSlice(
+		"wbps-per-gb", []string{},
+		"Write BPS per GB limit to use for each volume group prefix, "+
+			"--wbps-per-gb=\"vg1-prefix=100,vg2-prefix=200\"",
+	)
 
 	err := cmd.Execute()
 	if err != nil {

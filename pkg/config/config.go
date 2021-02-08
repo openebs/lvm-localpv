@@ -54,13 +54,21 @@ type Config struct {
 	// about the cgroup path for a pod requesting a volume mount
 	ContainerRuntime string
 
-	// VGIopsLimitPerKB provides iops rate limits per volume group type
+	// RIopsLimitPerGB provides read iops rate limits per volume group type
 	// as a string slice, in the form ["vg1-prefix=100", "vg2-prefix=200"]
-	VGIopsLimitPerKB *[]string
+	RIopsLimitPerGB *[]string
 
-	// VGBpsLimitPerKB provides bps rate limits per volume group type
+	// WIopsLimitPerGB provides write iops rate limits per volume group type
 	// as a string slice, in the form ["vg1-prefix=100", "vg2-prefix=200"]
-	VGBpsLimitPerKB *[]string
+	WIopsLimitPerGB *[]string
+
+	// RBpsLimitPerGB provides read bps rate limits per volume group type
+	// as a string slice, in the form ["vg1-prefix=100", "vg2-prefix=200"]
+	RBpsLimitPerGB *[]string
+
+	// WBpsLimitPerGB provides read bps rate limits per volume group type
+	// as a string slice, in the form ["vg1-prefix=100", "vg2-prefix=200"]
+	WBpsLimitPerGB *[]string
 }
 
 // Default returns a new instance of config
