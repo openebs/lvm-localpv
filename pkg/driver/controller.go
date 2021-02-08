@@ -18,6 +18,7 @@ package driver
 
 import (
 	"fmt"
+	"github.com/openebs/lvm-localpv/pkg/builder/snapbuilder"
 	"strconv"
 	"strings"
 	"time"
@@ -389,6 +390,28 @@ func (cs *controller) ControllerExpandVolume(
 		)
 	}
 
+	// get the list of snapshots for the volume
+	snapList, err := lvm.GetSnapshotForVolume(volumeID)
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.NotFound,
+			"failed to handle ControllerExpandVolume Request for %s, {%s}",
+			req.VolumeId,
+			err.Error(),
+		)
+	}
+
+	// resize is not supported if there are any snapshots present for the volume
+	if len(snapList.Items) != 0 {
+		return nil, status.Errorf(
+			codes.Internal,
+			"ControllerExpandVolume: unable to resize volume %s with %d active snapshots",
+			req.VolumeId,
+			len(snapList.Items),
+		)
+	}
+
 	/* round off the new size */
 	updatedSize := getRoundedCapacity(req.GetCapacityRange().GetRequiredBytes())
 
@@ -444,7 +467,76 @@ func (cs *controller) CreateSnapshot(
 	req *csi.CreateSnapshotRequest,
 ) (*csi.CreateSnapshotResponse, error) {
 
-	return nil, status.Error(codes.Unimplemented, "")
+	klog.Infof("CreateSnapshot volume %s for %s", req.Name, req.SourceVolumeId)
+
+	err := validateSnapshotRequest(req)
+	if err != nil {
+		return nil, err
+	}
+
+	snapTimeStamp := time.Now().Unix()
+	state, err := lvm.GetLVMSnapshotStatus(req.Name)
+
+	if err == nil {
+		return csipayload.NewCreateSnapshotResponseBuilder().
+			WithSourceVolumeID(req.SourceVolumeId).
+			WithSnapshotID(req.SourceVolumeId+"@"+req.Name).
+			WithCreationTime(snapTimeStamp, 0).
+			WithReadyToUse(state == lvm.LVMStatusReady).
+			Build(), nil
+	}
+
+	vol, err := lvm.GetLVMVolume(req.SourceVolumeId)
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Internal,
+			"CreateSnapshot not able to get volume %s: %s, {%s}",
+			req.SourceVolumeId, req.Name,
+			err.Error(),
+		)
+	}
+
+	labels := map[string]string{
+		lvm.LVMVolKey: vol.Name,
+	}
+
+	snapObj, err := snapbuilder.NewBuilder().
+		WithName(req.Name).
+		WithLabels(labels).
+		// the capacity of the snapshot will be set as same as the capacity of the
+		// origin volume so that overflow does not occur and snapshot is not dropped
+		WithCapacity(vol.Spec.Capacity).
+		Build()
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Internal,
+			"failed to create snapshotobject for %s: %s, {%s}",
+			req.SourceVolumeId, req.Name,
+			err.Error(),
+		)
+	}
+
+	snapObj.Spec = vol.Spec
+	snapObj.Status.State = lvm.LVMStatusPending
+
+	if err := lvm.ProvisionSnapshot(snapObj); err != nil {
+		return nil, status.Errorf(
+			codes.Internal,
+			"failed to handle CreateSnapshotRequest for %s: %s, {%s}",
+			req.SourceVolumeId, req.Name,
+			err.Error(),
+		)
+	}
+
+	state, _ = lvm.GetLVMSnapshotStatus(req.Name)
+
+	return csipayload.NewCreateSnapshotResponseBuilder().
+		WithSourceVolumeID(req.SourceVolumeId).
+		WithSnapshotID(req.SourceVolumeId+"@"+req.Name).
+		WithCreationTime(snapTimeStamp, 0).
+		WithReadyToUse(state == lvm.LVMStatusReady).
+		Build(), nil
 }
 
 // DeleteSnapshot deletes given snapshot
@@ -455,7 +547,31 @@ func (cs *controller) DeleteSnapshot(
 	req *csi.DeleteSnapshotRequest,
 ) (*csi.DeleteSnapshotResponse, error) {
 
-	return nil, status.Error(codes.Unimplemented, "")
+	klog.Infof("DeleteSnapshot request for %s", req.SnapshotId)
+
+	// snapshodID is formed as <volname>@<snapname>
+	// parsing them here
+	snapshotID := strings.Split(req.SnapshotId, "@")
+
+	if len(snapshotID) != 2 {
+		return nil, status.Errorf(
+			codes.Internal,
+			"failed to handle DeleteSnapshot for %s, {%s}",
+			req.SnapshotId,
+			"failed to get the snapshot name, Manual intervention required",
+		)
+	}
+
+	if err := lvm.DeleteSnapshot(snapshotID[1]); err != nil {
+		return nil, status.Errorf(
+			codes.Internal,
+			"failed to handle DeleteSnapshot for %s, {%s}",
+			req.SnapshotId,
+			err.Error(),
+		)
+	}
+
+	return &csi.DeleteSnapshotResponse{}, nil
 }
 
 // ListSnapshots lists all snapshots for the
@@ -583,6 +699,7 @@ func newControllerCapabilities() []*csi.ControllerServiceCapability {
 	for _, cap := range []csi.ControllerServiceCapability_RPC_Type{
 		csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME,
 		csi.ControllerServiceCapability_RPC_EXPAND_VOLUME,
+		csi.ControllerServiceCapability_RPC_CREATE_DELETE_SNAPSHOT,
 	} {
 		capabilities = append(capabilities, fromType(cap))
 	}
@@ -631,6 +748,41 @@ func (cs *controller) validateVolumeCreateReq(req *csi.CreateVolumeRequest) erro
 		return status.Error(
 			codes.InvalidArgument,
 			"failed to handle create volume request: missing volume capabilities",
+		)
+	}
+	return nil
+}
+
+func validateSnapshotRequest(req *csi.CreateSnapshotRequest) error {
+	snapName := strings.ToLower(req.GetName())
+	volumeID := strings.ToLower(req.GetSourceVolumeId())
+
+	if snapName == "" || volumeID == "" {
+		return status.Errorf(
+			codes.InvalidArgument,
+			"CreateSnapshot error invalid request %s: %s",
+			volumeID, snapName,
+		)
+	}
+
+	snap, err := lvm.GetLVMSnapshot(snapName)
+
+	if err != nil {
+		if k8serror.IsNotFound(err) {
+			return nil
+		}
+		return status.Errorf(
+			codes.NotFound,
+			"CreateSnapshot error snap %s %s get failed : %s",
+			snapName, volumeID, err.Error(),
+		)
+	}
+
+	if snap.Labels[lvm.LVMVolKey] != volumeID {
+		return status.Errorf(
+			codes.AlreadyExists,
+			"CreateSnapshot error snapshot %s already exist for different source vol %s: %s",
+			snapName, snap.Labels[lvm.LVMVolKey], volumeID,
 		)
 	}
 	return nil

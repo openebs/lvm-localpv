@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The OpenEBS Authors
+Copyright 2021 The OpenEBS Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -53,6 +53,8 @@ func (f *genericInformer) Lister() cache.GenericLister {
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
 	// Group=local.openebs.io, Version=v1alpha1
+	case v1alpha1.SchemeGroupVersion.WithResource("lvmsnapshots"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Local().V1alpha1().LVMSnapshots().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("lvmvolumes"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Local().V1alpha1().LVMVolumes().Informer()}, nil
 
