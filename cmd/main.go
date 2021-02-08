@@ -79,7 +79,7 @@ func main() {
 	)
 
 	cmd.PersistentFlags().StringVar(
-		&config.ContainerRuntime, "setiolimits", "containerd",
+		&config.ContainerRuntime, "runtime", "containerd",
 		"Whether to set iops, bps rate limit for pods accessing volumes",
 	)
 
