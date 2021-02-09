@@ -47,6 +47,9 @@ func isSet() bool {
 
 func extractRateValues(rateVals *[]string) (map[string]uint64, error) {
 	rate := map[string]uint64{}
+	if rateVals == nil {
+		return rate, nil
+	}
 	for _, kv := range *rateVals {
 		parts := strings.Split(kv, ":")
 		key := parts[0]

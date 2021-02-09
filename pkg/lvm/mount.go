@@ -256,8 +256,8 @@ func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo, podLVInfo *PodLVInfo)
 	return nil
 }
 
-func setIOLimits(vol *apis.LVMVolume, podLVinfo *PodLVInfo, devicePath string) error {
-	if podLVinfo == nil {
+func setIOLimits(vol *apis.LVMVolume, podLVInfo *PodLVInfo, devicePath string) error {
+	if podLVInfo == nil {
 		return errors.New("PodLVInfo is missing. Skipping setting IOLimits")
 	}
 	capacityGB, err := strconv.ParseUint(vol.Spec.Capacity, 10, 64)
@@ -265,15 +265,23 @@ func setIOLimits(vol *apis.LVMVolume, podLVinfo *PodLVInfo, devicePath string) e
 		klog.Warning("error parsing LVMVolume.Spec.Capacity. Skipping setting IOLimits", err)
 		return err
 	}
+	klog.Infof("Capacity of device: %v", capacityGB)
+	riops := getRIopsPerGB(podLVInfo.LVGroup) * capacityGB
+	wiops := getWIopsPerGB(podLVInfo.LVGroup) * capacityGB
+	rbps := getRBpsPerGB(podLVInfo.LVGroup) * capacityGB
+	wbps := getWBpsPerGB(podLVInfo.LVGroup) * capacityGB
+	klog.Infof("Setting iolimits for podUId %s, device %s: riops=%v, wiops=%v, rbps=%v, wbps=%v",
+		podLVInfo.UID, devicePath, riops, wiops, rbps, wbps,
+	)
 	err = iolimit.SetIOLimits(&iolimit.Request{
 		DeviceName:       devicePath,
-		PodUid:           podLVinfo.UID,
+		PodUid:           podLVInfo.UID,
 		ContainerRuntime: getContainerRuntime(),
 		IOLimit: &iolimit.IOMax{
-			Riops: getRIopsPerGB(podLVinfo.LVGroup) * capacityGB,
-			Wiops: getWIopsPerGB(podLVinfo.LVGroup) * capacityGB,
-			Rbps:  getRBpsPerGB(podLVinfo.LVGroup) * capacityGB,
-			Wbps:  getWBpsPerGB(podLVinfo.LVGroup) * capacityGB,
+			Riops: riops,
+			Wiops: wiops,
+			Rbps:  rbps,
+			Wbps:  wbps,
 		},
 	})
 	if err != nil {
