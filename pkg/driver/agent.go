@@ -99,7 +99,7 @@ func getPodLVInfo(req *csi.NodePublishVolumeRequest) (*lvm.PodLVInfo, error) {
 	if podLVInfo.UID, ok = req.VolumeContext["csi.storage.k8s.io/pod.uid"]; !ok {
 		return nil, errors.New("csi.storage.k8s.io/pod.uid key missing in VolumeContext")
 	}
-	if podLVInfo.UID, ok = req.VolumeContext["openebs.io/volgroup"]; !ok {
+	if podLVInfo.LVGroup, ok = req.VolumeContext["openebs.io/volgroup"]; !ok {
 		return nil, errors.New("openebs.io/volgroup key missing in VolumeContext")
 	}
 	return &podLVInfo, nil
