@@ -250,7 +250,7 @@ func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo, podLVInfo *PodLVInfo)
 		if err := setIOLimits(vol, podLVInfo, devicePath); err != nil {
 			klog.Warningf(": error setting io limits for podUid %s, device %s, err=%v", podLVInfo.UID, devicePath, err)
 		} else {
-			klog.Infof("lvm: io limits set for podUid %s, device %s", )
+			klog.Infof("lvm: io limits set for podUid %s, device %s", podLVInfo.UID, devicePath)
 		}
 	}
 	return nil
