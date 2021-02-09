@@ -260,12 +260,13 @@ func setIOLimits(vol *apis.LVMVolume, podLVInfo *PodLVInfo, devicePath string) e
 	if podLVInfo == nil {
 		return errors.New("PodLVInfo is missing. Skipping setting IOLimits")
 	}
-	capacityGB, err := strconv.ParseUint(vol.Spec.Capacity, 10, 64)
+	capacityBytes, err := strconv.ParseUint(vol.Spec.Capacity, 10, 64)
 	if err != nil {
 		klog.Warning("error parsing LVMVolume.Spec.Capacity. Skipping setting IOLimits", err)
 		return err
 	}
-	klog.Infof("Capacity of device: %v", capacityGB)
+	capacityGB := capacityBytes / (1024 * 1024 * 1024)
+	klog.Infof("Capacity of device in GB: %v", capacityGB)
 	riops := getRIopsPerGB(podLVInfo.LVGroup) * capacityGB
 	wiops := getWIopsPerGB(podLVInfo.LVGroup) * capacityGB
 	rbps := getRBpsPerGB(podLVInfo.LVGroup) * capacityGB
