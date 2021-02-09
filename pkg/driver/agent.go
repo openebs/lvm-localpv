@@ -129,7 +129,7 @@ func (ns *node) NodePublishVolume(
 
 	podLVinfo, err := getPodLVInfo(req)
 	if err != nil {
-		klog.Infof("Pod Info could not be obtained")
+		klog.Warningf("PodLVInfo could not be obtained for volume_id: %s, err = %v", req.VolumeId, err)
 	}
 	switch req.GetVolumeCapability().GetAccessType().(type) {
 	case *csi.VolumeCapability_Block:

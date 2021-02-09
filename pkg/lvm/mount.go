@@ -179,7 +179,7 @@ func verifyMountRequest(vol *apis.LVMVolume, mountpath string) (bool, error) {
 }
 
 // MountVolume mounts the disk to the specified path
-func MountVolume(vol *apis.LVMVolume, mount *MountInfo, podLVinfo *PodLVInfo) error {
+func MountVolume(vol *apis.LVMVolume, mount *MountInfo, podLVInfo *PodLVInfo) error {
 	volume := vol.Spec.VolGroup + "/" + vol.Name
 	mounted, err := verifyMountRequest(vol, mount.MountPath)
 	if err != nil {
@@ -200,13 +200,14 @@ func MountVolume(vol *apis.LVMVolume, mount *MountInfo, podLVinfo *PodLVInfo) er
 
 	klog.Infof("lvm: volume %v mounted %v fs %v", volume, mount.MountPath, mount.FSType)
 
-	if ioLimitsEnabled {
-		if err := setIOLimits(vol, podLVinfo, devicePath); err != nil {
-			klog.Warningf("lvm: error setting io limits: volume %v mounted %v", volume, mount.MountPath)
+	if ioLimitsEnabled && podLVInfo != nil {
+		if err := setIOLimits(vol, podLVInfo, devicePath); err != nil {
+			klog.Warningf("lvm: error setting io limits: podUid %s, device %s, err=%v", podLVInfo.UID, devicePath, err)
+		} else {
+			klog.Infof("lvm: io limits set for podUid %v, device %s", podLVInfo.UID, devicePath)
 		}
 	}
 
-	klog.Infof("lvm: io limits set for volume %v mounted %v", volume, mount.MountPath)
 	return nil
 }
 
@@ -220,7 +221,7 @@ func MountFilesystem(vol *apis.LVMVolume, mount *MountInfo, podinfo *PodLVInfo) 
 }
 
 // MountBlock mounts the block disk to the specified path
-func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo, podLVinfo *PodLVInfo) error {
+func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo, podLVInfo *PodLVInfo) error {
 	target := mountinfo.MountPath
 	volume := vol.Spec.VolGroup + "/" + vol.Name
 	devicePath := DevPath + volume
@@ -245,9 +246,11 @@ func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo, podLVinfo *PodLVInfo)
 
 	klog.Infof("NodePublishVolume mounted block device %s at %s", devicePath, target)
 
-	if ioLimitsEnabled {
-		if err := setIOLimits(vol, podLVinfo, devicePath); err != nil {
-			klog.Warningf(": error setting io limits: block device %s at %s", devicePath, target)
+	if ioLimitsEnabled && podLVInfo != nil {
+		if err := setIOLimits(vol, podLVInfo, devicePath); err != nil {
+			klog.Warningf(": error setting io limits for podUid %s, device %s, err=%v", podLVInfo.UID, devicePath, err)
+		} else {
+			klog.Infof("lvm: io limits set for podUid %s, device %s", )
 		}
 	}
 	return nil
