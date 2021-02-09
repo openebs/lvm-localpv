@@ -32,7 +32,7 @@ func isSet() bool {
 func extractRateValues(rateVals *[]string) (map[string]uint64, error) {
 	rate := map[string]uint64{}
 	for _, kv := range *rateVals {
-		parts := strings.Split(kv, "=")
+		parts := strings.Split(kv, ":")
 		key := parts[0]
 		value, err := strconv.ParseUint(parts[1], 10, 64)
 		if err != nil {
@@ -82,11 +82,6 @@ func SetIORateLimits(config *config.Config) {
 	}
 	rwlock.Lock()
 	defer rwlock.Unlock()
-
-	if !config.SetIOLimits {
-		set = true
-		return
-	}
 
 	ioLimitsEnabled = true
 	containerRuntime = config.ContainerRuntime

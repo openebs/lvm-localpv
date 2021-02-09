@@ -79,7 +79,7 @@ func main() {
 	)
 
 	cmd.PersistentFlags().StringVar(
-		&config.ContainerRuntime, "runtime", "containerd",
+		&config.ContainerRuntime, "container-runtime", "containerd",
 		"Whether to set iops, bps rate limit for pods accessing volumes",
 	)
 
@@ -98,16 +98,18 @@ func main() {
 	config.RBpsLimitPerGB = cmd.PersistentFlags().StringSlice(
 		"rbps-per-gb", []string{},
 		"Read BPS per GB limit to use for each volume group prefix, "+
-			"--rbps-per-gb=\"vg1-prefix=100,vg2-prefix=200\"",
+			"--rbps-per-gb=\"vg1-prefix:100,vg2-prefix:200\"",
 	)
 
 	config.WBpsLimitPerGB = cmd.PersistentFlags().StringSlice(
 		"wbps-per-gb", []string{},
 		"Write BPS per GB limit to use for each volume group prefix, "+
-			"--wbps-per-gb=\"vg1-prefix=100,vg2-prefix=200\"",
+			"--wbps-per-gb=\"vg1-prefix:100,vg2-prefix:200\"",
 	)
 
+	klog.Infof("Executing cobra command")
 	err := cmd.Execute()
+	klog.Errorf("Executed cobra command with error = %v", err)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "%s", err.Error())
 		os.Exit(1)
@@ -121,11 +123,17 @@ func run(config *config.Config) {
 
 	klog.Infof("LVM Driver Version :- %s - commit :- %s", version.Current(), version.GetGitCommit())
 	klog.Infof(
-		"DriverName: %s Plugin: %s EndPoint: %s NodeID: %s",
+		"DriverName: %s Plugin: %s EndPoint: %s NodeID: %s SetIOLimits: %v ContainerRuntime: %s RIopsPerGB: %v WIopsPerGB: %v RBpsPerGB: %v WBpsPerGB: %v",
 		config.DriverName,
 		config.PluginType,
 		config.Endpoint,
 		config.NodeID,
+		config.SetIOLimits,
+		config.ContainerRuntime,
+		*config.RIopsLimitPerGB,
+		*config.WIopsLimitPerGB,
+		*config.RBpsLimitPerGB,
+		*config.WBpsLimitPerGB,
 	)
 
 	if config.SetIOLimits {
