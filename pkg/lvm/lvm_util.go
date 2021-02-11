@@ -17,13 +17,16 @@ limitations under the License.
 package lvm
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 
 	"strings"
 
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/klog"
 )
 
@@ -36,6 +39,8 @@ const (
 // lvm command related constants
 const (
 	VGCreate = "vgcreate"
+	VGList   = "vgs"
+
 	LVCreate = "lvcreate"
 	LVRemove = "lvremove"
 	LVExtend = "lvextend"
@@ -288,4 +293,83 @@ func DestroySnapshot(snap *apis.LVMSnapshot) error {
 // with "snapshot" are reserved in lvm2
 func getLVMSnapName(snapName string) string {
 	return strings.TrimPrefix(snapName, "snapshot-")
+}
+
+func decodeVgsJSON(raw []byte) ([]apis.VolumeGroup, error) {
+	output := &struct {
+		Report []struct {
+			VolumeGroups []map[string]string `json:"vg"`
+		} `json:"report"`
+	}{}
+	var err error
+	if err = json.Unmarshal(raw, output); err != nil {
+		return nil, err
+	}
+
+	if len(output.Report) != 1 {
+		return nil, fmt.Errorf("expected exactly one lvm report")
+	}
+
+	items := output.Report[0].VolumeGroups
+	vgs := make([]apis.VolumeGroup, 0, len(items))
+	for _, item := range items {
+		var vg apis.VolumeGroup
+		if vg, err = parseVolumeGroup(item); err != nil {
+			return vgs, err
+		}
+		vgs = append(vgs, vg)
+	}
+	return vgs, nil
+}
+
+func parseVolumeGroup(m map[string]string) (apis.VolumeGroup, error) {
+	var vg apis.VolumeGroup
+	vg.Name = m["vg_name"]
+	vg.UUID = m["vg_uuid"]
+
+	int32Map := map[string]*int32{
+		"pv_count": &vg.PVCount,
+		"lv_count": &vg.LVCount,
+	}
+	for key, value := range int32Map {
+		count, err := strconv.Atoi(m[key])
+		if err != nil {
+			err = fmt.Errorf("invalid format of %v=%v for vg %v: %v", key, m[key], vg.Name, err)
+		}
+		*value = int32(count)
+	}
+
+	resQuantityMap := map[string]*resource.Quantity{
+		"vg_size": &vg.Size,
+		"vg_free": &vg.Free,
+	}
+
+	for key, value := range resQuantityMap {
+		sizeBytes, err := strconv.ParseInt(
+			strings.TrimSuffix(strings.ToLower(m[key]), "b"),
+			10, 64)
+		if err != nil {
+			err = fmt.Errorf("invalid format of %v=%v for vg %v: %v", key, m[key], vg.Name, err)
+		}
+		quantity := resource.NewQuantity(sizeBytes, resource.BinarySI)
+		*value = *quantity //
+	}
+	return vg, nil
+}
+
+// ListLVMVolumeGroup invokes `vgs` to list all the available volume
+// groups in the node.
+func ListLVMVolumeGroup() ([]apis.VolumeGroup, error) {
+	args := []string{
+		"--options", "vg_all",
+		"--reportformat", "json",
+		"--units", "b",
+	}
+	cmd := exec.Command(VGList, args...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		klog.Errorf("lvm: list volume group cmd %v: %v", args, err)
+		return nil, err
+	}
+	return decodeVgsJSON(output)
 }
