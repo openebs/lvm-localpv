@@ -83,7 +83,30 @@ type VolStatus struct {
 	// State specifies the current state of the volume provisioning request.
 	// The state "Pending" means that the volume creation request has not
 	// processed yet. The state "Ready" means that the volume has been created
-	// and it is ready for the use.
-	// +kubebuilder:validation:Enum=Pending;Ready
+	// and it is ready for the use. "Failed" means that volume provisioning
+	// has been failed and will not be retried by node agent controller.
+	// +kubebuilder:validation:Enum=Pending;Ready;Failed
 	State string `json:"state,omitempty"`
+
+	// Error denotes the error occurred during provisioning/expanding a volume.
+	// Error field should only be set when State becomes Failed.
+	Error *VolumeError `json:"error,omitempty"`
 }
+
+// VolumeError specifies the error occurred during volume provisioning.
+type VolumeError struct {
+	Code    VolumeErrorCode `json:"code,omitempty"`
+	Message string          `json:"message,omitempty"`
+}
+
+// VolumeErrorCode represents the error code to represent
+// specific class of errors.
+type VolumeErrorCode string
+
+const (
+	// Internal represents system internal error.
+	Internal VolumeErrorCode = "Internal"
+	// InsufficientCapacity represent lvm vg doesn't
+	// have enough capacity to fit the lv request.
+	InsufficientCapacity VolumeErrorCode = "InsufficientCapacity"
+)

@@ -18,6 +18,7 @@ package volume
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
@@ -74,26 +75,54 @@ func (c *VolController) enqueueVol(obj interface{}) {
 
 // synVol is the function which tries to converge to a desired state for the
 // LVMVolume
-func (c *VolController) syncVol(Vol *apis.LVMVolume) error {
+func (c *VolController) syncVol(vol *apis.LVMVolume) error {
 	var err error
 	// LVM Volume should be deleted. Check if deletion timestamp is set
-	if c.isDeletionCandidate(Vol) {
-		err = lvm.DestroyVolume(Vol)
+	if c.isDeletionCandidate(vol) {
+		err = lvm.DestroyVolume(vol)
 		if err == nil {
-			err = lvm.RemoveVolFinalizer(Vol)
+			err = lvm.RemoveVolFinalizer(vol)
 		}
-	} else {
-		// if finalizer is not set then it means we are creating
-		// the volume. And if it is set then volume has already been
-		// created and this event is for property change only.
-		if Vol.Status.State != lvm.LVMStatusReady {
-			err = lvm.CreateVolume(Vol)
-			if err == nil {
-				err = lvm.UpdateVolInfo(Vol)
-			}
-		}
+		return err
 	}
+	// if status is Pending then it means we are creating the volume.
+	// Otherwise, we are just ignoring the event.
+	switch vol.Status.State {
+	case lvm.LVMStatusFailed:
+		klog.Warningf("Skipping retrying lvm volume provisioning as its already in failed state: %+v", vol.Status.Error)
+		return nil
+	case lvm.LVMStatusReady:
+		klog.Info("lvm volume already provisioned")
+		return nil
+	}
+
+	if err = lvm.CreateVolume(vol); err != nil {
+		// validate if it's insufficient space error & accordingly set up the error code.
+		if volErr := c.transformLVMError(err); volErr.Code == apis.InsufficientCapacity {
+			vol.Status.Error = volErr
+			err = lvm.UpdateVolInfo(vol, lvm.LVMStatusFailed)
+		}
+		return err
+	}
+	err = lvm.UpdateVolInfo(vol, lvm.LVMStatusReady)
 	return err
+}
+
+func (c *VolController) transformLVMError(err error) *apis.VolumeError {
+	volErr := &apis.VolumeError{
+		Code:    apis.Internal,
+		Message: err.Error(),
+	}
+	execErr, ok := err.(*lvm.ExecError)
+	if !ok {
+		return volErr
+	}
+
+	if strings.Contains(strings.ToLower(string(execErr.Output)),
+		"insufficient free space") {
+		volErr.Code = apis.InsufficientCapacity
+	}
+	return volErr
 }
 
 // addVol is the add event handler for LVMVolume

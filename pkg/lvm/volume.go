@@ -15,12 +15,17 @@
 package lvm
 
 import (
+	"context"
 	"os"
 	"strconv"
+	"time"
 
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	"github.com/openebs/lvm-localpv/pkg/builder/snapbuilder"
 	"github.com/openebs/lvm-localpv/pkg/builder/volbuilder"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
 )
@@ -77,16 +82,14 @@ func init() {
 
 // ProvisionVolume creates a LVMVolume CR,
 // watcher for volume is present in CSI agent
-func ProvisionVolume(
-	vol *apis.LVMVolume,
-) error {
+func ProvisionVolume(vol *apis.LVMVolume) (*apis.LVMVolume, error) {
 
-	_, err := volbuilder.NewKubeclient().WithNamespace(LvmNamespace).Create(vol)
+	createdVol, err := volbuilder.NewKubeclient().WithNamespace(LvmNamespace).Create(vol)
 	if err == nil {
 		klog.Infof("provisioned volume %s", vol.Name)
 	}
 
-	return err
+	return createdVol, err
 }
 
 // DeleteVolume deletes the corresponding LVM Volume CR
@@ -107,6 +110,52 @@ func GetLVMVolume(volumeID string) (*apis.LVMVolume, error) {
 	return vol, err
 }
 
+// WaitForLVMVolumeProcessed waits till the lvm volume becomes
+// ready or failed (i.e reaches to terminal state).
+func WaitForLVMVolumeProcessed(ctx context.Context, volumeID string) (*apis.LVMVolume, error) {
+	timer := time.NewTimer(0)
+	defer timer.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, status.FromContextError(ctx.Err())
+		case <-timer.C:
+		}
+		vol, err := GetLVMVolume(volumeID)
+		if err != nil {
+			return nil, status.Errorf(codes.Aborted,
+				"lvm: wait failed, not able to get the volume %s %s", volumeID, err.Error())
+		}
+		if vol.Status.State == LVMStatusReady ||
+			vol.Status.State == LVMStatusFailed {
+			return vol, nil
+		}
+		timer.Reset(1 * time.Second)
+	}
+}
+
+// WaitForLVMVolumeDestroy waits till the lvm volume gets deleted.
+func WaitForLVMVolumeDestroy(ctx context.Context, volumeID string) error {
+	timer := time.NewTimer(0)
+	defer timer.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return status.FromContextError(ctx.Err())
+		case <-timer.C:
+		}
+		_, err := GetLVMVolume(volumeID)
+		if err != nil {
+			if k8serror.IsNotFound(err) {
+				return nil
+			}
+			return status.Errorf(codes.Aborted,
+				"lvm: destroy wait failed, not able to get the volume %s %s", volumeID, err.Error())
+		}
+		timer.Reset(1 * time.Second)
+	}
+}
+
 // GetLVMVolumeState returns LVMVolume OwnerNode and State for
 // the given volume. CreateVolume request may call it again and
 // again until volume is "Ready".
@@ -123,17 +172,20 @@ func GetLVMVolumeState(volID string) (string, string, error) {
 }
 
 // UpdateVolInfo updates LVMVolume CR with node id and finalizer
-func UpdateVolInfo(vol *apis.LVMVolume) error {
-	finalizers := []string{LVMFinalizer}
-	labels := map[string]string{LVMNodeKey: NodeID}
-
+func UpdateVolInfo(vol *apis.LVMVolume, state string) error {
 	if vol.Finalizers != nil {
 		return nil
 	}
 
+	var finalizers []string
+	labels := map[string]string{LVMNodeKey: NodeID}
+	switch state {
+	case LVMStatusReady:
+		finalizers = append(finalizers, LVMFinalizer)
+	}
 	newVol, err := volbuilder.BuildFrom(vol).
 		WithFinalizer(finalizers).
-		WithVolumeStatus(LVMStatusReady).
+		WithVolumeStatus(state).
 		WithLabels(labels).Build()
 
 	if err != nil {

@@ -17,6 +17,7 @@ limitations under the License.
 package lvm
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 
@@ -39,6 +40,28 @@ const (
 	LVRemove = "lvremove"
 	LVExtend = "lvextend"
 )
+
+// ExecError holds the process output along with underlying
+// error returned by exec.CombinedOutput function.
+type ExecError struct {
+	Output []byte
+	Err    error
+}
+
+// Error implements the error interface.
+func (e *ExecError) Error() string {
+	return fmt.Sprintf("%v - %v", string(e.Output), e.Err)
+}
+
+func newExecError(output []byte, err error) error {
+	if err == nil {
+		return nil
+	}
+	return &ExecError{
+		Output: output,
+		Err:    err,
+	}
+}
 
 // builldLVMCreateArgs returns lvcreate command for the volume
 func buildLVMCreateArgs(vol *apis.LVMVolume) []string {
@@ -89,6 +112,7 @@ func CreateVolume(vol *apis.LVMVolume) error {
 	out, err := cmd.CombinedOutput()
 
 	if err != nil {
+		err = newExecError(out, err)
 		klog.Errorf(
 			"lvm: could not create volume %v cmd %v error: %s", volume, args, string(out),
 		)
