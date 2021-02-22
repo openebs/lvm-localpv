@@ -53,9 +53,12 @@ replace k8s.io/sample-controller => k8s.io/sample-controller v0.15.12
 require (
 	github.com/container-storage-interface/spec v1.2.0
 	github.com/docker/go-units v0.3.3
+	github.com/ghodss/yaml v0.0.0-20180820084758-c7ce16629ff4
 	github.com/golang/protobuf v1.4.2
 	github.com/jpillora/go-ogle-analytics v0.0.0-20161213085824-14b04e0594ef
 	github.com/kubernetes-csi/csi-lib-utils v0.9.0
+	github.com/onsi/ginkgo v1.6.0
+	github.com/onsi/gomega v1.4.2
 	github.com/openebs/lib-csi v0.2.0
 	github.com/pkg/errors v0.8.1
 	github.com/spf13/cobra v0.0.0-20180319062004-c439c4fa0937
