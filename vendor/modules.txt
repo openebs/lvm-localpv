@@ -31,6 +31,8 @@ github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
 # github.com/google/gofuzz v1.0.0
 github.com/google/gofuzz
+# github.com/google/uuid v1.0.0
+github.com/google/uuid
 # github.com/googleapis/gnostic v0.3.1
 github.com/googleapis/gnostic/OpenAPIv2
 github.com/googleapis/gnostic/compiler
@@ -54,7 +56,7 @@ github.com/kubernetes-csi/csi-lib-utils/protosanitizer
 github.com/modern-go/concurrent
 # github.com/modern-go/reflect2 v1.0.1
 github.com/modern-go/reflect2
-# github.com/openebs/lib-csi v0.0.0-20201218144414-a64be5d4731e
+# github.com/openebs/lib-csi v0.2.0
 ## explicit
 github.com/openebs/lib-csi/pkg/client/k8s
 github.com/openebs/lib-csi/pkg/common/env

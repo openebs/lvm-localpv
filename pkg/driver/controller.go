@@ -176,12 +176,10 @@ func CreateLVMVolume(req *csi.CreateVolumeRequest) (string, error) {
 	selected := schd.Scheduler(req, nmap)
 
 	if len(selected) == 0 {
-		// (hack): CSI Sanity test does not pass topology information
-		selected = parameters["node"]
-		if len(selected) == 0 {
-			return "", status.Error(codes.Internal, "scheduler failed, not able to select a node to create the PV")
-		}
+		return "", status.Error(codes.Internal, "scheduler failed, not able to select a node to create the PV")
 	}
+
+	owner := selected[0]
 
 	klog.Infof("scheduled the volume %s/%s on node %s", vg, volName, selected)
 
@@ -189,7 +187,7 @@ func CreateLVMVolume(req *csi.CreateVolumeRequest) (string, error) {
 		WithName(volName).
 		WithCapacity(capacity).
 		WithVolGroup(vg).
-		WithOwnerNode(selected).
+		WithOwnerNode(owner).
 		WithVolumeStatus(lvm.LVMStatusPending).
 		WithShared(shared).Build()
 
@@ -203,7 +201,7 @@ func CreateLVMVolume(req *csi.CreateVolumeRequest) (string, error) {
 			"not able to provision the volume %s", err.Error())
 	}
 
-	return selected, nil
+	return owner, nil
 }
 
 // CreateVolume provisions a volume
