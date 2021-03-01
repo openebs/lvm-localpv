@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The OpenEBS Authors
+Copyright 2021 The OpenEBS Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -50,11 +50,16 @@ func IsPVCBoundEventually(pvcName string) bool {
 }
 
 // IsPVCResizedEventually checks if the pvc is bound or not eventually
-func IsPVCResizedEventually(pvcName string, newCapacity string) bool {
+func IsPVCResizedEventually(pvcName string, newCapacity string, shouldPass bool) bool {
 	newStorage, err := resource.ParseQuantity(newCapacity)
 	if err != nil {
 		return false
 	}
+	status := gomega.BeFalse()
+	if shouldPass {
+		status = gomega.BeTrue()
+	}
+
 	return gomega.Eventually(func() bool {
 		volume, err := PVCClient.
 			Get(pvcName, metav1.GetOptions{})
@@ -63,7 +68,7 @@ func IsPVCResizedEventually(pvcName string, newCapacity string) bool {
 		return pvcStorage == newStorage
 	},
 		120, 5).
-		Should(gomega.BeTrue())
+		Should(status)
 }
 
 // IsPodRunningEventually return true if the pod comes to running state
@@ -247,7 +252,7 @@ func createAndVerifyBlockPVC() {
 	)
 }
 
-func resizeAndVerifyPVC() {
+func resizeAndVerifyPVC(shouldPass bool, size string) {
 	var (
 		err     error
 		pvcName = "lvmpv-pvc"
@@ -255,7 +260,7 @@ func resizeAndVerifyPVC() {
 	ginkgo.By("updating the pvc with new size")
 	pvcObj, err = PVCClient.WithNamespace(OpenEBSNamespace).Get(pvcObj.Name, metav1.GetOptions{})
 	pvcObj, err = pvc.BuildFrom(pvcObj).
-		WithCapacity(NewCapacity).Build()
+		WithCapacity(size).Build()
 	gomega.Expect(err).To(
 		gomega.BeNil(),
 		"while building pvc {%s} in namespace {%s}",
@@ -272,9 +277,7 @@ func resizeAndVerifyPVC() {
 
 	ginkgo.By("verifying pvc size to be updated")
 
-	status := IsPVCResizedEventually(pvcName, NewCapacity)
-	gomega.Expect(status).To(gomega.Equal(true),
-		"while checking pvc resize")
+	IsPVCResizedEventually(pvcName, size, shouldPass)
 
 	pvcObj, err = PVCClient.WithNamespace(OpenEBSNamespace).Get(pvcObj.Name, metav1.GetOptions{})
 	gomega.Expect(err).To(

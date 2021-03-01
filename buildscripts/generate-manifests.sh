@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# Copyright 2019 The Kubernetes Authors.
 # Copyright 2020 The OpenEBS Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");

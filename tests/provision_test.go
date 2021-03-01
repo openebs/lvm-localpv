@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The OpenEBS Authors
+Copyright 2021 The OpenEBS Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -37,11 +37,16 @@ func fsVolCreationTest() {
 
 		// btrfs does not support online resize
 		if fstype != "btrfs" {
-			By("Resizing the PVC", resizeAndVerifyPVC)
+			resizeAndVerifyPVC(true, "8Gi")
 		}
 		// do not resize after creating the snapshot(not supported)
 		createSnapshot(pvcName, snapName)
 		verifySnapshotCreated(snapName)
+
+		if fstype != "btrfs" {
+			// if snapshot is there, resize should fail
+			resizeAndVerifyPVC(false, "10Gi")
+		}
 
 		By("Deleting the application deployment")
 		deleteAppDeployment(appName)

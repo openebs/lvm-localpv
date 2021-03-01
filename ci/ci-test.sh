@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2019 The OpenEBS Authors.
+# Copyright 2021 The OpenEBS Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,32 +27,33 @@ SNAP_CLASS=deploy/sample/lvmsnapclass.yaml
 
 export LVM_NAMESPACE="openebs"
 export TEST_DIR="tests"
+export NAMESPACE="kube-system"
 
-# Prepare env for runnging BDD tests
+# Prepare env for running BDD tests
 # Minikube is already running
 kubectl apply -f $LVM_OPERATOR
 kubectl apply -f $SNAP_CLASS
 
 dumpAgentLogs() {
   NR=$1
-  AgentPOD=$(kubectl get pods -l app=openebs-lvm-node -o jsonpath='{.items[0].metadata.name}' -n kube-system)
-  kubectl describe po "$AgentPOD" -n kube-system
+  AgentPOD=$(kubectl get pods -l app=openebs-lvm-node -o jsonpath='{.items[0].metadata.name}' -n "$NAMESPACE")
+  kubectl describe po "$AgentPOD" -n "$NAMESPACE"
   printf "\n\n"
-  kubectl logs --tail="${NR}" "$AgentPOD" -n kube-system -c openebs-lvm-plugin
+  kubectl logs --tail="${NR}" "$AgentPOD" -n "$NAMESPACE" -c openebs-lvm-plugin
   printf "\n\n"
 }
 
 dumpControllerLogs() {
   NR=$1
-  ControllerPOD=$(kubectl get pods -l app=openebs-lvm-controller -o jsonpath='{.items[0].metadata.name}' -n kube-system)
-  kubectl describe po "$ControllerPOD" -n kube-system
+  ControllerPOD=$(kubectl get pods -l app=openebs-lvm-controller -o jsonpath='{.items[0].metadata.name}' -n "$NAMESPACE")
+  kubectl describe po "$ControllerPOD" -n "$NAMESPACE"
   printf "\n\n"
-  kubectl logs --tail="${NR}" "$ControllerPOD" -n kube-system -c openebs-lvm-plugin
+  kubectl logs --tail="${NR}" "$ControllerPOD" -n "$NAMESPACE" -c openebs-lvm-plugin
   printf "\n\n"
 }
 
 isPodReady(){
-  [ "$(kubectl get po "$1" -o 'jsonpath={.status.conditions[?(@.type=="Ready")].status}' -n kube-system)" = 'True' ]
+  [ "$(kubectl get po "$1" -o 'jsonpath={.status.conditions[?(@.type=="Ready")].status}' -n "$NAMESPACE")" = 'True' ]
 }
 
 isDriverReady(){
@@ -67,7 +68,7 @@ waitForLVMDriver() {
 
   i=0
   while [ "$i" -le "$period" ]; do
-    lvmDriver="$(kubectl get pods -l role=openebs-lvm -o 'jsonpath={.items[*].metadata.name}' -n kube-system)"
+    lvmDriver="$(kubectl get pods -l role=openebs-lvm -o 'jsonpath={.items[*].metadata.name}' -n "$NAMESPACE")"
     if isDriverReady "$lvmDriver"; then
       return 0
     fi
@@ -86,7 +87,7 @@ waitForLVMDriver
 
 cd $TEST_DIR
 
-kubectl get po -n kube-system
+kubectl get po -n "$NAMESPACE"
 
 set +e
 
@@ -127,4 +128,4 @@ kubectl get lvmsnapshots.local.openebs.io -n openebs -oyaml
 exit 1
 fi
 
-echo "\n\n######### All test cases passed #########\n\n"
+printf "\n\n######### All test cases passed #########\n\n"
