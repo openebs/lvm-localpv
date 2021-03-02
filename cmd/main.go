@@ -86,13 +86,13 @@ func main() {
 	config.RIopsLimitPerGB = cmd.PersistentFlags().StringSlice(
 		"riops-per-gb", []string{},
 		"Read IOPS per GB limit to use for each volume group prefix, "+
-			"--riops-per-gb=\"vg1-prefix=100,vg2-prefix=200\"",
+			"--riops-per-gb=\"vg1-prefix:100,vg2-prefix:200\"",
 	)
 
 	config.WIopsLimitPerGB = cmd.PersistentFlags().StringSlice(
 		"wiops-per-gb", []string{},
 		"Write IOPS per GB limit to use for each volume group prefix, "+
-			"--wiops-per-gb=\"vg1-prefix=100,vg2-prefix=200\"",
+			"--wiops-per-gb=\"vg1-prefix:100,vg2-prefix:200\"",
 	)
 
 	config.RBpsLimitPerGB = cmd.PersistentFlags().StringSlice(
@@ -107,9 +107,7 @@ func main() {
 			"--wbps-per-gb=\"vg1-prefix:100,vg2-prefix:200\"",
 	)
 
-	klog.Infof("Executing cobra command")
 	err := cmd.Execute()
-	klog.Errorf("Executed cobra command with error = %v", err)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "%s", err.Error())
 		os.Exit(1)

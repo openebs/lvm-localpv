@@ -56,7 +56,7 @@ require (
 	github.com/golang/protobuf v1.4.2
 	github.com/jpillora/go-ogle-analytics v0.0.0-20161213085824-14b04e0594ef
 	github.com/kubernetes-csi/csi-lib-utils v0.9.0
-	github.com/openebs/lib-csi v0.0.0-20201218144414-a64be5d4731e
+	github.com/openebs/lib-csi v0.2.0
 	github.com/pkg/errors v0.8.1
 	github.com/spf13/cobra v0.0.0-20180319062004-c439c4fa0937
 	github.com/stretchr/testify v1.5.1
@@ -71,5 +71,3 @@ require (
 	k8s.io/kubernetes v1.15.12
 	sigs.k8s.io/controller-runtime v0.2.0
 )
-
-replace github.com/openebs/lib-csi => github.com/abhranilc/lib-csi v0.0.0-20210201134537-ab81fa0c64e3

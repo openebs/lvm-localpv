@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/openebs/lib-csi/pkg/device/iolimit"
+	"math"
 	"os"
 	"strconv"
 
@@ -265,7 +266,7 @@ func setIOLimits(vol *apis.LVMVolume, podLVInfo *PodLVInfo, devicePath string) e
 		klog.Warning("error parsing LVMVolume.Spec.Capacity. Skipping setting IOLimits", err)
 		return err
 	}
-	capacityGB := capacityBytes / (1024 * 1024 * 1024)
+	capacityGB := uint64(math.Ceil(float64(capacityBytes) / (1024 * 1024 * 1024)))
 	klog.Infof("Capacity of device in GB: %v", capacityGB)
 	riops := getRIopsPerGB(podLVInfo.LVGroup) * capacityGB
 	wiops := getWIopsPerGB(podLVInfo.LVGroup) * capacityGB
