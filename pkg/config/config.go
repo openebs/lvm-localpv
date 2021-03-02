@@ -42,6 +42,33 @@ type Config struct {
 	// in case of topologies and publishing or
 	// unpublishing volumes on nodes
 	NodeID string
+
+	// SetIOLimits if set to true, directs the driver
+	// to set iops, bps limits on a pod using a volume
+	// provisioned on its node. For this to work,
+	// CSIDriver.Spec.podInfoOnMount must be set to 'true'
+	SetIOLimits bool
+
+	// ContainerRuntime informs the driver of the container runtime
+	// used on the node, so that the driver can make assumptions
+	// about the cgroup path for a pod requesting a volume mount
+	ContainerRuntime string
+
+	// RIopsLimitPerGB provides read iops rate limits per volume group type
+	// as a string slice, in the form ["vg1-prefix=100", "vg2-prefix=200"]
+	RIopsLimitPerGB *[]string
+
+	// WIopsLimitPerGB provides write iops rate limits per volume group type
+	// as a string slice, in the form ["vg1-prefix=100", "vg2-prefix=200"]
+	WIopsLimitPerGB *[]string
+
+	// RBpsLimitPerGB provides read bps rate limits per volume group type
+	// as a string slice, in the form ["vg1-prefix=100", "vg2-prefix=200"]
+	RBpsLimitPerGB *[]string
+
+	// WBpsLimitPerGB provides read bps rate limits per volume group type
+	// as a string slice, in the form ["vg1-prefix=100", "vg2-prefix=200"]
+	WBpsLimitPerGB *[]string
 }
 
 // Default returns a new instance of config

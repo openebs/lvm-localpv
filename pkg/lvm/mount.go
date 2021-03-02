@@ -16,8 +16,12 @@ limitations under the License.
 package lvm
 
 import (
+	"errors"
 	"fmt"
+	"github.com/openebs/lib-csi/pkg/device/iolimit"
+	"math"
 	"os"
+	"strconv"
 
 	mnt "github.com/openebs/lib-csi/pkg/mount"
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
@@ -46,6 +50,15 @@ type MountInfo struct {
 	// MountOptions specifies the options with
 	// which mount needs to be attempted
 	MountOptions []string `json:"mountOptions"`
+}
+
+// PodLVInfo contains the pod, LVGroup related info
+type PodLVInfo struct {
+	// UID is the Uid of the pod
+	UID string
+
+	// LVGroup is the LVM vg name in which lv needs to be provisioned
+	LVGroup string
 }
 
 // FormatAndMountVol formats and mounts the created volume to the desired mount path
@@ -88,7 +101,7 @@ func UmountVolume(vol *apis.LVMVolume, targetPath string,
 	}
 
 	if pathExists, pathErr := mount.PathExists(targetPath); pathErr != nil {
-		return fmt.Errorf("Error checking if path exists: %v", pathErr)
+		return fmt.Errorf("error checking if path exists: %v", pathErr)
 	} else if !pathExists {
 		klog.Warningf(
 			"Warning: Unmount skipped because path does not exist: %v",
@@ -167,7 +180,7 @@ func verifyMountRequest(vol *apis.LVMVolume, mountpath string) (bool, error) {
 }
 
 // MountVolume mounts the disk to the specified path
-func MountVolume(vol *apis.LVMVolume, mount *MountInfo) error {
+func MountVolume(vol *apis.LVMVolume, mount *MountInfo, podLVInfo *PodLVInfo) error {
 	volume := vol.Spec.VolGroup + "/" + vol.Name
 	mounted, err := verifyMountRequest(vol, mount.MountPath)
 	if err != nil {
@@ -188,20 +201,28 @@ func MountVolume(vol *apis.LVMVolume, mount *MountInfo) error {
 
 	klog.Infof("lvm: volume %v mounted %v fs %v", volume, mount.MountPath, mount.FSType)
 
-	return err
+	if ioLimitsEnabled && podLVInfo != nil {
+		if err := setIOLimits(vol, podLVInfo, devicePath); err != nil {
+			klog.Warningf("lvm: error setting io limits: podUid %s, device %s, err=%v", podLVInfo.UID, devicePath, err)
+		} else {
+			klog.Infof("lvm: io limits set for podUid %v, device %s", podLVInfo.UID, devicePath)
+		}
+	}
+
+	return nil
 }
 
 // MountFilesystem mounts the disk to the specified path
-func MountFilesystem(vol *apis.LVMVolume, mount *MountInfo) error {
+func MountFilesystem(vol *apis.LVMVolume, mount *MountInfo, podinfo *PodLVInfo) error {
 	if err := os.MkdirAll(mount.MountPath, 0755); err != nil {
 		return status.Errorf(codes.Internal, "Could not create dir {%q}, err: %v", mount.MountPath, err)
 	}
 
-	return MountVolume(vol, mount)
+	return MountVolume(vol, mount, podinfo)
 }
 
 // MountBlock mounts the block disk to the specified path
-func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo) error {
+func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo, podLVInfo *PodLVInfo) error {
 	target := mountinfo.MountPath
 	volume := vol.Spec.VolGroup + "/" + vol.Name
 	devicePath := DevPath + volume
@@ -226,5 +247,47 @@ func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo) error {
 
 	klog.Infof("NodePublishVolume mounted block device %s at %s", devicePath, target)
 
+	if ioLimitsEnabled && podLVInfo != nil {
+		if err := setIOLimits(vol, podLVInfo, devicePath); err != nil {
+			klog.Warningf(": error setting io limits for podUid %s, device %s, err=%v", podLVInfo.UID, devicePath, err)
+		} else {
+			klog.Infof("lvm: io limits set for podUid %s, device %s", podLVInfo.UID, devicePath)
+		}
+	}
+	return nil
+}
+
+func setIOLimits(vol *apis.LVMVolume, podLVInfo *PodLVInfo, devicePath string) error {
+	if podLVInfo == nil {
+		return errors.New("PodLVInfo is missing. Skipping setting IOLimits")
+	}
+	capacityBytes, err := strconv.ParseUint(vol.Spec.Capacity, 10, 64)
+	if err != nil {
+		klog.Warning("error parsing LVMVolume.Spec.Capacity. Skipping setting IOLimits", err)
+		return err
+	}
+	capacityGB := uint64(math.Ceil(float64(capacityBytes) / (1024 * 1024 * 1024)))
+	klog.Infof("Capacity of device in GB: %v", capacityGB)
+	riops := getRIopsPerGB(podLVInfo.LVGroup) * capacityGB
+	wiops := getWIopsPerGB(podLVInfo.LVGroup) * capacityGB
+	rbps := getRBpsPerGB(podLVInfo.LVGroup) * capacityGB
+	wbps := getWBpsPerGB(podLVInfo.LVGroup) * capacityGB
+	klog.Infof("Setting iolimits for podUId %s, device %s: riops=%v, wiops=%v, rbps=%v, wbps=%v",
+		podLVInfo.UID, devicePath, riops, wiops, rbps, wbps,
+	)
+	err = iolimit.SetIOLimits(&iolimit.Request{
+		DeviceName:       devicePath,
+		PodUid:           podLVInfo.UID,
+		ContainerRuntime: getContainerRuntime(),
+		IOLimit: &iolimit.IOMax{
+			Riops: riops,
+			Wiops: wiops,
+			Rbps:  rbps,
+			Wbps:  wbps,
+		},
+	})
+	if err != nil {
+		return err
+	}
 	return nil
 }

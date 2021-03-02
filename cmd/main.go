@@ -19,15 +19,14 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
-	"os"
-
 	config "github.com/openebs/lvm-localpv/pkg/config"
 	"github.com/openebs/lvm-localpv/pkg/driver"
 	"github.com/openebs/lvm-localpv/pkg/lvm"
 	"github.com/openebs/lvm-localpv/pkg/version"
 	"github.com/spf13/cobra"
 	"k8s.io/klog"
+	"log"
+	"os"
 )
 
 /*
@@ -74,6 +73,40 @@ func main() {
 		&config.PluginType, "plugin", "csi-plugin", "Type of this driver i.e. controller or node",
 	)
 
+	cmd.PersistentFlags().BoolVar(
+		&config.SetIOLimits, "setiolimits", false,
+		"Whether to set iops, bps rate limit for pods accessing volumes",
+	)
+
+	cmd.PersistentFlags().StringVar(
+		&config.ContainerRuntime, "container-runtime", "containerd",
+		"Whether to set iops, bps rate limit for pods accessing volumes",
+	)
+
+	config.RIopsLimitPerGB = cmd.PersistentFlags().StringSlice(
+		"riops-per-gb", []string{},
+		"Read IOPS per GB limit to use for each volume group prefix, "+
+			"--riops-per-gb=\"vg1-prefix:100,vg2-prefix:200\"",
+	)
+
+	config.WIopsLimitPerGB = cmd.PersistentFlags().StringSlice(
+		"wiops-per-gb", []string{},
+		"Write IOPS per GB limit to use for each volume group prefix, "+
+			"--wiops-per-gb=\"vg1-prefix:100,vg2-prefix:200\"",
+	)
+
+	config.RBpsLimitPerGB = cmd.PersistentFlags().StringSlice(
+		"rbps-per-gb", []string{},
+		"Read BPS per GB limit to use for each volume group prefix, "+
+			"--rbps-per-gb=\"vg1-prefix:100,vg2-prefix:200\"",
+	)
+
+	config.WBpsLimitPerGB = cmd.PersistentFlags().StringSlice(
+		"wbps-per-gb", []string{},
+		"Write BPS per GB limit to use for each volume group prefix, "+
+			"--wbps-per-gb=\"vg1-prefix:100,vg2-prefix:200\"",
+	)
+
 	err := cmd.Execute()
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "%s", err.Error())
@@ -88,12 +121,22 @@ func run(config *config.Config) {
 
 	klog.Infof("LVM Driver Version :- %s - commit :- %s", version.Current(), version.GetGitCommit())
 	klog.Infof(
-		"DriverName: %s Plugin: %s EndPoint: %s NodeID: %s",
+		"DriverName: %s Plugin: %s EndPoint: %s NodeID: %s SetIOLimits: %v ContainerRuntime: %s RIopsPerGB: %v WIopsPerGB: %v RBpsPerGB: %v WBpsPerGB: %v",
 		config.DriverName,
 		config.PluginType,
 		config.Endpoint,
 		config.NodeID,
+		config.SetIOLimits,
+		config.ContainerRuntime,
+		*config.RIopsLimitPerGB,
+		*config.WIopsLimitPerGB,
+		*config.RBpsLimitPerGB,
+		*config.WBpsLimitPerGB,
 	)
+
+	if config.SetIOLimits {
+		lvm.SetIORateLimits(config)
+	}
 
 	err := driver.New(config).Run()
 	if err != nil {

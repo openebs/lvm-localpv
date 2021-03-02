@@ -63,6 +63,7 @@ github.com/openebs/lib-csi/pkg/common/env
 github.com/openebs/lib-csi/pkg/common/errors
 github.com/openebs/lib-csi/pkg/common/helpers
 github.com/openebs/lib-csi/pkg/common/kubernetes/client
+github.com/openebs/lib-csi/pkg/device/iolimit
 github.com/openebs/lib-csi/pkg/mount
 github.com/openebs/lib-csi/pkg/scheduler
 # github.com/pkg/errors v0.8.1

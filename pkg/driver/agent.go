@@ -17,6 +17,7 @@ limitations under the License.
 package driver
 
 import (
+	"errors"
 	"os"
 	"strings"
 	"sync"
@@ -101,6 +102,18 @@ func GetVolAndMountInfo(
 	return vol, &mountinfo, nil
 }
 
+func getPodLVInfo(req *csi.NodePublishVolumeRequest) (*lvm.PodLVInfo, error) {
+	var podLVInfo lvm.PodLVInfo
+	var ok bool
+	if podLVInfo.UID, ok = req.VolumeContext["csi.storage.k8s.io/pod.uid"]; !ok {
+		return nil, errors.New("csi.storage.k8s.io/pod.uid key missing in VolumeContext")
+	}
+	if podLVInfo.LVGroup, ok = req.VolumeContext["openebs.io/volgroup"]; !ok {
+		return nil, errors.New("openebs.io/volgroup key missing in VolumeContext")
+	}
+	return &podLVInfo, nil
+}
+
 // NodePublishVolume publishes (mounts) the volume
 // at the corresponding node at a given path
 //
@@ -123,18 +136,23 @@ func (ns *node) NodePublishVolume(
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	podLVinfo, err := getPodLVInfo(req)
+	if err != nil {
+		klog.Warningf("PodLVInfo could not be obtained for volume_id: %s, err = %v", req.VolumeId, err)
+	}
 	switch req.GetVolumeCapability().GetAccessType().(type) {
 	case *csi.VolumeCapability_Block:
 		// attempt block mount operation on the requested path
-		err = lvm.MountBlock(vol, mountInfo)
+		err = lvm.MountBlock(vol, mountInfo, podLVinfo)
 	case *csi.VolumeCapability_Mount:
 		// attempt filesystem mount operation on the requested path
-		err = lvm.MountFilesystem(vol, mountInfo)
+		err = lvm.MountFilesystem(vol, mountInfo, podLVinfo)
 	}
 
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
