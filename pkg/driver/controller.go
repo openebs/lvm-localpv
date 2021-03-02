@@ -126,9 +126,7 @@ func waitForLVMVolume(ctx context.Context,
 	var errMsg string
 	if volErr := vol.Status.Error; volErr != nil {
 		errMsg = volErr.Message
-		if volErr.Code == lvmapi.InsufficientCapacity {
-			reschedule = true
-		}
+		reschedule = true
 	} else {
 		errMsg = fmt.Sprintf("failed lvmvol must have error set")
 	}

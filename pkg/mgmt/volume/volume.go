@@ -97,13 +97,11 @@ func (c *VolController) syncVol(vol *apis.LVMVolume) error {
 	}
 
 	if err = lvm.CreateVolume(vol); err != nil {
-		// validate if it's insufficient space error & accordingly set up the error code.
-		if volErr := c.transformLVMError(err); volErr.Code == apis.InsufficientCapacity {
-			vol.Status.Error = volErr
-			err = lvm.UpdateVolInfo(vol, lvm.LVMStatusFailed)
-		}
+		vol.Status.Error = c.transformLVMError(err)
+		err = lvm.UpdateVolInfo(vol, lvm.LVMStatusFailed)
 		return err
 	}
+
 	err = lvm.UpdateVolInfo(vol, lvm.LVMStatusReady)
 	return err
 }
