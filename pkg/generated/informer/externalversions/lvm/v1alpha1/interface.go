@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The OpenEBS Authors
+Copyright 2021 The OpenEBS Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
+	// LVMSnapshots returns a LVMSnapshotInformer.
+	LVMSnapshots() LVMSnapshotInformer
 	// LVMVolumes returns a LVMVolumeInformer.
 	LVMVolumes() LVMVolumeInformer
 }
@@ -37,6 +39,11 @@ type version struct {
 // New returns a new Interface.
 func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakListOptions internalinterfaces.TweakListOptionsFunc) Interface {
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
+}
+
+// LVMSnapshots returns a LVMSnapshotInformer.
+func (v *version) LVMSnapshots() LVMSnapshotInformer {
+	return &lVMSnapshotInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // LVMVolumes returns a LVMVolumeInformer.

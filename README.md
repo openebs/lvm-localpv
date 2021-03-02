@@ -78,8 +78,11 @@ Features
 - [ ] Supports fsTypes: `ext4`, `btrfs`, `xfs`
 - [x] Volume metrics
 - [x] Topology
-- [ ] Snapshot
+- [x] Snapshot
 - [ ] Clone
-- [ ] Volume Resize
+- [x] Volume Resize
 - [ ] Backup/Restore
 - [ ] Ephemeral inline volume
+
+### Limitation
+- Resize of volumes with snapshot is not supported

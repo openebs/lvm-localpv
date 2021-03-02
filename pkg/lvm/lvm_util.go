@@ -187,3 +187,81 @@ func ResizeLVMVolume(vol *apis.LVMVolume, resizefs bool) error {
 
 	return err
 }
+
+func buildLVMSnapCreateArgs(snap *apis.LVMSnapshot) []string {
+	var LVMSnapArg []string
+
+	volName := snap.Labels[LVMVolKey]
+	volPath := DevPath + snap.Spec.VolGroup + "/" + volName
+	size := snap.Spec.Capacity + "b"
+
+	LVMSnapArg = append(LVMSnapArg,
+		// snapshot argument
+		"--snapshot",
+		// name of snapshot
+		"--name", getLVMSnapName(snap.Name),
+		// size of the snapshot, will be same as source volume
+		"--size", size,
+		// set the permission to make the snapshot read-only. By default LVM snapshots are RW
+		"--permission", "r",
+		// volume to snapshot
+		volPath,
+	)
+
+	return LVMSnapArg
+}
+
+func buildLVMSnapDestroyArgs(snap *apis.LVMSnapshot) []string {
+	var LVMSnapArg []string
+
+	dev := DevPath + snap.Spec.VolGroup + "/" + getLVMSnapName(snap.Name)
+
+	LVMSnapArg = append(LVMSnapArg, "-y", dev)
+
+	return LVMSnapArg
+}
+
+// CreateSnapshot creates the lvm volume snapshot
+func CreateSnapshot(snap *apis.LVMSnapshot) error {
+
+	volume := snap.Labels[LVMVolKey]
+
+	snapVolume := snap.Spec.VolGroup + "/" + getLVMSnapName(snap.Name)
+
+	args := buildLVMSnapCreateArgs(snap)
+	cmd := exec.Command(LVCreate, args...)
+	out, err := cmd.CombinedOutput()
+
+	if err != nil {
+		klog.Errorf("lvm: could not create snapshot %s cmd %v error: %s", snapVolume, args, string(out))
+		return err
+	}
+
+	klog.Infof("created snapshot %s from %s", snapVolume, volume)
+	return nil
+
+}
+
+// DestroySnapshot deletes the lvm volume snapshot
+func DestroySnapshot(snap *apis.LVMSnapshot) error {
+	snapVolume := snap.Spec.VolGroup + "/" + getLVMSnapName(snap.Name)
+
+	args := buildLVMSnapDestroyArgs(snap)
+	cmd := exec.Command(LVRemove, args...)
+	out, err := cmd.CombinedOutput()
+
+	if err != nil {
+		klog.Errorf("lvm: could not remove snapshot %s cmd %v error: %s", snapVolume, args, string(out))
+		return err
+	}
+
+	klog.Infof("removed snapshot %s", snapVolume)
+	return nil
+
+}
+
+// getSnapName is used to remove the snapshot prefix from the snapname. since names starting
+// with "snapshot" are reserved in lvm2
+func getLVMSnapName(snapName string) string {
+	return strings.TrimPrefix(snapName, "snapshot-")
+}

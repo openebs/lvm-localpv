@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The OpenEBS Authors
+Copyright 2021 The OpenEBS Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -26,6 +26,10 @@ import (
 
 type FakeLocalV1alpha1 struct {
 	*testing.Fake
+}
+
+func (c *FakeLocalV1alpha1) LVMSnapshots(namespace string) v1alpha1.LVMSnapshotInterface {
+	return &FakeLVMSnapshots{c, namespace}
 }
 
 func (c *FakeLocalV1alpha1) LVMVolumes(namespace string) v1alpha1.LVMVolumeInterface {

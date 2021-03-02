@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The OpenEBS Authors
+Copyright 2021 The OpenEBS Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -26,12 +26,17 @@ import (
 
 type LocalV1alpha1Interface interface {
 	RESTClient() rest.Interface
+	LVMSnapshotsGetter
 	LVMVolumesGetter
 }
 
 // LocalV1alpha1Client is used to interact with features provided by the local.openebs.io group.
 type LocalV1alpha1Client struct {
 	restClient rest.Interface
+}
+
+func (c *LocalV1alpha1Client) LVMSnapshots(namespace string) LVMSnapshotInterface {
+	return newLVMSnapshots(c, namespace)
 }
 
 func (c *LocalV1alpha1Client) LVMVolumes(namespace string) LVMVolumeInterface {
