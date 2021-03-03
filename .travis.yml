@@ -46,8 +46,10 @@ before_script:
   - "./buildscripts/travis-build.sh"
 script:
   - make test
+  - make ansible-runner-image
 after_success:
   - make deploy-images
+  - make deploy-e2e-images
   - bash <(curl -s https://codecov.io/bash)
 notifications:
   email:

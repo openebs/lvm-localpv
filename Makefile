@@ -233,6 +233,13 @@ lvm-driver-image: lvm-driver
 	cd buildscripts/${CSI_DRIVER} && sudo docker build -t ${IMAGE_ORG}/${CSI_DRIVER}:${IMAGE_TAG} ${DBUILD_ARGS} . && sudo docker tag ${IMAGE_ORG}/${CSI_DRIVER}:${IMAGE_TAG} quay.io/${IMAGE_ORG}/${CSI_DRIVER}:${IMAGE_TAG}
 	@rm buildscripts/${CSI_DRIVER}/${CSI_DRIVER}
 
+.PHONY: ansible-runner-image
+ansible-runner-image:
+	@echo "------------------"
+	@echo "--> Build ansible-runner image for lvm-localpv e2e-tests" 
+	@echo "------------------"
+	sudo docker build . -f e2e-tests/Dockerfile -t ${IMAGE_ORG}/lvm-localpv-e2e:ci
+
 .PHONY: ci-setup
 ci-setup:
 	@echo "--> Running ci test";
@@ -243,9 +250,13 @@ sanity: ci-setup
 	@echo "--> Running CSI Sanity test";
 	$(PWD)/ci/sanity.sh
 
-# Push images
+# Push lvm-driver images
 deploy-images:
 	@DIMAGE="${IMAGE_ORG}/lvm-driver" ./buildscripts/push
+
+# Push lvm-localpv-e2e-tests images
+deploy-e2e-images:
+	@DIMAGE="${IMAGE_ORG}/lvm-localpv-e2e" ./buildscripts/push
 
 .PHONY: golint
 golint:
