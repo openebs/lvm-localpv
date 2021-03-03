@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The OpenEBS Authors. All rights reserved.
+# Copyright 2020 The OpenEBS Authors. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -240,15 +240,10 @@ ansible-runner-image:
 	@echo "------------------"
 	sudo docker build . -f e2e-tests/Dockerfile -t ${IMAGE_ORG}/lvm-localpv-e2e:ci
 
-.PHONY: ci-setup
-ci-setup:
+.PHONY: ci
+ci:
 	@echo "--> Running ci test";
-	$(PWD)/ci/setup.sh
-
-.PHONY: sanity
-sanity: ci-setup
-	@echo "--> Running CSI Sanity test";
-	$(PWD)/ci/sanity.sh
+	$(PWD)/ci/ci-test.sh
 
 # Push lvm-driver images
 deploy-images:

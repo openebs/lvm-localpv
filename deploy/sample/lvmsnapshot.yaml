@@ -1,17 +1,8 @@
-kind: VolumeSnapshotClass
-apiVersion: snapshot.storage.k8s.io/v1
-metadata:
-  name: lvm-localpv-snapclass
-  annotations:
-    snapshot.storage.kubernetes.io/is-default-class: "true"
-driver: local.csi.openebs.io
-deletionPolicy: Delete
----
 apiVersion: snapshot.storage.k8s.io/v1
 kind: VolumeSnapshot
 metadata:
   name: lvm-localpv-snap
 spec:
-  volumeSnapshotClassName: lvm-localpv-snapclass
+  volumeSnapshotClassName: lvmpv-snapclass
   source:
     persistentVolumeClaimName: csi-lvmpvc
