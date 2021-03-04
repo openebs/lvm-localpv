@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: lvm-controller-high-availability-
+  namespace: e2e
+spec:
+  template:
+    metadata:
+      labels:
+        name: lvm-controller-high-availability
+    spec:
+      serviceAccountName: e2e
+      restartPolicy: Never
+
+      containers:
+      - name: ansibletest
+        image: openebs/lvm-localpv-e2e:ci
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: ANSIBLE_STDOUT_CALLBACK
+            #value: log_plays
+            #value: actionable
+            value: default
+
+            # This is the namespace where the LVM driver will create all its resources.
+            # By default it is in openebs namespace. If we want to change it to use a different
+            # namespace change the value of this env with desired namespace name.
+          - name: OPERATOR_NAMESPACE
+            value: 'openebs'
+
+        command: ["/bin/bash"]
+        args: ["-c", "ansible-playbook ./e2e-tests/experiments/functional/lvm-controller-high-availability/test.yml -i /etc/ansible/hosts -vv; exit 0"]

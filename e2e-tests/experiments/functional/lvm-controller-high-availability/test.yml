@@ -1,0 +1,229 @@
+- hosts: localhost
+  connection: local
+  gather_facts: False
+
+  vars_files:
+    - test_vars.yml
+    
+  tasks:
+    - block:
+
+          ## Generating the testname for lvm localpv controller high-availability test
+        - include_tasks: /e2e-tests/hack/create_testname.yml
+    
+          ## Record SOT (start of test) in e2e result e2e-cr (e2e-custom-resource)
+        - include_tasks: /e2e-tests/hack/update_e2e_result_resource.yml
+          vars:
+            status: 'SOT'
+        
+        - name: Get the no of replicas in lvm-controller statefulset 
+          shell: >
+            kubectl get sts openebs-lvm-controller -n kube-system -o jsonpath='{.status.replicas}'
+          args:
+            executable: /bin/bash
+          register: lvm_ctrl_replicas
+
+        - name: Get the list of names of all the nodes in cluster
+          shell: >
+            kubectl get nodes --no-headers -o custom-columns=:.metadata.name
+          args:
+            executable: /bin/bash
+          register: node_list
+
+        - name: Get the count of the schedulable nodes, which don't have `NoSchedule` taints
+          shell: >
+            kubectl get nodes --no-headers -o custom-columns=:.spec.taints
+            | grep -v NoSchedule | wc -l
+          args:
+            executable: /bin/bash
+          register: no_of_Schedulable_nodes
+
+        - name: scale down the replicas to zero of lvm-controller statefulset
+          shell: >
+            kubectl scale sts openebs-lvm-controller -n kube-system --replicas=0
+          args:
+            executable: /bin/bash
+          register: status
+          failed_when: "status.rc != 0"
+
+        - name: check that lvm-controller pods has been terminated successfully
+          shell: >
+            kubectl get pods -n kube-system -l app=openebs-lvm-controller
+          args:
+            executable: /bin/bash
+          register: ctrl_pods
+          until: "'No resources found' in ctrl_pods.stderr"
+          delay: 3
+          retries: 25
+
+        - name: Provision a test volume when lvm-controller is not active
+          shell: >
+            kubectl apply -f busybox_app.yml
+          args: 
+            executable: /bin/bash
+       
+        - name: check the pvc status, it should be in pending state
+          shell: >
+            kubectl get pvc pvcha -n e2e -o jsonpath='{.status.phase}'
+          args:
+            executable: /bin/bash
+          register: pvc_status
+          failed_when: "'Pending' not in pvc_status.stdout"
+
+        - name: Manual wait for 15 seconds, pvc should not get bound in this time
+          shell: sleep 15
+
+        - name: again check the pvc status
+          shell: >
+            kubectl get pvc pvcha -n e2e -o jsonpath='{.status.phase}'
+          args:
+            executable: /bin/bash
+          register: pvc_status
+          failed_when: "'Pending' not in pvc_status.stdout"
+        
+        - name: scale up the lvm-controller statefulset replica
+          shell: >
+            kubectl scale sts openebs-lvm-controller -n kube-system
+            --replicas="{{ lvm_ctrl_replicas.stdout|int + 1 }}"
+          args:
+            executable: /bin/bash
+          failed_when: "{{ lvm_ctrl_replicas.stdout|int + 1 }} > {{no_of_Schedulable_nodes.stdout|int}}"
+
+        - name: check that lvm-controller statefulset replicas are up and running
+          shell: >
+            kubectl get pods -n kube-system -l app=openebs-lvm-controller --no-headers 
+            -o custom-columns=:.status.phase | grep Running | wc -l
+          args:
+            executable: /bin/bash
+          register: ready_replicas
+          until: "{{ ready_replicas.stdout|int }} == {{ lvm_ctrl_replicas.stdout|int + 1 }}"
+          delay: 3
+          retries: 30
+
+        - name: check the pvc status after lvm controller is up and running
+          shell: >
+            kubectl get pvc pvcha -n e2e -o jsonpath='{.status.phase}'
+          args:
+            executable: /bin/bash
+          register: pvc_status
+          until: "'Bound' in pvc_status.stdout"
+          delay: 5
+          retries: 30
+
+        - name: Get the application pod name
+          shell: >
+            kubectl get pods -n e2e -o jsonpath='{.items[?(@.metadata.labels.app=="test_ha")].metadata.name}'
+          args:
+            executable: /bin/bash
+          register: app_pod_name
+                    
+        - name: Check if the application pod is in running state.
+          shell: >
+            kubectl get pods -n e2e -o jsonpath='{.items[?(@.metadata.labels.app=="test_ha")].status.phase}'
+          register: pod_status
+          until: "'Running' in pod_status.stdout"
+          delay: 5
+          retries: 20
+
+        - name: Get the lvm-volume name from the pvc name
+          shell: >
+            kubectl get pvc pvcha -n e2e -o jsonpath='{.spec.volumeName}'
+          args:
+            executable: /bin/bash
+          register: lvmvol_name
+
+        - name: Get the name of the controller pod replica which is active as master at present
+          shell: >
+            kubectl get lease local-csi-openebs-io -n kube-system -o jsonpath='{.spec.holderIdentity}'
+          args: 
+            executable: /bin/bash
+          register: master_replica
+
+        - name: Taint all nodes with `NoSchedule` to keep replica {{ master_replica.stdout }} out of action
+          shell: >
+            kubectl taint node {{ item }} key=value:NoSchedule
+          args:
+            executable: /bin/bash
+          register: taint_status
+          until: "'tainted' in taint_status.stdout "
+          retries: 20
+          delay: 5
+          with_items: "{{ node_list.stdout_lines }}"
+
+        - name: Delete the {{ master_replica.stdout }} replica pod
+          shell: >
+            kubectl delete pod {{ master_replica.stdout }} -n kube-system
+          args:
+            executable: /bin/bash
+          register: status
+          failed_when: "status.rc != 0"
+
+        - name: Get the new replica name which is in action as master for lvm-controller
+          shell: >
+            kubectl get lease local-csi-openebs-io -n kube-system -o jsonpath='{.spec.holderIdentity}'
+          args: 
+            executable: /bin/bash
+          register: new_master_replica
+          retries: 30
+          delay: 5
+          until: master_replica.stdout != new_master_replica.stdout
+
+        - name: Deprovision the application
+          shell: >
+            kubectl delete -f busybox_app.yml
+          args:
+            executable: /bin/bash
+          
+        - name: Verify that application pods have been deleted successfully 
+          shell: >
+            kubectl get pods -n e2e
+          args:
+            executable: /bin/bash
+          register: app_pod
+          until: "'{{ app_pod_name.stdout }}' not in app_pod.stdout"
+          delay: 3
+          retries: 30
+          
+        - name: verify that pvc has been deleted successfully
+          shell: >
+            kubectl get pvc -n e2e
+          args:
+            executable: /bin/bash
+          register: pvc_status
+          until: "'pvcha' not in pvc_status.stdout"
+          delay: 5
+          retries: 30
+          
+        - name: verify that lvmvol has been deleted successfully
+          shell: >
+            kubectl get lvmvol -n {{ operator_ns }}
+          args:
+            executable: /bin/bash
+          register: lvmvol_status
+          until: "lvmvol_name.stdout not in lvmvol_status.stdout"
+          delay: 3
+          retries: 30
+
+        - set_fact:
+            flag: "Pass"
+
+      rescue:
+        - set_fact:
+            flag: "Fail"
+
+      always:
+          ## RECORD END-OF-TEST IN e2e RESULT CR
+
+        - name: Remove the taint from the nodes
+          shell: >
+            kubectl taint node {{ item }} key-
+          args:
+            executable: /bin/bash
+          register: status
+          failed_when: "status.rc != 0"
+          with_items: "{{ node_list.stdout_lines }}"
+          ignore_errors: true
+
+        - include_tasks: /e2e-tests/hack/update_e2e_result_resource.yml
+          vars:
+            status: 'EOT'

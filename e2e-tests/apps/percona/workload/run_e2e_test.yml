@@ -2,17 +2,17 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  generateName: litmus-percona-loadgen-
-  namespace: litmus
+  generateName: percona-loadgen-
+  namespace: e2e
 spec:
   template:
     metadata:
       name: percona-loadgen
-      namespace: litmus
+      namespace: e2e
       labels:
         loadgen: percona-loadjob
     spec:
-      serviceAccountName: litmus
+      serviceAccountName: e2e
       restartPolicy: Never
       containers:
       - name: ansibletest
@@ -24,10 +24,10 @@ spec:
             
             # This is the namespace where percona application is running
           - name: APP_NAMESPACE
-            value: ''
+            value: 'percona'
 
           - name: APP_LABEL
-            value: ''
+            value: 'app=percona'
            
           - name: LOADGEN_LABEL
             value: loadgen=percona-loadgen
