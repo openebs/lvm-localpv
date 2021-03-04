@@ -79,16 +79,6 @@ jobs:
           kubernetes version: ${{ matrix.kubernetes }}
           github token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set tag
-        run: |
-          BRANCH="${GITHUB_REF##*/}"
-          CI_TAG=${BRANCH#v}-ci
-          if [ ${BRANCH} = "master" ]; then
-            CI_TAG="ci"
-          fi
-          echo "TAG=${CI_TAG}" >> $GITHUB_ENV
-          echo "BRANCH=${BRANCH}" >> $GITHUB_ENV
-
       - name: Build images locally
         run: make lvm-driver-image || exit 1;
 
