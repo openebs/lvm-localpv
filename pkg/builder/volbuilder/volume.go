@@ -133,6 +133,12 @@ func (b *Builder) WithShared(shared string) *Builder {
 	return b
 }
 
+// WithThinProvision sets where thinProvision is enable or not
+func (b *Builder) WithThinProvision(thinProvision string) *Builder {
+	b.volume.Object.Spec.ThinProvision = thinProvision
+	return b
+}
+
 // WithVolGroup sets volume group name for creating volume
 func (b *Builder) WithVolGroup(vg string) *Builder {
 	if vg == "" {

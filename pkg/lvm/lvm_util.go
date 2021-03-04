@@ -86,7 +86,33 @@ func buildLVMCreateArgs(vol *apis.LVMVolume) []string {
 	}
 
 	LVMVolArg = append(LVMVolArg, vol.Spec.VolGroup)
+	return LVMVolArg
+}
 
+// builldThinLVMCreateArgs returns lvcreate command for thin volume
+func buildThinLVMCreateArgs(vol *apis.LVMVolume) []string {
+	var LVMVolArg []string
+
+	volume := vol.Name
+	size := vol.Spec.Capacity + "b"
+	pool := vol.Spec.VolGroup + "_thinpool"
+
+	if len(vol.Spec.Capacity) != 0 {
+		// check if thin pool exists for given volumegroup
+		if !lvThinExists(vol.Spec.VolGroup, pool) {
+			LVMVolArg = append(LVMVolArg, "-L", size)
+		}
+	}
+
+	// command to create thinpool and thin volume
+	// `lvcreate -L 1G -T lvmvg/mythinpool -V 1G -n thinvol`
+	if strings.TrimSpace(vol.Spec.ThinProvision) == "yes" {
+		LVMVolArg = append(LVMVolArg, "-T", vol.Spec.VolGroup+"/"+pool, "-V", size)
+	}
+
+	if len(vol.Spec.VolGroup) != 0 {
+		LVMVolArg = append(LVMVolArg, "-n", volume)
+	}
 	return LVMVolArg
 }
 
@@ -113,8 +139,14 @@ func CreateVolume(vol *apis.LVMVolume) error {
 		klog.Infof("lvm: volume (%s) already exists, skipping its creation", volume)
 		return nil
 	}
+	var args []string
+	if vol.Spec.ThinProvision == "yes" {
+		args = buildThinLVMCreateArgs(vol)
+	} else {
 
-	args := buildLVMCreateArgs(vol)
+		args = buildLVMCreateArgs(vol)
+	}
+
 	cmd := exec.Command(LVCreate, args...)
 	out, err := cmd.CombinedOutput()
 
@@ -391,4 +423,15 @@ func ListLVMVolumeGroup() ([]apis.VolumeGroup, error) {
 		return nil, err
 	}
 	return decodeVgsJSON(output)
+}
+
+// lvThinExists verifies if thin pool/volume already exists for given volumegroup
+func lvThinExists(vg string, name string) bool {
+	cmd := exec.Command("lvs", vg+"/"+name, "--noheadings", "-o", "lv_name")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		klog.Infof("unable to list existing volumes:%v", err)
+		return false
+	}
+	return name == strings.TrimSpace(string(out))
 }

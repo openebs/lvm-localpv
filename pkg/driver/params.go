@@ -27,9 +27,9 @@ type VolumeParams struct {
 	// provisioning logical volumes.
 	VolumeGroup string
 
-	Scheduler string
-	Shared    string
-
+	Scheduler     string
+	Shared        string
+	ThinProvision string
 	// extra optional metadata passed by external provisioner
 	// if enabled. See --extra-create-metadata flag for more details.
 	// https://github.com/kubernetes-csi/external-provisioner#recommended-optional-arguments
@@ -41,8 +41,9 @@ type VolumeParams struct {
 // NewVolumeParams parses the input params and instantiates new VolumeParams.
 func NewVolumeParams(m map[string]string) (*VolumeParams, error) {
 	params := &VolumeParams{ // set up defaults, if any.
-		Scheduler: CapacityWeighted,
-		Shared:    "no",
+		Scheduler:     CapacityWeighted,
+		Shared:        "no",
+		ThinProvision: "no",
 	}
 	// parameter keys may be mistyped from the CRD specification when declaring
 	// the storageclass, which kubectl validation will not catch. Because
@@ -53,8 +54,9 @@ func NewVolumeParams(m map[string]string) (*VolumeParams, error) {
 
 	// parse string params
 	stringParams := map[string]*string{
-		"scheduler": &params.Scheduler,
-		"shared":    &params.Shared,
+		"scheduler":     &params.Scheduler,
+		"shared":        &params.Shared,
+		"thinprovision": &params.ThinProvision,
 	}
 	for key, param := range stringParams {
 		value, ok := m[key]
