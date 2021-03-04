@@ -18,9 +18,12 @@ set -e
 
 # setup the lvm volume group to create the volume
 truncate -s 1024G /tmp/disk.img
-disk=`losetup -f /tmp/disk.img --show`
-pvcreate "$disk"
-vgcreate lvmvg "$disk"
+disk=`sudo losetup -f /tmp/disk.img --show`
+sudo pvcreate "$disk"
+sudo vgcreate lvmvg "$disk"
+
+# install snapshot module for lvm
+sudo modprobe dm-snapshot
 
 LVM_OPERATOR=deploy/lvm-operator.yaml
 SNAP_CLASS=deploy/sample/lvmsnapclass.yaml
@@ -28,6 +31,7 @@ SNAP_CLASS=deploy/sample/lvmsnapclass.yaml
 export LVM_NAMESPACE="openebs"
 export TEST_DIR="tests"
 export NAMESPACE="kube-system"
+export KUBECONFIG=$HOME/.kube/config
 
 # Prepare env for running BDD tests
 # Minikube is already running
