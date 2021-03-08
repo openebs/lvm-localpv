@@ -1,0 +1,51 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: lvm-vol-resize-
+  namespace: e2e
+spec:
+  template:
+    metadata:
+      name: lvm-vol-resize
+      labels:
+        app: lvm-vol-resize
+
+    spec:
+      serviceAccountName: e2e
+      restartPolicy: Never
+      containers:
+      - name: ansibletest
+        image: openebs/lvm-localpv-e2e:ci
+        imagePullPolicy: IfNotPresent
+
+        env:
+          - name: ANSIBLE_STDOUT_CALLBACK
+            value: default
+
+            # This is the namespace where application pod is running
+          - name: APP_NAMESPACE
+            value: ''
+
+            # Name of the application pvc
+          - name: APP_PVC
+            value: '' 
+
+            # Application pod label in `key=value` format
+          - name: APP_LABEL
+            value: ''
+
+            # Storage class name used for `APP_PVC` provision
+          - name: STORAGE_CLASS
+            value: ''
+
+            # PVC size (for eg. 5Gi)
+          - name: OLD_PV_CAPACITY
+            value: ''
+          
+            # Resized PVC size (for eg. 10Gi)
+          - name: NEW_PV_CAPACITY
+            value: ''
+
+        command: ["/bin/bash"]
+        args: ["-c", "ansible-playbook ./e2e-tests/experiments/functional/lvm-volume-resize/test.yml -i /etc/ansible/hosts -vv; exit 0"]
