@@ -1,0 +1,20 @@
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: openebs-lvmsc
+allowVolumeExpansion: true
+parameters:
+  volgroup: "{{ vg_name }}"
+provisioner: local.csi.openebs.io
+
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: openebs-lvmsc-wfc
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  volgroup: "{{ vg_name }}"
+provisioner: local.csi.openebs.io

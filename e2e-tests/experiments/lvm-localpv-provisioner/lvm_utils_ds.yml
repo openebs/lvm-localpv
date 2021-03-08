@@ -1,0 +1,42 @@
+###################################################################
+# In case when we don't have the direct access to cluster nodes,  #
+# for that time we can apply this daemonset with privileged       #
+# access to create volume groups on nodes by running the commands #
+# from this daemonset pod scheduled on that particular node.      #
+###################################################################
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: lvm-vg-creation
+spec:
+  selector:
+    matchLabels:
+      app: lvm-vg
+  template:
+    metadata:
+      labels:
+        app: lvm-vg
+    spec:
+      #nodeSelector:
+        #test: lvm-vg
+      containers:
+      - name: lvm-vg-creation
+        image: w3aman/lvmutils:ci
+        imagePullPolicy: IfNotPresent
+        command: ['sh', '-c', 'echo Hello! && sleep 1800']
+        volumeMounts:
+          - name: udev
+            mountPath: /run/udev
+          - name: device
+            mountPath: /dev
+        securityContext:
+          privileged: true
+        tty: true
+      volumes:
+        - hostPath:
+            path: /run/udev
+          name: udev
+        - hostPath:
+            path: /dev
+          name: device

@@ -1,0 +1,103 @@
+---
+- name: Get the list of nodes for volume group creation
+  set_fact:
+    node_list: "{{ node_names.split(',') }}"
+
+- block:
+ 
+    - name: Label the nodes for DaemonSet pods to schedule on it
+      shell: >
+        kubectl label node {{ item }} test=lvm-vg
+      args:
+        executable: /bin/bash
+      register: label_status
+      failed_when: "label_status.rc != 0"
+      with_items: "{{ node_list }}"
+
+    - name: Update the DaemonSet yaml to use nodes label selector
+      shell: >
+        sed -i -e "s|#nodeSelector|nodeSelector|g" \
+        -e "s|#test: lvm-vg|test: lvm-vg|g" /e2e-tests/experiments/lvm-localpv-provisioner/lvm_utils_ds.yml
+      args:
+        executable: /bin/bash
+      register: status
+      failed_when: "status.rc != 0"
+
+  when: "node_names != ''"
+
+- name: Create a DaemonSet with privileged access for volume group creation on nodes
+  shell: >
+    kubectl apply -f /e2e-tests/experiments/lvm-localpv-provisioner/lvm_utils_ds.yml
+  args:
+    executable: /bin/bash
+
+- name: Check if DaemonSet pods are in running state on each nodes
+  shell: >
+    kubectl get pods -l app=lvm-vg
+    --no-headers -o custom-columns=:.status.phase | sort | uniq
+  args:
+    executable: /bin/bash
+  register: result
+  until: "result.stdout == 'Running'"
+  delay: 3
+  retries: 40
+
+- block:
+
+    - name: Get the list of DaemonSet pods
+      shell: >
+        kubectl get pods -n e2e -l app=lvm-vg --no-headers
+        -o custom-columns=:.metadata.name
+      args:
+        executable: /bin/bash
+      register: ds_pods_list
+
+    - name: Install lvm utils on each node and Create volume group
+      shell: >
+        kubectl exec -ti {{ item }} -- bash -c 'apt-get install lvm2 -y && pvcreate {{ pv_disks }} && vgcreate {{ vg_name }} {{ pv_disks }}'
+      args:
+        executable: /bin/bash
+      register: vg_status_all_nodes
+      failed_when: "vg_status_all_nodes.rc != 0"
+      with_items: "{{ ds_pods_list.stdout_lines }}"
+
+  when: "node_names == ''"
+
+- block:
+
+    - name: Get the list of DaemonSet pods which are scheduled on desired nodes for volume group creation
+      shell: >
+        kubectl get pods -n e2e -l app=lvm-vg
+        -o jsonpath='{.items[?(@.spec.nodeName==''"{{ item }}"'')].metadata.name}'
+      args:
+        executable: /bin/bash
+      register: ds_pods
+      with_items: "{{ node_list }}"
+
+    - name: Install lvm utils on nodes and Create volume group
+      shell: >
+        kubectl exec -ti {{ item.stdout }} -- bash -c 'apt-get install lvm2 -y && pvcreate {{ pv_disks }} && vgcreate {{ vg_name }} {{ pv_disks }}'
+      args:
+        executable: /bin/bash
+      register: vg_status
+      failed_when: "vg_status.rc != 0"
+      with_items: "{{ ds_pods.results }}"
+  
+  when: "node_names != ''"
+
+- name: Delete the DaemonSet
+  shell: >
+    kubectl delete -f /e2e-tests/experiments/lvm-localpv-provisioner/lvm_utils_ds.yml
+  args:
+    executable: /bin/bash
+  register: status
+  failed_when: "status.rc != 0"
+
+- name: Remove the label from nodes
+  shell: >
+    kubectl label node {{ item }} test-
+  args:
+    executable: /bin/bash
+  register: label_status
+  failed_when: "label_status.rc != 0"
+  with_items: "{{ node_list }}"

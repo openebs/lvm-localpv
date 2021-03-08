@@ -20,8 +20,8 @@
 
           when: lookup('env','RUN_ID')
         
-        ## RECORD START-OF-TEST IN LITMUS RESULT CR
-        - include_tasks: /e2e-tests/hack/update_litmus_result_resource.yml
+        ## RECORD START-OF-TEST IN e2e RESULT CR
+        - include_tasks: /e2e-tests/hack/update_e2e_result_resource.yml
           vars:
             status: 'SOT'
 
@@ -89,8 +89,8 @@
 
       always:
 
-        ## RECORD END-OF-TEST IN LITMUS RESULT CR
-        - include_tasks: /e2e-tests/hack/update_litmus_result_resource.yml
+        ## RECORD END-OF-TEST IN e2e RESULT CR
+        - include_tasks: /e2e-tests/hack/update_e2e_result_resource.yml
           vars:
             status: 'EOT'
         

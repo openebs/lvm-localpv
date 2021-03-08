@@ -1,0 +1,3 @@
+test_name: lvm-controller-high-availability
+
+operator_ns: "{{ lookup('env','OPERATOR_NAMESPACE') }}"

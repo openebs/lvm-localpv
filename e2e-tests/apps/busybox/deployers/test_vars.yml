@@ -17,5 +17,3 @@ app_pvc: "{{ lookup('env','APP_PVC') }}"
 deploy_type: "{{ lookup('env','DEPLOY_TYPE') }}"
 
 action: "{{ lookup('env','ACTION') }}"
-
-

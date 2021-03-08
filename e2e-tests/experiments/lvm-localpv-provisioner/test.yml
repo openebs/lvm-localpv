@@ -1,0 +1,97 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+
+  vars_files:
+    - test_vars.yml
+    
+  tasks:
+    - block:
+    
+         ## Generating the testname for lvm localpv provisioner test
+       - include_tasks: /e2e-tests/hack/create_testname.yml
+    
+         ## Record SOT (start of test) in e2e result e2e-cr (e2e-custom-resource)
+       - include_tasks: /e2e-tests/hack/update_e2e_result_resource.yml
+         vars:
+           status: 'SOT'
+       
+       - name: Create volume group on desired worker nodes
+         include_tasks: /e2e-tests/experiments/lvm-localpv-provisioner/vg_creation.yml
+         when: vg_creation == 'true'
+
+       - name: Download lvm-localpv operator file
+         get_url:
+           url: https://raw.githubusercontent.com/openebs/lvm-localpv/{{ lvm_branch }}/deploy/lvm-operator.yaml
+           dest: ./lvm_operator.yml
+           force: yes
+         register: status
+         until: "'OK' in status.msg"
+         delay: 5
+         retries: 3
+
+       - name: Update the namespace where we want to create LVM_DRIVER resources
+         shell: >
+           sed -i -e "/name: LVM_NAMESPACE/{n;s/value: openebs/value: {{ operator_ns }}/g}" lvm_operator.yml &&
+           sed -z "s/kind: Namespace\nmetadata:\n  name: openebs/kind: Namespace\nmetadata:\n  name: {{ operator_ns }}/" -i lvm_operator.yml 
+         args:
+           executable: /bin/bash
+         register: update_status
+         failed_when: "update_status.rc != 0"
+         when: "operator_ns != 'openebs'"
+ 
+       - name: Update the openebs lvm-localpv image tag
+         replace:
+           path: ./lvm_operator.yml
+           regexp: openebs/lvm-driver:ci
+           replace: "{{ lookup('env','LVM_DRIVER_IMAGE') }}"
+         when: lookup('env','LVM_DRIVER_IMAGE') | length > 0
+
+       - name: Apply the lvm-localpv operator file
+         shell: >
+           kubectl apply -f ./lvm_operator.yml
+         args:
+           executable: /bin/bash
+         
+       - name: Verify that the lvm-controller and node-agent pods are in running state
+         shell: >
+           kubectl get pods -n kube-system -l role=openebs-lvm
+           --no-headers -o custom-columns=:.status.phase | sort | uniq
+         args:
+           executable: /bin/bash
+         register: lvm_driver_components
+         until: "lvm_driver_components.stdout == 'Running'"
+         delay: 5
+         retries: 40
+
+       - block:
+
+          - name: Update storage class template variables with test-specific values
+            template:
+              src: openebs-lvmsc.j2
+              dest: openebs-lvmsc.yml
+
+          - name: Apply storage class yamls
+            shell: >
+              kubectl apply -f openebs-lvmsc.yml
+            args:
+              executable: /bin/bash
+            register: sc_result
+            failed_when: "sc_result.rc != 0"
+
+         when: "{{ lookup('env','STORAGE_CLASS_CREATION') }} == true"
+
+       - set_fact:
+           flag: "Pass"
+
+      rescue:
+        - name: Setting fail flag
+          set_fact:
+            flag: "Fail"
+
+      always:
+        ## RECORD END-OF-TEST IN e2e RESULT CR
+        - include_tasks: /e2e-tests/hack/update_e2e_result_resource.yml
+          vars:
+            status: 'EOT'

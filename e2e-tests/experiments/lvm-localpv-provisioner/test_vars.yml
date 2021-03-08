@@ -1,0 +1,15 @@
+test_name: lvm-localpv-provisioner
+
+lvm_branch: "{{ lookup('env','LVM_BRANCH') }}"
+
+lvm_driver_image: "{{ lookup('env','LVM_DRIVER_IMAGE') }}"
+
+operator_ns: "{{ lookup('env','OPERATOR_NAMESPACE') }}"
+
+vg_creation: "{{ lookup('env','VOLUME_GROUP_CREATION') }}"
+
+vg_name: "{{ lookup('env','VOLUME_GROUP_NAME') }}"
+
+pv_disks: "{{ lookup('env','PHYSICAL_VOLUME_DISKS') }}"
+
+node_names: "{{ lookup('env','NODE_NAMES') }}"
