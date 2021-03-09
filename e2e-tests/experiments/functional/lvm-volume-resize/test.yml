@@ -1,0 +1,149 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+
+  vars_files:
+    - test_vars.yml
+
+  tasks:
+    - block:
+
+          ## Generating the testname for lvm volume resize test
+        - include_tasks: /e2e-tests/hack/create_testname.yml
+    
+          ## Record SOT (start of test) in e2e result e2e-cr (e2e-custom-resource)
+        - include_tasks: /e2e-tests/hack/update_e2e_result_resource.yml
+          vars:
+            status: 'SOT'
+
+        - block:
+
+            - name: Check if the desired PVC is bound
+              shell: >
+                kubectl get pvc {{ app_pvc }} -n {{ app_ns }} --no-headers
+                -o custom-columns=:.status.phase
+              args:
+                executable: /bin/bash
+              register: pvc_status
+              failed_when: "'Bound' not in pvc_status.stdout"
+
+            - name: Get the application pod name using {{ app_pvc }} pvc
+              shell: >
+                kubectl get pod -n {{ app_ns }} -l {{ app_label }} --no-headers
+                -o custom-columns=:.metadata.name
+              args:
+                executable: /bin/bash
+              register: app_pod
+
+            - name: Obtain the mount path for the application
+              shell: > 
+                  kubectl get pod {{ app_pod.stdout }} -n {{ app_ns }}
+                  -o custom-columns=:.spec.containers[].volumeMounts[].mountPath --no-headers
+              args: 
+                  executable: /bin/bash
+              register: mount
+
+            - name: Fetch the Storage from PVC using namespace
+              shell: kubectl get pvc -n {{ app_ns }} -o jsonpath={.items[0].spec.resources.requests.storage}
+              args:
+                executable: /bin/bash
+              register: storage_capacity
+
+            - name: Fetch the alphabet(G,M,m,g) from storage capacity
+              shell: echo "{{ storage_capacity.stdout }}" | grep -o -E '[0-9]+'
+              args:
+                executable: /bin/bash
+              register: value_str
+
+            - name: Obtain the PVC spec
+              shell: >
+                kubectl get pvc {{ app_pvc }} -n {{ app_ns }}
+                --no-headers -o yaml > pvc.yml
+              args:
+                executable: /bin/bash
+
+            - name: Update the desired capacity in PVC spec
+              replace:
+                path: pvc.yml
+                before: 'storageClassName: {{ storage_class }}'
+                regexp: "storage: {{ vol_size }}"
+                replace: "storage: {{ desired_vol_size }}"
+
+            - name: Configure PVC with the new capacity
+              shell: kubectl apply -f pvc.yml
+              args:
+                executable: /bin/bash
+              register: result
+              failed_when: "result.rc != 0"
+
+            - name: Check if the desired PVC is bound
+              shell: >
+                kubectl get pvc {{ app_pvc }} -n {{ app_ns }} --no-headers
+                -o custom-columns=:.status.phase
+              args:
+                executable: /bin/bash
+              register: pvc_status
+              failed_when: "'Bound' not in pvc_status.stdout"
+
+            - name: Check if the storage capacity is updated in PVC
+              shell: >
+                 kubectl get pvc {{ app_pvc }} -n {{ app_ns }} --no-headers 
+                 -o custom-columns=:status.capacity.storage
+              args:
+                executable: /bin/bash
+              register: capacity
+              until: "desired_vol_size in capacity.stdout"
+              delay: 10
+              retries: 50
+
+            - name: Restart the application pod after resizing the volume
+              shell: kubectl delete pod {{ app_pod.stdout }} -n {{ app_ns }}
+              args:
+                executable: /bin/bash
+              register: app_pod_status
+              failed_when: app_pod_status.rc != 0
+
+            - name: Verify that application pod is deleted successfully.
+              shell: >
+                kubectl get pods -n {{ app_ns }}
+              args:
+                executable: /bin/bash
+              register: app_pod_list
+              until: '"{{ app_pod.stdout }}" not in app_pod_list.stdout'
+              delay: 2
+              retries: 30
+
+            - name: Get the name of application pod after Restart
+              shell: >
+                kubectl get pod -n {{ app_ns }} -l {{ app_label }} --no-headers
+                -o custom-columns=:.metadata.name
+              args:
+                executable: /bin/bash
+              register: app_pod_name
+
+             ## Here we will dump +1Gi data than to previous pvc size
+            - set_fact:
+                value_num: '{{ ( (value_str.stdout | int + 1 | int) * 262144) |  int }}'
+
+            - name: Dump some more dummy data in the application mount point for using resized volume
+              shell: >
+                  kubectl exec -it "{{ app_pod_name.stdout }}" -n "{{ app_ns }}" 
+                  -- sh -c "cd {{ mount.stdout }} && dd if=/dev/urandom of=volume.txt bs=4k count={{ value_num }}"
+              args:
+                  executable: /bin/bash
+              register: load
+              failed_when: "load.rc != 0"
+
+        - set_fact:
+            flag: "Pass"
+
+      rescue:
+        - set_fact:
+            flag: "Fail"
+
+      always:
+          # RECORD END-OF-TEST IN e2e RESULT CR
+        - include_tasks: /e2e-tests/hack/update_e2e_result_resource.yml
+          vars:
+            status: 'EOT'
