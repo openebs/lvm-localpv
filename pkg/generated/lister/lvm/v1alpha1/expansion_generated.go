@@ -18,6 +18,14 @@ limitations under the License.
 
 package v1alpha1
 
+// LVMNodeListerExpansion allows custom methods to be added to
+// LVMNodeLister.
+type LVMNodeListerExpansion interface{}
+
+// LVMNodeNamespaceListerExpansion allows custom methods to be added to
+// LVMNodeNamespaceLister.
+type LVMNodeNamespaceListerExpansion interface{}
+
 // LVMSnapshotListerExpansion allows custom methods to be added to
 // LVMSnapshotLister.
 type LVMSnapshotListerExpansion interface{}

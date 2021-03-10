@@ -26,6 +26,7 @@ import (
 
 type LocalV1alpha1Interface interface {
 	RESTClient() rest.Interface
+	LVMNodesGetter
 	LVMSnapshotsGetter
 	LVMVolumesGetter
 }
@@ -33,6 +34,10 @@ type LocalV1alpha1Interface interface {
 // LocalV1alpha1Client is used to interact with features provided by the local.openebs.io group.
 type LocalV1alpha1Client struct {
 	restClient rest.Interface
+}
+
+func (c *LocalV1alpha1Client) LVMNodes(namespace string) LVMNodeInterface {
+	return newLVMNodes(c, namespace)
 }
 
 func (c *LocalV1alpha1Client) LVMSnapshots(namespace string) LVMSnapshotInterface {

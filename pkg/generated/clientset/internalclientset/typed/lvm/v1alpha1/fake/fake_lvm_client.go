@@ -28,6 +28,10 @@ type FakeLocalV1alpha1 struct {
 	*testing.Fake
 }
 
+func (c *FakeLocalV1alpha1) LVMNodes(namespace string) v1alpha1.LVMNodeInterface {
+	return &FakeLVMNodes{c, namespace}
+}
+
 func (c *FakeLocalV1alpha1) LVMSnapshots(namespace string) v1alpha1.LVMSnapshotInterface {
 	return &FakeLVMSnapshots{c, namespace}
 }

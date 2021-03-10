@@ -678,6 +678,9 @@ rules:
   - apiGroups: ["storage.k8s.io"]
     resources: ["storageclasses", "csinodes"]
     verbs: ["get", "list", "watch"]
+  - apiGroups: [ "storage.k8s.io" ]
+    resources: [ "csistoragecapacities"]
+    verbs: ["*"]
   - apiGroups: [""]
     resources: ["events"]
     verbs: ["list", "watch", "create", "update", "patch"]
@@ -691,7 +694,7 @@ rules:
     resources: ["pods"]
     verbs: ["get", "list", "watch", "update", "patch"]
   - apiGroups: ["local.openebs.io"]
-    resources: ["lvmvolumes", "lvmsnapshots"]
+    resources: ["lvmvolumes", "lvmsnapshots", "lvmnodes"]
     verbs: ["*"]
 ---
 
@@ -898,7 +901,7 @@ rules:
     resources: ["persistentvolumes", "nodes", "services"]
     verbs: ["get", "list"]
   - apiGroups: ["local.openebs.io"]
-    resources: ["lvmvolumes", "lvmsnapshots"]
+    resources: ["lvmvolumes", "lvmsnapshots", "lvmnodes"]
     verbs: ["get", "list", "watch", "create", "update", "patch"]
 
 ---
