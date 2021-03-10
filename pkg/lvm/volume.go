@@ -196,6 +196,16 @@ func UpdateVolInfo(vol *apis.LVMVolume, state string) error {
 	return err
 }
 
+// UpdateVolGroup updates LVMVolume CR with volGroup name.
+func UpdateVolGroup(vol *apis.LVMVolume, vgName string) (*apis.LVMVolume, error) {
+	newVol, err := volbuilder.BuildFrom(vol).
+		WithVolGroup(vgName).Build()
+	if err != nil {
+		return nil, err
+	}
+	return volbuilder.NewKubeclient().WithNamespace(LvmNamespace).Update(newVol)
+}
+
 // RemoveVolFinalizer adds finalizer to LVMVolume CR
 func RemoveVolFinalizer(vol *apis.LVMVolume) error {
 	vol.Finalizers = nil

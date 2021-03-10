@@ -17,6 +17,7 @@ limitations under the License.
 package driver
 
 import (
+	"regexp"
 	"strconv"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,7 +40,7 @@ const (
 // and creates the node mapping of the volume for all the nodes.
 // It returns a map which has nodes as key and volumes present
 // on the nodes as corresponding value.
-func getVolumeWeightedMap(vg string) (map[string]int64, error) {
+func getVolumeWeightedMap(re *regexp.Regexp) (map[string]int64, error) {
 	nmap := map[string]int64{}
 
 	vollist, err := volbuilder.NewKubeclient().
@@ -53,7 +54,7 @@ func getVolumeWeightedMap(vg string) (map[string]int64, error) {
 	// create the map of the volume count
 	// for the given vg
 	for _, vol := range vollist.Items {
-		if vol.Spec.VolGroup == vg {
+		if re.MatchString(vol.Spec.VolGroup) {
 			nmap[vol.Spec.OwnerNodeID]++
 		}
 	}
@@ -66,7 +67,7 @@ func getVolumeWeightedMap(vg string) (map[string]int64, error) {
 // It returns a map which has nodes as key and capacity provisioned
 // on the nodes as corresponding value. The scheduler will use this map
 // and picks the node which is less weighted.
-func getCapacityWeightedMap(vg string) (map[string]int64, error) {
+func getCapacityWeightedMap(re *regexp.Regexp) (map[string]int64, error) {
 	nmap := map[string]int64{}
 
 	volList, err := volbuilder.NewKubeclient().
@@ -80,7 +81,7 @@ func getCapacityWeightedMap(vg string) (map[string]int64, error) {
 	// create the map of the volume capacity
 	// for the given volume group
 	for _, vol := range volList.Items {
-		if vol.Spec.VolGroup == vg {
+		if re.MatchString(vol.Spec.VolGroup) {
 			volSize, err := strconv.ParseInt(vol.Spec.Capacity, 10, 64)
 			if err == nil {
 				nmap[vol.Spec.OwnerNodeID] += volSize
@@ -92,13 +93,13 @@ func getCapacityWeightedMap(vg string) (map[string]int64, error) {
 }
 
 // getNodeMap returns the node mapping for the given scheduling algorithm
-func getNodeMap(schd string, vg string) (map[string]int64, error) {
+func getNodeMap(schd string, vgPattern *regexp.Regexp) (map[string]int64, error) {
 	switch schd {
 	case VolumeWeighted:
-		return getVolumeWeightedMap(vg)
+		return getVolumeWeightedMap(vgPattern)
 	case CapacityWeighted:
-		return getCapacityWeightedMap(vg)
+		return getCapacityWeightedMap(vgPattern)
 	}
 	// return CapacityWeighted(default) if not specified
-	return getCapacityWeightedMap(vg)
+	return getCapacityWeightedMap(vgPattern)
 }

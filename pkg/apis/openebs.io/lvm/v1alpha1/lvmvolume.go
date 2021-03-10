@@ -62,8 +62,12 @@ type VolumeInfo struct {
 
 	// VolGroup specifies the name of the volume group where the volume has been created.
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:MinLength=1
 	VolGroup string `json:"volGroup"`
+
+	// VgPattern specifies the regex to choose volume groups where volume
+	// needs to be created.
+	// +kubebuilder:validation:Required
+	VgPattern string `json:"vgPattern"`
 
 	// Capacity of the volume
 	// +kubebuilder:validation:Required

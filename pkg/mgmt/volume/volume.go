@@ -18,6 +18,9 @@ package volume
 
 import (
 	"fmt"
+	"regexp"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -96,14 +99,80 @@ func (c *VolController) syncVol(vol *apis.LVMVolume) error {
 		return nil
 	}
 
-	if err = lvm.CreateVolume(vol); err != nil {
-		vol.Status.Error = c.transformLVMError(err)
-		err = lvm.UpdateVolInfo(vol, lvm.LVMStatusFailed)
+	// if there is already a volGroup field set for lvmvolume resource,
+	// we'll first try to create a volume in that volume group.
+	if vol.Spec.VolGroup != "" {
+		err = lvm.CreateVolume(vol)
+		if err == nil {
+			return lvm.UpdateVolInfo(vol, lvm.LVMStatusReady)
+		}
+	}
+
+	vgs, err := c.getVgPriorityList(vol)
+	if err != nil {
 		return err
 	}
 
-	err = lvm.UpdateVolInfo(vol, lvm.LVMStatusReady)
-	return err
+	if len(vgs) == 0 {
+		err = fmt.Errorf("no vg available to serve volume request having regex=%q & capacity=%q",
+			vol.Spec.VgPattern, vol.Spec.Capacity)
+		klog.Errorf("lvm volume %v - %v", vol.Name, err)
+	} else {
+		for _, vg := range vgs {
+			// first update volGroup field in lvm volume resource for ensuring
+			// idempotency and avoiding volume leaks during crash.
+			if vol, err = lvm.UpdateVolGroup(vol, vg.Name); err != nil {
+				klog.Errorf("failed to update volGroup to %v: %v", vg.Name, err)
+				return err
+			}
+			if err = lvm.CreateVolume(vol); err == nil {
+				return lvm.UpdateVolInfo(vol, lvm.LVMStatusReady)
+			}
+		}
+	}
+
+	// In case no vg available or lvm.CreateVolume fails for all vgs, mark
+	// the volume provisioning failed so that controller can reschedule it.
+	vol.Status.Error = c.transformLVMError(err)
+	return lvm.UpdateVolInfo(vol, lvm.LVMStatusFailed)
+}
+
+// getVgPriorityList returns ordered list of volume groups from higher to lower
+// priority to use for provisioning a lvm volume. As of now, we are prioritizing
+// the vg having least amount free space available to fit the volume.
+func (c *VolController) getVgPriorityList(vol *apis.LVMVolume) ([]apis.VolumeGroup, error) {
+	re, err := regexp.Compile(vol.Spec.VgPattern)
+	if err != nil {
+		return nil, fmt.Errorf("invalid regular expression %v for lvm volume %s: %v",
+			vol.Spec.VgPattern, vol.Name, err)
+	}
+	capacity, err := strconv.Atoi(vol.Spec.Capacity)
+	if err != nil {
+		return nil, fmt.Errorf("invalid requested capacity %v for lvm volume %s: %v",
+			vol.Spec.Capacity, vol.Name, err)
+	}
+
+	vgs, err := lvm.ListLVMVolumeGroup()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list vgs available on node: %v", err)
+	}
+	filteredVgs := make([]apis.VolumeGroup, 0)
+	for _, vg := range vgs {
+		if !re.MatchString(vg.Name) {
+			continue
+		}
+		// filter vgs having insufficient capacity.
+		if vg.Free.Value() < int64(capacity) {
+			continue
+		}
+		filteredVgs = append(filteredVgs, vg)
+	}
+
+	// prioritize the volume group having less free space available.
+	sort.SliceStable(filteredVgs, func(i, j int) bool {
+		return filteredVgs[i].Free.Cmp(filteredVgs[j].Free) < 0
+	})
+	return filteredVgs, nil
 }
 
 func (c *VolController) transformLVMError(err error) *apis.VolumeError {
@@ -134,7 +203,7 @@ func (c *VolController) addVol(obj interface{}) {
 	if lvm.NodeID != Vol.Spec.OwnerNodeID {
 		return
 	}
-	klog.Infof("Got add event for Vol %s/%s", Vol.Spec.VolGroup, Vol.Name)
+	klog.Infof("Got add event for Vol %s", Vol.Name)
 	c.enqueueVol(Vol)
 }
 
@@ -152,7 +221,7 @@ func (c *VolController) updateVol(oldObj, newObj interface{}) {
 	}
 
 	if c.isDeletionCandidate(newVol) {
-		klog.Infof("Got update event for deleted Vol %s/%s", newVol.Spec.VolGroup, newVol.Name)
+		klog.Infof("Got update event for deleted Vol %s", newVol.Name)
 		c.enqueueVol(newVol)
 	}
 }
@@ -177,7 +246,7 @@ func (c *VolController) deleteVol(obj interface{}) {
 		return
 	}
 
-	klog.Infof("Got delete event for Vol %s/%s", Vol.Spec.VolGroup, Vol.Name)
+	klog.Infof("Got delete event for Vol %s", Vol.Name)
 	c.enqueueVol(Vol)
 }
 

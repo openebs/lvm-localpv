@@ -144,6 +144,11 @@ func CreateVolume(vol *apis.LVMVolume) error {
 
 // DestroyVolume deletes the lvm volume
 func DestroyVolume(vol *apis.LVMVolume) error {
+	if vol.Spec.VolGroup == "" {
+		klog.Infof("volGroup not set for lvm volume %v, skipping its deletion", vol.Name)
+		return nil
+	}
+
 	volume := vol.Spec.VolGroup + "/" + vol.Name
 
 	volExists, err := CheckVolumeExists(vol)

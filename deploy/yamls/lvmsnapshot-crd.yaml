@@ -74,14 +74,18 @@ spec:
                 - "yes"
                 - "no"
                 type: string
+              vgPattern:
+                description: VgPattern specifies the regex to choose volume groups
+                  where volume needs to be created.
+                type: string
               volGroup:
                 description: VolGroup specifies the name of the volume group where
                   the volume has been created.
-                minLength: 1
                 type: string
             required:
             - capacity
             - ownerNodeID
+            - vgPattern
             - volGroup
             type: object
           status:
