@@ -73,6 +73,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&LVMVolumeList{},
 		&LVMSnapshot{},
 		&LVMSnapshotList{},
+		&LVMNode{},
+		&LVMNodeList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil

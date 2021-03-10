@@ -18,6 +18,8 @@ limitations under the License.
 
 package v1alpha1
 
+type LVMNodeExpansion interface{}
+
 type LVMSnapshotExpansion interface{}
 
 type LVMVolumeExpansion interface{}
