@@ -78,7 +78,7 @@ Features
 - [ ] Supports fsTypes: `ext4`, `btrfs`, `xfs`
 - [x] Volume metrics
 - [x] Topology
-- [x] Snapshot
+- [x] [Snapshot](docs/snapshot.md)
 - [ ] Clone
 - [x] Volume Resize
 - [ ] Backup/Restore
