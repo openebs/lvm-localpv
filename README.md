@@ -59,10 +59,109 @@ kubectl apply -f https://raw.githubusercontent.com/openebs/lvm-localpv/master/de
 
 ### Deployment
 
-deploy the sample fio application 
+
+#### 1. Create a Storage class
 
 ```
-kubectl apply -f https://raw.githubusercontent.com/openebs/lvm-localpv/master/deploy/sample/fio.yaml
+$ cat sc.yaml
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: openebs-lvmpv
+parameters:
+  storage: "lvm"
+  volgroup: "lvmpv-vg"
+provisioner: local.csi.openebs.io
+```
+
+##### VolumeGroup Availability
+
+If LVM volume group is available on certain nodes only, then make use of topology to tell the list of nodes where we have the volgroup available.
+As shown in the below storage class, we can use allowedTopologies to describe volume group availability on nodes.
+
+```
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: openebs-lvmpv
+allowVolumeExpansion: true
+parameters:
+  storage: "lvm"
+  volgroup: "lvmpv-vg"
+provisioner: local.csi.openebs.io
+allowedTopologies:
+- matchLabelExpressions:
+  - key: kubernetes.io/hostname
+    values:
+      - lvmpv-node1
+      - lvmpv-node2
+```
+
+The above storage class tells that volume group "lvmpv-vg" is available on nodes lvmpv-node1 and lvmpv-node2 only. The LVM driver will create volumes on those nodes only.
+
+Please note that the provisioner name for LVM driver is "local.csi.openebs.io", we have to use this while creating the storage class so that the volume provisioning/deprovisioning request can come to LVM driver.
+
+#### 2. Create the PVC
+
+```
+$ cat pvc.yaml
+
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: csi-lvmpv
+spec:
+  storageClassName: openebs-lvmpv
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 4Gi
+```
+
+Create a PVC using the storage class created for the LVM driver.
+
+#### 3. Deploy the application
+
+Create the deployment yaml using the pvc backed by LVM storage.
+
+```
+$ cat fio.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fio
+spec:
+  restartPolicy: Never
+  containers:
+  - name: perfrunner
+    image: openebs/tests-fio
+    command: ["/bin/bash"]
+    args: ["-c", "while true ;do sleep 50; done"]
+    volumeMounts:
+       - mountPath: /datadir
+         name: fio-vol
+    tty: true
+  volumes:
+  - name: fio-vol
+    persistentVolumeClaim:
+      claimName: csi-lvmpv
+```
+
+After the deployment of the application, we can go to the node and see that the lvm volume is being used
+by the application for reading/writting the data and space is consumed from the LVM. Please note that to check the provisioned volumes on the node, we need to run `pvscan --cache` command to update the lvm cache and then we can use lvdisplay and all other lvm commands on the node.
+
+#### 4. Deprovisioning
+
+for deprovisioning the volume we can delete the application which is using the volume and then we can go ahead and delete the pv, as part of deletion of pv this volume will also be deleted from the volume group and data will be freed.
+
+```
+$ kubectl delete -f fio.yaml
+pod "fio" deleted
+$ kubectl delete -f pvc.yaml
+persistentvolumeclaim "csi-lvmpv" deleted
 ```
 
 Features
@@ -74,13 +173,13 @@ Features
     - ~~ReadWriteMany~~
 - [x] Volume modes
     - [x] `Filesystem` mode
-    - [ ] `Block` mode
-- [ ] Supports fsTypes: `ext4`, `btrfs`, `xfs`
+    - [x] [`Block`](docs/raw-block-volume.md) mode
+- [x] Supports fsTypes: `ext4`, `btrfs`, `xfs`
 - [x] Volume metrics
 - [x] Topology
 - [x] [Snapshot](docs/snapshot.md)
 - [ ] Clone
-- [x] Volume Resize
+- [x] [Volume Resize](docs/resize.md)
 - [ ] Backup/Restore
 - [ ] Ephemeral inline volume
 
