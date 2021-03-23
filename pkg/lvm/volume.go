@@ -118,7 +118,7 @@ func WaitForLVMVolumeProcessed(ctx context.Context, volumeID string) (*apis.LVMV
 	for {
 		select {
 		case <-ctx.Done():
-			return nil, status.FromContextError(ctx.Err())
+			return nil, status.FromContextError(ctx.Err()).Err()
 		case <-timer.C:
 		}
 		vol, err := GetLVMVolume(volumeID)
@@ -141,7 +141,7 @@ func WaitForLVMVolumeDestroy(ctx context.Context, volumeID string) error {
 	for {
 		select {
 		case <-ctx.Done():
-			return status.FromContextError(ctx.Err())
+			return status.FromContextError(ctx.Err()).Err()
 		case <-timer.C:
 		}
 		_, err := GetLVMVolume(volumeID)
