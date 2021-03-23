@@ -44,6 +44,8 @@ const (
 	LVCreate = "lvcreate"
 	LVRemove = "lvremove"
 	LVExtend = "lvextend"
+
+	PVScan = "pvscan"
 )
 
 // ExecError holds the process output along with underlying
@@ -357,9 +359,26 @@ func parseVolumeGroup(m map[string]string) (apis.VolumeGroup, error) {
 	return vg, nil
 }
 
+// ReloadLVMMetadataCache refreshes lvmetad daemon cache used for
+// serving vgs or other lvm utility.
+func ReloadLVMMetadataCache() error {
+	args := []string{"--cache"}
+	cmd := exec.Command(PVScan, args...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		klog.Errorf("lvm: reload lvm metadata cache: %v - %v", string(output), err)
+		return err
+	}
+	return nil
+}
+
 // ListLVMVolumeGroup invokes `vgs` to list all the available volume
 // groups in the node.
 func ListLVMVolumeGroup() ([]apis.VolumeGroup, error) {
+	if err := ReloadLVMMetadataCache(); err != nil {
+		return nil, err
+	}
+
 	args := []string{
 		"--options", "vg_all",
 		"--reportformat", "json",
