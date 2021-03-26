@@ -17,7 +17,7 @@ allowVolumeExpansion: true
 parameters:
   fstype: "ext4"
   volgroup: "lvmpv-vg"
-provisioner: local.csi.openebs.io
+provisioner: lvm.csi.openebs.io
 
 
 $ kubectl apply -f sc.yaml

@@ -12,7 +12,7 @@ metadata:
   allowVolumeExpansion: true
   parameters:
     volgroup: "lvmpv-vg"
-    provisioner: local.csi.openebs.io
+    provisioner: lvm.csi.openebs.io
 ```
 
 Now we can create a pvc with volumeMode as Block to request for a Raw Block Volume :-

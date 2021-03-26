@@ -19,14 +19,15 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
+	"os"
+
 	config "github.com/openebs/lvm-localpv/pkg/config"
 	"github.com/openebs/lvm-localpv/pkg/driver"
 	"github.com/openebs/lvm-localpv/pkg/lvm"
 	"github.com/openebs/lvm-localpv/pkg/version"
 	"github.com/spf13/cobra"
 	"k8s.io/klog"
-	"log"
-	"os"
 )
 
 /*
@@ -66,7 +67,7 @@ func main() {
 	)
 
 	cmd.PersistentFlags().StringVar(
-		&config.DriverName, "name", "local.csi.openebs.io", "Name of this driver",
+		&config.DriverName, "name", "lvm.csi.openebs.io", "Name of this driver",
 	)
 
 	cmd.PersistentFlags().StringVar(

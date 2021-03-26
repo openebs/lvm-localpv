@@ -49,7 +49,7 @@ var (
 	PodClient        *pod.KubeClient
 	nsName           = "lvm"
 	scName           = "lvmpv-sc"
-	LocalProvisioner = "local.csi.openebs.io"
+	LocalProvisioner = "lvm.csi.openebs.io"
 	pvcName          = "lvmpv-pvc"
 	snapName         = "lvmpv-snap"
 	appName          = "busybox-lvmpv"

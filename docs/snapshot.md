@@ -14,7 +14,7 @@ metadata:
   name: lvmpv-snapclass
   annotations:
     snapshot.storage.kubernetes.io/is-default-class: "true"
-driver: local.csi.openebs.io
+driver: lvm.csi.openebs.io
 deletionPolicy: Delete
 ```
 

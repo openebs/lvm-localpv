@@ -72,7 +72,7 @@ metadata:
 parameters:
   storage: "lvm"
   volgroup: "lvmpv-vg"
-provisioner: local.csi.openebs.io
+provisioner: lvm.csi.openebs.io
 ```
 
 ##### VolumeGroup Availability
@@ -89,7 +89,7 @@ allowVolumeExpansion: true
 parameters:
   storage: "lvm"
   volgroup: "lvmpv-vg"
-provisioner: local.csi.openebs.io
+provisioner: lvm.csi.openebs.io
 allowedTopologies:
 - matchLabelExpressions:
   - key: kubernetes.io/hostname
@@ -100,7 +100,7 @@ allowedTopologies:
 
 The above storage class tells that volume group "lvmpv-vg" is available on nodes lvmpv-node1 and lvmpv-node2 only. The LVM driver will create volumes on those nodes only.
 
-Please note that the provisioner name for LVM driver is "local.csi.openebs.io", we have to use this while creating the storage class so that the volume provisioning/deprovisioning request can come to LVM driver.
+Please note that the provisioner name for LVM driver is "lvm.csi.openebs.io", we have to use this while creating the storage class so that the volume provisioning/deprovisioning request can come to LVM driver.
 
 #### 2. Create the PVC
 

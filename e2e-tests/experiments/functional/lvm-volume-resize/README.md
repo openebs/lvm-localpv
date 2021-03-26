@@ -11,7 +11,7 @@ metadata:
 allowVolumeExpansion: true
 parameters:
   volgroup: "lvmvg"
-provisioner: local.csi.openebs.io
+provisioner: lvm.csi.openebs.io
 ```
 
 ## Supported platforms:
