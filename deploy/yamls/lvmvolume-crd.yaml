@@ -11,35 +11,14 @@
 # to generate the CRD definition
 
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.2.8
+    controller-gen.kubebuilder.io/version: v0.4.0
   creationTimestamp: null
   name: lvmvolumes.local.openebs.io
 spec:
-  additionalPrinterColumns:
-  - JSONPath: .spec.volGroup
-    description: volume group where the volume is created
-    name: VolGroup
-    type: string
-  - JSONPath: .spec.ownerNodeID
-    description: Node where the volume is created
-    name: Node
-    type: string
-  - JSONPath: .spec.capacity
-    description: Size of the volume
-    name: Size
-    type: string
-  - JSONPath: .status.state
-    description: Status of the volume
-    name: Status
-    type: string
-  - JSONPath: .metadata.creationTimestamp
-    description: Age of the volume
-    name: Age
-    type: date
   group: local.openebs.io
   names:
     kind: LVMVolume
@@ -48,92 +27,111 @@ spec:
     shortNames:
     - lvmvol
     singular: lvmvolume
-  preserveUnknownFields: false
   scope: Namespaced
-  subresources: {}
-  validation:
-    openAPIV3Schema:
-      description: LVMVolume represents a LVM based volume
-      properties:
-        apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation
-            of an object. Servers should convert recognized schemas to the latest
-            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
-          type: string
-        kind:
-          description: 'Kind is a string value representing the REST resource this
-            object represents. Servers may infer this from the endpoint the client
-            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
-          type: string
-        metadata:
-          type: object
-        spec:
-          description: VolumeInfo defines LVM info
-          properties:
-            capacity:
-              description: Capacity of the volume
-              minLength: 1
-              type: string
-            ownerNodeID:
-              description: OwnerNodeID is the Node ID where the volume group is present
-                which is where the volume has been provisioned. OwnerNodeID can not
-                be edited after the volume has been provisioned.
-              minLength: 1
-              type: string
-            shared:
-              description: Shared specifies whether the volume can be shared among
-                multiple pods. If it is not set to "yes", then the LVM LocalPV Driver
-                will not allow the volumes to be mounted by more than one pods.
-              enum:
-              - "yes"
-              - "no"
-              type: string
-            volGroup:
-              description: VolGroup specifies the name of the volume group where the
-                volume has been created.
-              minLength: 1
-              type: string
-          required:
-          - capacity
-          - ownerNodeID
-          - volGroup
-          type: object
-        status:
-          description: VolStatus string that specifies the current state of the volume
-            provisioning request.
-          properties:
-            error:
-              description: Error denotes the error occurred during provisioning/expanding
-                a volume. Error field should only be set when State becomes Failed.
-              properties:
-                code:
-                  description: VolumeErrorCode represents the error code to represent
-                    specific class of errors.
-                  type: string
-                message:
-                  type: string
-              type: object
-            state:
-              description: State specifies the current state of the volume provisioning
-                request. The state "Pending" means that the volume creation request
-                has not processed yet. The state "Ready" means that the volume has
-                been created and it is ready for the use. "Failed" means that volume
-                provisioning has been failed and will not be retried by node agent
-                controller.
-              enum:
-              - Pending
-              - Ready
-              - Failed
-              type: string
-          type: object
-      required:
-      - spec
-      type: object
-  version: v1alpha1
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - description: volume group where the volume is created
+      jsonPath: .spec.volGroup
+      name: VolGroup
+      type: string
+    - description: Node where the volume is created
+      jsonPath: .spec.ownerNodeID
+      name: Node
+      type: string
+    - description: Size of the volume
+      jsonPath: .spec.capacity
+      name: Size
+      type: string
+    - description: Status of the volume
+      jsonPath: .status.state
+      name: Status
+      type: string
+    - description: Age of the volume
+      jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: LVMVolume represents a LVM based volume
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: VolumeInfo defines LVM info
+            properties:
+              capacity:
+                description: Capacity of the volume
+                minLength: 1
+                type: string
+              ownerNodeID:
+                description: OwnerNodeID is the Node ID where the volume group is
+                  present which is where the volume has been provisioned. OwnerNodeID
+                  can not be edited after the volume has been provisioned.
+                minLength: 1
+                type: string
+              shared:
+                description: Shared specifies whether the volume can be shared among
+                  multiple pods. If it is not set to "yes", then the LVM LocalPV Driver
+                  will not allow the volumes to be mounted by more than one pods.
+                enum:
+                - "yes"
+                - "no"
+                type: string
+              volGroup:
+                description: VolGroup specifies the name of the volume group where
+                  the volume has been created.
+                minLength: 1
+                type: string
+            required:
+            - capacity
+            - ownerNodeID
+            - volGroup
+            type: object
+          status:
+            description: VolStatus string that specifies the current state of the
+              volume provisioning request.
+            properties:
+              error:
+                description: Error denotes the error occurred during provisioning/expanding
+                  a volume. Error field should only be set when State becomes Failed.
+                properties:
+                  code:
+                    description: VolumeErrorCode represents the error code to represent
+                      specific class of errors.
+                    type: string
+                  message:
+                    type: string
+                type: object
+              state:
+                description: State specifies the current state of the volume provisioning
+                  request. The state "Pending" means that the volume creation request
+                  has not processed yet. The state "Ready" means that the volume has
+                  been created and it is ready for the use. "Failed" means that volume
+                  provisioning has been failed and will not be retried by node agent
+                  controller.
+                enum:
+                - Pending
+                - Ready
+                - Failed
+                type: string
+            type: object
+        required:
+        - spec
+        type: object
     served: true
     storage: true
+    subresources: {}
 status:
   acceptedNames:
     kind: ""
