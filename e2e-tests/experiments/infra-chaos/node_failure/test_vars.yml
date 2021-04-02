@@ -1,0 +1,20 @@
+---
+# Test specific parameters
+
+test_name: node-power-failure
+
+namespace: "{{ lookup('env','APP_NAMESPACE') }}"
+
+pvc: "{{ lookup('env','APP_PVC') }}"
+
+label: "{{ lookup('env','APP_LABEL') }}"
+
+host_ip: "{{ lookup('env','ESX_HOST_IP') }}"
+
+esx_pwd: "{{ lookup('env','ESX_PASSWORD') }}"
+
+data_persistence: "{{ lookup('env','DATA_PERSISTENCE') }}"
+
+user: "{{ lookup('env','USERNAME') }}"
+
+node_pwd: "{{ lookup('env','NODE_PASSWORD') }}"
