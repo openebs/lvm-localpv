@@ -16,6 +16,11 @@ name: ci
 
 on:
   pull_request:
+    paths-ignore:
+      - 'docs/**'
+      # The line below will required once deploy/helm/ directory exists
+      # - 'deploy/helm/**'
+      - 'changelogs/**'
     branches:
       # on pull requests to master and release branches
       - master
