@@ -22,7 +22,7 @@ spec:
         #test: lvm-vg
       containers:
       - name: lvm-vg-creation
-        image: w3aman/lvmutils:ci
+        image: quay.io/w3aman/lvmutils:ci
         imagePullPolicy: IfNotPresent
         command: ['sh', '-c', 'echo Hello! && sleep 1800']
         volumeMounts:
