@@ -76,35 +76,17 @@ func buildLVMCreateArgs(vol *apis.LVMVolume) []string {
 
 	volume := vol.Name
 	size := vol.Spec.Capacity + "b"
-
-	if len(vol.Spec.Capacity) != 0 {
-		LVMVolArg = append(LVMVolArg, "-L", size)
-	}
-
-	if len(vol.Spec.VolGroup) != 0 {
-		LVMVolArg = append(LVMVolArg, "-n", volume)
-	}
-
-	LVMVolArg = append(LVMVolArg, vol.Spec.VolGroup)
-	return LVMVolArg
-}
-
-// builldThinLVMCreateArgs returns lvcreate command for thin volume
-func buildThinLVMCreateArgs(vol *apis.LVMVolume) []string {
-	var LVMVolArg []string
-
-	volume := vol.Name
-	size := vol.Spec.Capacity + "b"
+	// thinpool name required for thinProvision volumes
 	pool := vol.Spec.VolGroup + "_thinpool"
 
 	if len(vol.Spec.Capacity) != 0 {
-		// check if thin pool exists for given volumegroup
-		if !lvThinExists(vol.Spec.VolGroup, pool) {
+		// check if thin pool exists for given volumegroup requested thin volume
+		if strings.TrimSpace(vol.Spec.ThinProvision) != "yes" || !lvThinExists(vol.Spec.VolGroup, pool) {
 			LVMVolArg = append(LVMVolArg, "-L", size)
 		}
 	}
 
-	// command to create thinpool and thin volume
+	// command to create thinpool and thin volume if thinProvision is enabled
 	// `lvcreate -L 1G -T lvmvg/mythinpool -V 1G -n thinvol`
 	if strings.TrimSpace(vol.Spec.ThinProvision) == "yes" {
 		LVMVolArg = append(LVMVolArg, "-T", vol.Spec.VolGroup+"/"+pool, "-V", size)
@@ -112,6 +94,10 @@ func buildThinLVMCreateArgs(vol *apis.LVMVolume) []string {
 
 	if len(vol.Spec.VolGroup) != 0 {
 		LVMVolArg = append(LVMVolArg, "-n", volume)
+	}
+
+	if strings.TrimSpace(vol.Spec.ThinProvision) != "yes" {
+		LVMVolArg = append(LVMVolArg, vol.Spec.VolGroup)
 	}
 	return LVMVolArg
 }
@@ -139,14 +125,8 @@ func CreateVolume(vol *apis.LVMVolume) error {
 		klog.Infof("lvm: volume (%s) already exists, skipping its creation", volume)
 		return nil
 	}
-	var args []string
-	if vol.Spec.ThinProvision == "yes" {
-		args = buildThinLVMCreateArgs(vol)
-	} else {
 
-		args = buildLVMCreateArgs(vol)
-	}
-
+	args := buildLVMCreateArgs(vol)
 	cmd := exec.Command(LVCreate, args...)
 	out, err := cmd.CombinedOutput()
 
