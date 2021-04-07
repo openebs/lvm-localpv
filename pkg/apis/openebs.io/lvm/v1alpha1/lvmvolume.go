@@ -76,6 +76,13 @@ type VolumeInfo struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=yes;no
 	Shared string `json:"shared,omitempty"`
+
+	// ThinProvision specifies whether logical volumes can be thinly provisioned.
+	// If it is set to "yes", then the LVM LocalPV Driver will create
+	// thinProvision i.e. logical volumes that are larger than the available extents.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum=yes;no
+	ThinProvision string `json:"thinProvision,omitempty"`
 }
 
 // VolStatus string that specifies the current state of the volume provisioning request.

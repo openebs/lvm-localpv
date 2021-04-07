@@ -88,6 +88,15 @@ spec:
                 - "yes"
                 - "no"
                 type: string
+              thinProvision:
+                description: ThinProvision specifies whether logical volumes can be
+                  thinly provisioned. If it is set to "yes", then the LVM LocalPV
+                  Driver will create thinProvision i.e. logical volumes that are larger
+                  than the available extents.
+                enum:
+                - "yes"
+                - "no"
+                type: string
               volGroup:
                 description: VolGroup specifies the name of the volume group where
                   the volume has been created.

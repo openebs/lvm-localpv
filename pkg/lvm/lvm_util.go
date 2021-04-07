@@ -76,17 +76,29 @@ func buildLVMCreateArgs(vol *apis.LVMVolume) []string {
 
 	volume := vol.Name
 	size := vol.Spec.Capacity + "b"
+	// thinpool name required for thinProvision volumes
+	pool := vol.Spec.VolGroup + "_thinpool"
 
 	if len(vol.Spec.Capacity) != 0 {
-		LVMVolArg = append(LVMVolArg, "-L", size)
+		// check if thin pool exists for given volumegroup requested thin volume
+		if strings.TrimSpace(vol.Spec.ThinProvision) != "yes" || !lvThinExists(vol.Spec.VolGroup, pool) {
+			LVMVolArg = append(LVMVolArg, "-L", size)
+		}
+	}
+
+	// command to create thinpool and thin volume if thinProvision is enabled
+	// `lvcreate -L 1G -T lvmvg/mythinpool -V 1G -n thinvol`
+	if strings.TrimSpace(vol.Spec.ThinProvision) == "yes" {
+		LVMVolArg = append(LVMVolArg, "-T", vol.Spec.VolGroup+"/"+pool, "-V", size)
 	}
 
 	if len(vol.Spec.VolGroup) != 0 {
 		LVMVolArg = append(LVMVolArg, "-n", volume)
 	}
 
-	LVMVolArg = append(LVMVolArg, vol.Spec.VolGroup)
-
+	if strings.TrimSpace(vol.Spec.ThinProvision) != "yes" {
+		LVMVolArg = append(LVMVolArg, vol.Spec.VolGroup)
+	}
 	return LVMVolArg
 }
 
@@ -391,4 +403,15 @@ func ListLVMVolumeGroup() ([]apis.VolumeGroup, error) {
 		return nil, err
 	}
 	return decodeVgsJSON(output)
+}
+
+// lvThinExists verifies if thin pool/volume already exists for given volumegroup
+func lvThinExists(vg string, name string) bool {
+	cmd := exec.Command("lvs", vg+"/"+name, "--noheadings", "-o", "lv_name")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		klog.Infof("unable to list existing volumes:%v", err)
+		return false
+	}
+	return name == strings.TrimSpace(string(out))
 }
