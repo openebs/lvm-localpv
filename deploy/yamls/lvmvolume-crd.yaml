@@ -90,7 +90,7 @@ spec:
                 type: string
               thinProvision:
                 description: ThinProvision specifies whether logical volumes can be
-                  thinly provisioned. If it is not set to "yes", then the LVM LocalPV
+                  thinly provisioned. If it is set to "yes", then the LVM LocalPV
                   Driver will create thinProvision i.e. logical volumes that are larger
                   than the available extents.
                 enum:
