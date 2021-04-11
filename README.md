@@ -75,6 +75,8 @@ parameters:
 provisioner: local.csi.openebs.io
 ```
 
+Check the doc on [storageclasses](docs/storageclasses.md) to know all the supported parameters for LVM-LocalPV
+
 ##### VolumeGroup Availability
 
 If LVM volume group is available on certain nodes only, then make use of topology to tell the list of nodes where we have the volgroup available.
