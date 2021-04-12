@@ -34,7 +34,7 @@ user@k8s-master:~ $ kubectl label node k8s-node-1 openebs.io/lvmvg=nvme
 node/k8s-node-1 labeled
 ```
 
-Now, restart the LVM-LocalPV Driver (if already deployed, otherwise please ignore) so that it can pick the new node label as the supported topology. Check [faq](./faq.md#6-how-to-add-custom-topology-key) for more details.
+Now, restart the LVM-LocalPV Driver (if already deployed, otherwise please ignore) so that it can pick the new node label as the supported topology. Check [faq](./faq.md#1-how-to-add-custom-topology-key) for more details.
 
 ```
 $ kubectl delete po -n kube-system -l role=openebs-lvm
