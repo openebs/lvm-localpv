@@ -1,3 +1,21 @@
+v0.4.0 / 2021-04-14
+========================
+* updated storage and apiextension version to v1 ([#40](https://github.com/openebs/lvm-localpv/pull/40),[@shubham14bajpai](https://github.com/shubham14bajpai))
+* add support for thin provision lvm volumes ([#30](https://github.com/openebs/lvm-localpv/pull/30),[@prateekpandey14](https://github.com/prateekpandey14))
+* upgrade grpc lib dependency to v1.34.2 ([#37](https://github.com/openebs/lvm-localpv/pull/37),[@iyashu](https://github.com/iyashu))
+* reload lvmetad cache before querying volume groups ([#38](https://github.com/openebs/lvm-localpv/pull/38),[@iyashu](https://github.com/iyashu))
+
+v0.4.0-RC2 / 2021-04-12
+========================
+
+v0.4.0-RC1 / 2021-04-07
+========================
+* updated storage and apiextension version to v1 ([#40](https://github.com/openebs/lvm-localpv/pull/40),[@shubham14bajpai](https://github.com/shubham14bajpai))
+* add support for thin provision lvm volumes ([#30](https://github.com/openebs/lvm-localpv/pull/30),[@prateekpandey14](https://github.com/prateekpandey14))
+* upgrade grpc lib dependency to v1.34.2 ([#37](https://github.com/openebs/lvm-localpv/pull/37),[@iyashu](https://github.com/iyashu))
+* reload lvmetad cache before querying volume groups ([#38](https://github.com/openebs/lvm-localpv/pull/38),[@iyashu](https://github.com/iyashu))
+
+
 v0.3.0 / 2021-03-12
 ========================
 * Add e2e-test for lvm volume resize support  ([#32](https://github.com/openebs/lvm-localpv/pull/32),[@w3aman](https://github.com/w3aman))
