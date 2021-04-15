@@ -27,11 +27,11 @@ must meet the following prerequisites:
 
 ### Supported System
 
-K8S : 1.17+
+K8S : 1.18+
 
 OS : Ubuntu
 
-LVM : 2
+LVM version : LVM 2
 
 ### Setup
 
@@ -46,16 +46,35 @@ Create the Volume group on all the nodes, which will be used by the LVM Driver f
 
 ```
 sudo pvcreate /dev/loop0
-sudo vgcreate lvmvg /dev/loop0
+sudo vgcreate lvmvg /dev/loop0       ## here lvmvg is the volume group name to be created
 ```
 
 ### Installation
 
-Deploy the Operator yaml 
+We can install the LVM-LocalPV driver by running the following command.
 
 ```
 kubectl apply -f https://raw.githubusercontent.com/openebs/lvm-localpv/master/deploy/lvm-operator.yaml
 ```
+
+Verify that the LVM driver Components are installed and running using below command :
+
+```
+$ kubectl get pods -n kube-system -l role=openebs-lvm
+```
+
+Depending on number of nodes, you will see one lvm-controller pod and lvm-node daemonset running
+on the nodes.
+
+```
+NAME                       READY   STATUS    RESTARTS   AGE
+openebs-lvm-controller-0   5/5     Running   0          35s
+openebs-lvm-node-54slv     2/2     Running   0          35s
+openebs-lvm-node-9vg28     2/2     Running   0          35s
+openebs-lvm-node-qbv57     2/2     Running   0          35s
+
+```
+Once LVM driver is successfully installed, we can provision volumes.
 
 ### Deployment
 

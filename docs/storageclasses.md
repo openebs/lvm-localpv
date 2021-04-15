@@ -1,5 +1,35 @@
 ## Parameters
 
+### volgroup (*must* parameter)
+
+volgroup specifies the name of the volume group on nodes from which the volumes will be created. The *volgroup* is the must argument.
+
+```
+volgroup: "lvmvg"
+```
+
+### thinProvision (*optional* parameter)
+
+For creating thin-provisioned volume, use thinProvision parameter in storage class. It's allowed values are: "yes" and "no". If we don't use this parameter by default it's value will be "no" and it will work as thick provisioned volumes.
+
+```
+parameters:
+  volgroup: "lvmvg"
+  thinProvision: "yes"
+provisioner: local.csi.openebs.io
+```
+Before creating thin provision volume, make ensure that required thin provisioning kernel module `dm_thin_pool` is loaded on all the nodes.
+
+To verify if the modules are loaded, run:
+```
+lsmod | grep dm_thin_pool
+```
+
+If modules are not loaded, then execute the following command to load the modules:
+```
+modprobe dm_thin_pool
+```
+
 ### StorageClass With Custom Node Labels
 
 There can be a use case where we have certain kinds of Volume Groups present on certain nodes only, and we want a particular type of application to use that VG. We can create a storage class with `allowedTopologies` and mention all the nodes there where that vg is present:
