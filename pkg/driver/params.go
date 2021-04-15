@@ -17,15 +17,18 @@
 package driver
 
 import (
+	"fmt"
+	"regexp"
+
 	"github.com/openebs/lib-csi/pkg/common/helpers"
 )
 
 // VolumeParams holds collection of supported settings that can
 // be configured in storage class.
 type VolumeParams struct {
-	// VolumeGroup specifies vg name to use for
+	// VgPattern specifies vg regex to use for
 	// provisioning logical volumes.
-	VolumeGroup string
+	VgPattern *regexp.Regexp
 
 	Scheduler     string
 	Shared        string
@@ -50,7 +53,18 @@ func NewVolumeParams(m map[string]string) (*VolumeParams, error) {
 	// parameter keys (not values!) are all lowercase, keys may safely be forced
 	// to the lower case.
 	m = helpers.GetCaseInsensitiveMap(&m)
-	params.VolumeGroup = m["volgroup"]
+
+	// for ensuring backward compatibility, we first check if
+	// there is any volgroup param exists for storage class.
+	vgPattern, ok := m["volgroup"]
+	if !ok {
+		vgPattern = m["vgpattern"]
+	}
+
+	var err error
+	if params.VgPattern, err = regexp.Compile(vgPattern); err != nil {
+		return nil, fmt.Errorf("invalid volgroup/vgpattern param %v: %v", vgPattern, err)
+	}
 
 	// parse string params
 	stringParams := map[string]*string{

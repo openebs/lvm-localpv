@@ -23,7 +23,6 @@ import (
 	"time"
 
 	k8sapi "github.com/openebs/lib-csi/pkg/client/k8s"
-	"github.com/openebs/lib-csi/pkg/common/helpers"
 	clientset "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset"
 	informers "github.com/openebs/lvm-localpv/pkg/generated/informer/externalversions"
 	kubeinformers "k8s.io/client-go/informers"
@@ -250,7 +249,7 @@ func CreateLVMVolume(ctx context.Context, req *csi.CreateVolumeRequest,
 		}
 	}
 
-	nmap, err := getNodeMap(params.Scheduler, params.VolumeGroup)
+	nmap, err := getNodeMap(params.Scheduler, params.VgPattern)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "get node map failed : %s", err.Error())
 	}
@@ -263,12 +262,13 @@ func CreateLVMVolume(ctx context.Context, req *csi.CreateVolumeRequest,
 	}
 
 	owner := selected[0]
-	klog.Infof("scheduling the volume %s/%s on node %s", params.VolumeGroup, volName, owner)
+	klog.Infof("scheduling the volume %s/%s on node %s",
+		params.VgPattern.String(), volName, owner)
 
 	volObj, err := volbuilder.NewBuilder().
 		WithName(volName).
 		WithCapacity(capacity).
-		WithVolGroup(params.VolumeGroup).
+		WithVgPattern(params.VgPattern.String()).
 		WithOwnerNode(owner).
 		WithVolumeStatus(lvm.LVMStatusPending).
 		WithShared(params.Shared).
@@ -323,7 +323,7 @@ func (cs *controller) CreateVolume(
 		"lvm-localpv", analytics.VolumeProvision)
 
 	topology := map[string]string{lvm.LVMTopologyKey: vol.Spec.OwnerNodeID}
-	cntx := map[string]string{lvm.VolGroupKey: params.VolumeGroup}
+	cntx := map[string]string{lvm.VolGroupKey: vol.Spec.VolGroup}
 
 	return csipayload.NewCreateVolumeResponseBuilder().
 		WithName(volName).
@@ -704,8 +704,12 @@ func (cs *controller) GetCapacity(
 	}
 
 	lvmNodesCache := cs.lvmNodeInformer.GetIndexer()
-	params := req.GetParameters()
-	vgParam := helpers.GetInsensitiveParameter(&params, "volgroup")
+
+	params, err := NewVolumeParams(req.GetParameters())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument,
+			"failed to parse csi volume params: %v", err)
+	}
 
 	var availableCapacity int64
 	for _, nodeName := range nodeNames {
@@ -723,7 +727,7 @@ func (cs *controller) GetCapacity(
 		// See https://github.com/kubernetes/enhancements/tree/master/keps/sig-storage/1472-storage-capacity-tracking#available-capacity-vs-maximum-volume-size &
 		// https://github.com/container-storage-interface/spec/issues/432 for more details
 		for _, vg := range lvmNode.VolumeGroups {
-			if vg.Name != vgParam {
+			if !params.VgPattern.MatchString(vg.Name) {
 				continue
 			}
 			freeCapacity := vg.Free.Value()

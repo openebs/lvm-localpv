@@ -154,6 +154,21 @@ func (b *Builder) WithVolGroup(vg string) *Builder {
 	return b
 }
 
+// WithVgPattern sets volume group regex pattern.
+func (b *Builder) WithVgPattern(pattern string) *Builder {
+	if pattern == "" {
+		b.errs = append(
+			b.errs,
+			errors.New(
+				"failed to build lvm volume object: missing vg name",
+			),
+		)
+		return b
+	}
+	b.volume.Object.Spec.VgPattern = pattern
+	return b
+}
+
 // WithNodeName sets NodeID for creating the volume
 func (b *Builder) WithNodeName(name string) *Builder {
 	if name == "" {
