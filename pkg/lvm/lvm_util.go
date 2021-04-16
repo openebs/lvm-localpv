@@ -81,8 +81,11 @@ func buildLVMCreateArgs(vol *apis.LVMVolume) []string {
 
 	if len(vol.Spec.Capacity) != 0 {
 		// check if thin pool exists for given volumegroup requested thin volume
-		if strings.TrimSpace(vol.Spec.ThinProvision) != "yes" || !lvThinExists(vol.Spec.VolGroup, pool) {
+		if strings.TrimSpace(vol.Spec.ThinProvision) != "yes" {
 			LVMVolArg = append(LVMVolArg, "-L", size)
+		} else if !lvThinExists(vol.Spec.VolGroup, pool) {
+			// thinpool size can't be equal or greater than actual volumegroup size
+			LVMVolArg = append(LVMVolArg, "-L", getThinPoolSize(vol.Spec.VolGroup))
 		}
 	}
 
@@ -426,7 +429,7 @@ func lvThinExists(vg string, name string) bool {
 	cmd := exec.Command("lvs", vg+"/"+name, "--noheadings", "-o", "lv_name")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		klog.Infof("unable to list existing volumes:%v", err)
+		klog.Errorf("failed to list existing volumes:%v", err)
 		return false
 	}
 	return name == strings.TrimSpace(string(out))
@@ -443,4 +446,28 @@ func snapshotExists(snapVolumeName string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+// getVGSize get the size in bytes for given volumegroup name
+func getVGSize(vgname string) string {
+	cmd := exec.Command("vgs", vgname, "--noheadings", "-o", "vg_size", "--units", "b")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		klog.Errorf("failed to list existing volumegroup:%v , %v", vgname, err)
+		return ""
+	}
+	return strings.TrimSpace(string(out))
+}
+
+// getThinPoolSize gets size for a given volumegroup and returns
+// half of as a thinpool size
+func getThinPoolSize(vgname string) string {
+	outstr := getVGSize(vgname)
+	// split the output stringi, contains B as byte suffix i.e. 107369988096B
+	intNumber, err := strconv.Atoi(strings.Split(strings.TrimSpace(string(outstr)), "B")[0])
+	if err != nil {
+		klog.Errorf("failed to convert to int, got size,:%v , %v", string(outstr), err)
+		return ""
+	}
+	return fmt.Sprint(intNumber/2) + "b"
 }
