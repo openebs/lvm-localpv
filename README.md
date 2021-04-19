@@ -10,7 +10,7 @@ CSI driver for provisioning Local PVs backed by LVM and more.
 
 ## Project Status
 
-Currently the LVM CSI Driver is in alpha.
+Currently the LVM CSI Driver is in beta.
 
 ## Usage
 
