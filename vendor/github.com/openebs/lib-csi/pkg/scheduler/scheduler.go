@@ -102,12 +102,12 @@ func Scheduler(req *csi.CreateVolumeRequest, nmap map[string]int64) []string {
 	}
 
 	topo := areq.Preferred
-	if len(topo) == 0  {
+	if len(topo) == 0 {
 		// if preferred list is empty, use the requisite
 		topo = areq.Requisite
 	}
 
-	if len(topo) == 0  {
+	if len(topo) == 0 {
 		klog.Errorf("scheduler: topology information not provided")
 		return nodelist
 	}

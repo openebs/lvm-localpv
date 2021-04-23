@@ -59,15 +59,15 @@ require (
 	github.com/kubernetes-csi/csi-lib-utils v0.9.0
 	github.com/onsi/ginkgo v1.6.0
 	github.com/onsi/gomega v1.4.2
-	github.com/openebs/lib-csi v0.2.0
-	github.com/pkg/errors v0.8.1
+	github.com/openebs/lib-csi v0.4.0
+	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v0.0.0-20180319062004-c439c4fa0937
 	github.com/stretchr/testify v1.5.1
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381
 	golang.org/x/sys v0.0.0-20200323222414-85ca7c5b95cd
 	google.golang.org/grpc v1.34.2
-	k8s.io/api v0.19.0
-	k8s.io/apimachinery v0.15.12
+	k8s.io/api v0.20.2
+	k8s.io/apimachinery v0.20.2
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 	k8s.io/code-generator v0.15.12
 	k8s.io/klog v1.0.0

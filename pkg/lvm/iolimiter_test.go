@@ -50,11 +50,12 @@ func TestExtractingIoLimits(t *testing.T) {
 				WIopsLimitPerGB: &[]string{"lvmvg1:70", "lvmvg2:120"},
 				RBpsLimitPerGB:  nil,
 				WBpsLimitPerGB:  nil,
-			}, vgNames: &[]string{"lvmvg1-id1", "lvmvg2", "lvmvg3"},
+			}, vgNames: &[]string{"lvmvg1-id1", "lvmvg2", "lvmvg3", "prfx-lvmvg2-sffx"},
 			expected: map[string]expectedIoLimitRate{
 				"lvmvg1-id1": {riops: 50, wiops: 70, rbps: 0, wbps: 0},
 				"lvmvg2":     {riops: 100, wiops: 120, rbps: 0, wbps: 0},
 				"lvmvg3":     {riops: 0, wiops: 0, rbps: 0, wbps: 0},
+				"prfx-lvmvg2-sffx": {riops: 0, wiops: 0, rbps: 0, wbps: 0},
 			},
 		},
 	}

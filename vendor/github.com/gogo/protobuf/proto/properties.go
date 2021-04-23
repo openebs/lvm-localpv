@@ -144,7 +144,7 @@ type Properties struct {
 	Repeated bool
 	Packed   bool   // relevant for repeated primitives only
 	Enum     string // set for enum types only
-	proto3   bool   // whether this is known to be a proto3 field
+	proto3   bool   // whether this is known to be a proto3 field; set for []byte only
 	oneof    bool   // whether this is a oneof field
 
 	Default     string // default value
@@ -153,15 +153,14 @@ type Properties struct {
 	CastType    string
 	StdTime     bool
 	StdDuration bool
-	WktPointer  bool
 
 	stype reflect.Type      // set for struct types only
 	ctype reflect.Type      // set for custom types only
 	sprop *StructProperties // set for struct types only
 
-	mtype      reflect.Type // set for map types only
-	MapKeyProp *Properties  // set for map types only
-	MapValProp *Properties  // set for map types only
+	mtype    reflect.Type // set for map types only
+	mkeyprop *Properties  // set for map types only
+	mvalprop *Properties  // set for map types only
 }
 
 // String formats the properties in the protobuf struct field tag style.
@@ -275,8 +274,6 @@ outer:
 			p.StdTime = true
 		case f == "stdduration":
 			p.StdDuration = true
-		case f == "wktptr":
-			p.WktPointer = true
 		}
 	}
 }
@@ -296,10 +293,6 @@ func (p *Properties) setFieldProps(typ reflect.Type, f *reflect.StructField, loc
 		return
 	}
 	if p.StdDuration && !isMap {
-		p.setTag(lockGetProp)
-		return
-	}
-	if p.WktPointer && !isMap {
 		p.setTag(lockGetProp)
 		return
 	}
@@ -324,9 +317,9 @@ func (p *Properties) setFieldProps(typ reflect.Type, f *reflect.StructField, loc
 	case reflect.Map:
 
 		p.mtype = t1
-		p.MapKeyProp = &Properties{}
-		p.MapKeyProp.init(reflect.PtrTo(p.mtype.Key()), "Key", f.Tag.Get("protobuf_key"), nil, lockGetProp)
-		p.MapValProp = &Properties{}
+		p.mkeyprop = &Properties{}
+		p.mkeyprop.init(reflect.PtrTo(p.mtype.Key()), "Key", f.Tag.Get("protobuf_key"), nil, lockGetProp)
+		p.mvalprop = &Properties{}
 		vtype := p.mtype.Elem()
 		if vtype.Kind() != reflect.Ptr && vtype.Kind() != reflect.Slice {
 			// The value type is not a message (*T) or bytes ([]byte),
@@ -334,11 +327,10 @@ func (p *Properties) setFieldProps(typ reflect.Type, f *reflect.StructField, loc
 			vtype = reflect.PtrTo(vtype)
 		}
 
-		p.MapValProp.CustomType = p.CustomType
-		p.MapValProp.StdDuration = p.StdDuration
-		p.MapValProp.StdTime = p.StdTime
-		p.MapValProp.WktPointer = p.WktPointer
-		p.MapValProp.init(vtype, "Value", f.Tag.Get("protobuf_val"), nil, lockGetProp)
+		p.mvalprop.CustomType = p.CustomType
+		p.mvalprop.StdDuration = p.StdDuration
+		p.mvalprop.StdTime = p.StdTime
+		p.mvalprop.init(vtype, "Value", f.Tag.Get("protobuf_val"), nil, lockGetProp)
 	}
 	p.setTag(lockGetProp)
 }
@@ -391,6 +383,9 @@ func GetProperties(t reflect.Type) *StructProperties {
 	sprop, ok := propertiesMap[t]
 	propertiesMu.RUnlock()
 	if ok {
+		if collectStats {
+			stats.Chit++
+		}
 		return sprop
 	}
 
@@ -400,19 +395,16 @@ func GetProperties(t reflect.Type) *StructProperties {
 	return sprop
 }
 
-type (
-	oneofFuncsIface interface {
-		XXX_OneofFuncs() (func(Message, *Buffer) error, func(Message, int, int, *Buffer) (bool, error), func(Message) int, []interface{})
-	}
-	oneofWrappersIface interface {
-		XXX_OneofWrappers() []interface{}
-	}
-)
-
 // getPropertiesLocked requires that propertiesMu is held.
 func getPropertiesLocked(t reflect.Type) *StructProperties {
 	if prop, ok := propertiesMap[t]; ok {
+		if collectStats {
+			stats.Chit++
+		}
 		return prop
+	}
+	if collectStats {
+		stats.Cmiss++
 	}
 
 	prop := new(StructProperties)
@@ -450,40 +442,37 @@ func getPropertiesLocked(t reflect.Type) *StructProperties {
 	// Re-order prop.order.
 	sort.Sort(prop)
 
-	if isOneofMessage {
+	type oneofMessage interface {
+		XXX_OneofFuncs() (func(Message, *Buffer) error, func(Message, int, int, *Buffer) (bool, error), func(Message) int, []interface{})
+	}
+	if om, ok := reflect.Zero(reflect.PtrTo(t)).Interface().(oneofMessage); isOneofMessage && ok {
 		var oots []interface{}
-		switch m := reflect.Zero(reflect.PtrTo(t)).Interface().(type) {
-		case oneofFuncsIface:
-			_, _, _, oots = m.XXX_OneofFuncs()
-		case oneofWrappersIface:
-			oots = m.XXX_OneofWrappers()
-		}
-		if len(oots) > 0 {
-			// Interpret oneof metadata.
-			prop.OneofTypes = make(map[string]*OneofProperties)
-			for _, oot := range oots {
-				oop := &OneofProperties{
-					Type: reflect.ValueOf(oot).Type(), // *T
-					Prop: new(Properties),
-				}
-				sft := oop.Type.Elem().Field(0)
-				oop.Prop.Name = sft.Name
-				oop.Prop.Parse(sft.Tag.Get("protobuf"))
-				// There will be exactly one interface field that
-				// this new value is assignable to.
-				for i := 0; i < t.NumField(); i++ {
-					f := t.Field(i)
-					if f.Type.Kind() != reflect.Interface {
-						continue
-					}
-					if !oop.Type.AssignableTo(f.Type) {
-						continue
-					}
-					oop.Field = i
-					break
-				}
-				prop.OneofTypes[oop.Prop.OrigName] = oop
+		_, _, _, oots = om.XXX_OneofFuncs()
+
+		// Interpret oneof metadata.
+		prop.OneofTypes = make(map[string]*OneofProperties)
+		for _, oot := range oots {
+			oop := &OneofProperties{
+				Type: reflect.ValueOf(oot).Type(), // *T
+				Prop: new(Properties),
 			}
+			sft := oop.Type.Elem().Field(0)
+			oop.Prop.Name = sft.Name
+			oop.Prop.Parse(sft.Tag.Get("protobuf"))
+			// There will be exactly one interface field that
+			// this new value is assignable to.
+			for i := 0; i < t.NumField(); i++ {
+				f := t.Field(i)
+				if f.Type.Kind() != reflect.Interface {
+					continue
+				}
+				if !oop.Type.AssignableTo(f.Type) {
+					continue
+				}
+				oop.Field = i
+				break
+			}
+			prop.OneofTypes[oop.Prop.OrigName] = oop
 		}
 	}
 

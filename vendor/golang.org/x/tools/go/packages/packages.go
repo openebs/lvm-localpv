@@ -25,16 +25,24 @@ import (
 	"golang.org/x/tools/go/gcexportdata"
 )
 
-// A LoadMode controls the amount of detail to return when loading.
-// The bits below can be combined to specify which fields should be
-// filled in the result packages.
-// The zero value is a special case, equivalent to combining
-// the NeedName, NeedFiles, and NeedCompiledGoFiles bits.
-// ID and Errors (if present) will always be filled.
-// Load may return more information than requested.
+// A LoadMode specifies the amount of detail to return when loading.
+// Higher-numbered modes cause Load to return more information,
+// but may be slower. Load may return more information than requested.
 type LoadMode int
 
 const (
+	// The following constants are used to specify which fields of the Package
+	// should be filled when loading is done. As a special case to provide
+	// backwards compatibility, a LoadMode of 0 is equivalent to LoadFiles.
+	// For all other LoadModes, the bits below specify which fields will be filled
+	// in the result packages.
+	// WARNING: This part of the go/packages API is EXPERIMENTAL. It might
+	// be changed or removed up until April 15 2019. After that date it will
+	// be frozen.
+	// TODO(matloob): Remove this comment on April 15.
+
+	// ID and Errors (if present) will always be filled.
+
 	// NeedName adds Name and PkgPath.
 	NeedName LoadMode = 1 << iota
 
@@ -69,24 +77,30 @@ const (
 )
 
 const (
-	// Deprecated: LoadFiles exists for historical compatibility
-	// and should not be used. Please directly specify the needed fields using the Need values.
+	// LoadFiles finds the packages and computes their source file lists.
+	// Package fields: ID, Name, Errors, GoFiles, CompiledGoFiles, and OtherFiles.
 	LoadFiles = NeedName | NeedFiles | NeedCompiledGoFiles
 
-	// Deprecated: LoadImports exists for historical compatibility
-	// and should not be used. Please directly specify the needed fields using the Need values.
+	// LoadImports adds import information for each package
+	// and its dependencies.
+	// Package fields added: Imports.
 	LoadImports = LoadFiles | NeedImports | NeedDeps
 
-	// Deprecated: LoadTypes exists for historical compatibility
-	// and should not be used. Please directly specify the needed fields using the Need values.
+	// LoadTypes adds type information for package-level
+	// declarations in the packages matching the patterns.
+	// Package fields added: Types, TypesSizes, Fset, and IllTyped.
+	// This mode uses type information provided by the build system when
+	// possible, and may fill in the ExportFile field.
 	LoadTypes = LoadImports | NeedTypes | NeedTypesSizes
 
-	// Deprecated: LoadSyntax exists for historical compatibility
-	// and should not be used. Please directly specify the needed fields using the Need values.
+	// LoadSyntax adds typed syntax trees for the packages matching the patterns.
+	// Package fields added: Syntax, and TypesInfo, for direct pattern matches only.
 	LoadSyntax = LoadTypes | NeedSyntax | NeedTypesInfo
 
-	// Deprecated: LoadAllSyntax exists for historical compatibility
-	// and should not be used. Please directly specify the needed fields using the Need values.
+	// LoadAllSyntax adds typed syntax trees for the packages matching the patterns
+	// and all dependencies.
+	// Package fields added: Types, Fset, IllTyped, Syntax, and TypesInfo,
+	// for all packages in the import graph.
 	LoadAllSyntax = LoadSyntax
 )
 
@@ -261,9 +275,9 @@ type Package struct {
 	Imports map[string]*Package
 
 	// Types provides type information for the package.
-	// The NeedTypes LoadMode bit sets this field for packages matching the
-	// patterns; type information for dependencies may be missing or incomplete,
-	// unless NeedDeps and NeedImports are also set.
+	// Modes LoadTypes and above set this field for packages matching the
+	// patterns; type information for dependencies may be missing or incomplete.
+	// Mode LoadAllSyntax sets this field for all packages, including dependencies.
 	Types *types.Package
 
 	// Fset provides position information for Types, TypesInfo, and Syntax.
@@ -276,9 +290,8 @@ type Package struct {
 
 	// Syntax is the package's syntax trees, for the files listed in CompiledGoFiles.
 	//
-	// The NeedSyntax LoadMode bit populates this field for packages matching the patterns.
-	// If NeedDeps and NeedImports are also set, this field will also be populated
-	// for dependencies.
+	// Mode LoadSyntax sets this field for packages matching the patterns.
+	// Mode LoadAllSyntax sets this field for all packages, including dependencies.
 	Syntax []*ast.File
 
 	// TypesInfo provides type information about the package's syntax trees.
@@ -431,7 +444,7 @@ func newLoader(cfg *Config) *loader {
 		ld.Config = *cfg
 	}
 	if ld.Config.Mode == 0 {
-		ld.Config.Mode = NeedName | NeedFiles | NeedCompiledGoFiles // Preserve zero behavior of Mode for backwards compatibility.
+		ld.Config.Mode = LoadFiles // Preserve zero behavior of Mode for backwards compatibility.
 	}
 	if ld.Config.Env == nil {
 		ld.Config.Env = os.Environ()
@@ -674,7 +687,7 @@ func (ld *loader) loadRecursive(lpkg *loaderPackage) {
 // loadPackage loads the specified package.
 // It must be called only once per Package,
 // after immediate dependencies are loaded.
-// Precondition: ld.Mode & NeedTypes.
+// Precondition: ld.Mode >= LoadTypes.
 func (ld *loader) loadPackage(lpkg *loaderPackage) {
 	if lpkg.PkgPath == "unsafe" {
 		// Fill in the blanks to avoid surprises.

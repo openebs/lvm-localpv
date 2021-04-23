@@ -115,7 +115,7 @@ func getRatePerGB(vgName string, rateMap map[string]uint64) uint64 {
 		return ptr
 	}
 	for k, v := range rateMap {
-		if strings.Contains(vgName, k) {
+		if strings.HasPrefix(vgName, k) {
 			return v
 		}
 	}

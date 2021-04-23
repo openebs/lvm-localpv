@@ -65,7 +65,7 @@ func validate(request *Request) (*ValidRequest, error) {
 	return &ValidRequest{
 		FilePath:     ioMaxFile,
 		DeviceNumber: deviceNumber,
-		IOMax:      request.IOLimit,
+		IOMax:        request.IOLimit,
 	}, nil
 }
 
@@ -97,7 +97,11 @@ func getContainerdPodCGSuffix(podUid string) string {
 func getContainerdCGPath(podUid string) (string, error) {
 	kubepodsCGPath := baseCgroupPath + "/kubepods.slice"
 	podSuffix := getContainerdPodCGSuffix(podUid)
-	podCGPath := kubepodsCGPath + "/kubepods-besteffort.slice/kubepods-besteffort-" + podSuffix + ".slice"
+	podCGPath := kubepodsCGPath + "/kubepods-" + podSuffix + ".slice"
+	if helpers.DirExists(podCGPath) {
+		return podCGPath, nil
+	}
+	podCGPath = kubepodsCGPath + "/kubepods-besteffort.slice/kubepods-besteffort-" + podSuffix + ".slice"
 	if helpers.DirExists(podCGPath) {
 		return podCGPath, nil
 	}
@@ -114,8 +118,8 @@ func getDeviceNumber(deviceName string) (*DeviceNumber, error) {
 		return nil, err
 	}
 	return &DeviceNumber{
-		Major: uint64(stat.Rdev/256),
-		Minor: uint64(stat.Rdev%256),
+		Major: uint64(stat.Rdev / 256),
+		Minor: uint64(stat.Rdev % 256),
 	}, nil
 }
 
