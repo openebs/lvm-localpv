@@ -85,17 +85,19 @@ func IsPodRunningEventually(namespace, podName string) bool {
 		Should(gomega.BeTrue())
 }
 
-// IsPVCDeletedEventually tries to get the deleted pvc
-// and returns true if pvc is not found
-// else returns false
-func IsPVCDeletedEventually(pvcName string) bool {
+// IsPVCDeletedEventually checks if the PVC is deleted or not eventually
+func IsPVCDeletedEventually(pvcName string, shouldPass bool) bool {
+	status := gomega.BeFalse()
+	if shouldPass {
+		status = gomega.BeTrue()
+	}
 	return gomega.Eventually(func() bool {
 		_, err := PVCClient.
 			Get(pvcName, metav1.GetOptions{})
 		return k8serrors.IsNotFound(err)
 	},
 		120, 10).
-		Should(gomega.BeTrue())
+		Should(status)
 }
 
 func createFstypeStorageClass(ftype string) {
@@ -445,7 +447,7 @@ func deleteAppDeployment(appname string) {
 	gomega.Expect(err).ShouldNot(gomega.HaveOccurred(), "while deleting application pod")
 }
 
-func deletePVC(pvcname string) {
+func deleteAndVerifyPVC(shouldPass bool, pvcname string) {
 	err := PVCClient.WithNamespace(OpenEBSNamespace).Delete(pvcname, &metav1.DeleteOptions{})
 	gomega.Expect(err).To(
 		gomega.BeNil(),
@@ -454,6 +456,6 @@ func deletePVC(pvcname string) {
 		OpenEBSNamespace,
 	)
 	ginkgo.By("verifying deleted pvc")
-	status := IsPVCDeletedEventually(pvcname)
+	status := IsPVCDeletedEventually(pvcname, shouldPass)
 	gomega.Expect(status).To(gomega.Equal(true), "while trying to get deleted pvc")
 }
