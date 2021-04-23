@@ -1,0 +1,1 @@
+prevent LVM volume deletion if a snapshot exists for the volume.
