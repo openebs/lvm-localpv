@@ -459,3 +459,27 @@ func deleteAndVerifyPVC(shouldPass bool, pvcname string) {
 	status := IsPVCDeletedEventually(pvcname, shouldPass)
 	gomega.Expect(status).To(gomega.Equal(true), "while trying to get deleted pvc")
 }
+
+func verifyPVForPVC(shouldExist bool, pvcName string) {
+	pvList, err := PVClient.List(metav1.ListOptions{})
+	gomega.Expect(err).To(
+		gomega.BeNil(),
+		"while listing PV for PVC: %{s}",
+		pvcName,
+	)
+
+	shouldPVExist := gomega.BeFalse()
+	if shouldExist {
+		shouldPVExist = gomega.BeTrue()
+	}
+
+	matchingPVFound := gomega.BeFalse()
+	for _, pv := range pvList.Items {
+		if pv.claimRef != nil &&
+			pv.claimRef.name == pvcName &&
+			pv.claimRef.namespace == OpenEBSNamespace {
+			matchingPVFound = gomega.BeTrue()
+		}
+	}
+	gomega.Expect(matchingPVFound).To(shouldPVExist)
+}
