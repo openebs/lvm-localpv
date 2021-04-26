@@ -17,16 +17,16 @@ limitations under the License.
 package iolimit
 
 type Request struct {
-	DeviceName string
-	PodUid     string
+	DeviceName       string
+	PodUid           string
 	ContainerRuntime string
-	IOLimit    *IOMax
+	IOLimit          *IOMax
 }
 
 type ValidRequest struct {
-	FilePath string
+	FilePath     string
 	DeviceNumber *DeviceNumber
-	IOMax    *IOMax
+	IOMax        *IOMax
 }
 
 type IOMax struct {
