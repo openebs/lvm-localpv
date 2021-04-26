@@ -1,0 +1,41 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: lvmpv-custom-topology-
+  namespace: e2e
+spec:
+  template:
+    metadata:
+      labels:
+        test: lvmpv-custom-topology
+    spec:
+      serviceAccountName: e2e
+      restartPolicy: Never
+
+      containers:
+      - name: ansibletest
+        image: openebs/lvm-localpv-e2e:ci
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: ANSIBLE_STDOUT_CALLBACK
+            value: default
+
+            ## This is the namespace in which test specific application
+            ## pods will be deployed. Default test specific value for this env is `custom-topology`
+          - name: APP_NAMESPACE
+            value: 'custom-topology'
+
+            ## This is the name of the volume group present on nodes
+            ## from which volume will be provisioned for this test
+          - name: VOLUME_GROUP_NAME
+            value: 'lvmvg'
+
+            ## This is the node_label in key=value format which will be used
+            ## in the allowedTopology field in storage class yaml and nodes will
+            ## be labeled by this in the execution of this test.
+            ## Default test specific value for this env is `lvme2e=custom-topology`
+          - name: NODE_LABEL
+            value: 'lvme2e=custom-topology'
+
+        command: ["/bin/bash"]
+        args: ["-c", "ansible-playbook ./e2e-tests/experiments/functional/lvmpv-custom-topology/test.yml -i /etc/ansible/hosts -vv; exit 0"]

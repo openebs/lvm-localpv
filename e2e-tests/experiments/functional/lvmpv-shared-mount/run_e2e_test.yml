@@ -1,0 +1,59 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lvmpv-shared-mount
+  namespace: e2e
+data:
+  parameters.yml: |
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: lvmpv-shared-mount-
+  namespace: e2e
+spec:
+  template:
+    metadata:
+      labels:
+        test: shared-mount
+    spec:
+      serviceAccountName: e2e
+      restartPolicy: Never
+      containers:
+      - name: ansibletest
+        image: openebs/lvm-localpv-e2e:ci
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: ANSIBLE_STDOUT_CALLBACK
+            value: default
+
+          - name: APP_NAMESPACE      ## This is the namespace in which application will be deployed
+            value: 'share-ns'        ## in the execution of this shared mount volume e2e-test
+          
+          - name: APP_PVC            ## PVC name of the application
+            value: 'share-pvc'
+
+          - name: STORAGE_CLASS      ## Give the storage class which supports shared volume mount
+            value: 'lvmsc-ext4-shared'
+
+          - name: VOLUME_GROUP_NAME  ## This the name of volgroup present on nodes from which lvmvolume
+            value: 'lvmvg'           ## which lvmvolume will be created
+
+          - name: LVM_OPERATOR_NAMESPACE ## Namespace in which all the resources created by lvm driver is present
+            value: 'openebs'                    ## for e.g. lvmvolume (lvmvol) will be in this namespace
+
+          - name: DATA_PERSISTENCE   ## Give values according to the application
+            value: 'busybox'                ## For `Busybox` : `busybox`
+
+        command: ["/bin/bash"]
+        args: ["-c", "ansible-playbook ./e2e-tests/experiments/functional/lvmpv-shared-mount/test.yml -i /etc/ansible/hosts -vv; exit 0"]
+
+        volumeMounts:
+        - name: parameters
+          mountPath: /mnt/
+      volumes:
+        - name: parameters
+          configMap:
+            name: lvmpv-shared-mount

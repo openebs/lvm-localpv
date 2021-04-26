@@ -4,7 +4,7 @@ This functional experiment scale up the lvm-controller replicas to use it in hig
 
 ## Supported platforms:
 
-K8s : 1.17+
+K8s : 1.18+
 
 OS : Ubuntu
 

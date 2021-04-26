@@ -1,0 +1,29 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: lvmpv-custom-topology-wait
+allowVolumeExpansion: true
+parameters:
+  volgroup: "{{ vg_name }}"
+provisioner: local.csi.openebs.io
+volumeBindingMode: WaitForFirstConsumer
+allowedTopologies:
+- matchLabelExpressions:
+  - key: {{ lkey }} 
+    values:
+      - {{ lvalue }}
+
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: lvmpv-custom-topology-immediate
+allowVolumeExpansion: true
+parameters:
+  volgroup: "{{ vg_name }}"
+provisioner: local.csi.openebs.io
+allowedTopologies:
+- matchLabelExpressions:
+  - key: {{ lkey }} 
+    values:
+      - {{ lvalue }}

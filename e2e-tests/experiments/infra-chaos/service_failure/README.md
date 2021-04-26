@@ -4,7 +4,7 @@ This experiment validates the stability and fault-tolerance of application pod c
 
 ## Supported platforms:
 
-K8S : 1.17+
+K8S : 1.18+
 
 OS : Ubuntu
 

@@ -1,18 +1,18 @@
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: app-busybox
+  name: busybox-shared-mount
+  namespace: "{{ app_ns }}"
   labels:
-    lkey: lvalue
+    app: shared-mount
 spec:
   selector:
     matchLabels:
-      lkey: lvalue
+      app: shared-mount
   template:
     metadata:
       labels:
-        lkey: lvalue
+        app: shared-mount
     spec:
       containers:
       - name: app-busybox
@@ -27,16 +27,18 @@ spec:
       volumes:
       - name: data-vol
         persistentVolumeClaim:
-          claimName: testclaim
+          claimName: "{{ app_pvc }}"
+
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: testclaim
+  namespace: "{{ app_ns }}"
+  name: "{{ app_pvc }}"
 spec:
-  storageClassName: testclass
+  storageClassName: "{{ storage_class }}"
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: teststorage
+      storage: 4Gi

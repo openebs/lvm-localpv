@@ -1,0 +1,13 @@
+test_name: lvmpv-shared-mount-volume
+
+app_ns: "{{ lookup('env','APP_NAMESPACE') }}"
+
+app_pvc: "{{ lookup('env','APP_PVC') }}"
+
+data_persistence: "{{ lookup('env','DATA_PERSISTENCE') }}"
+
+storage_class: "{{ lookup('env','STORAGE_CLASS') }}"
+
+lvm_operator_ns: "{{ lookup('env', 'LVM_OPERATOR_NAMESPACE') }}"
+
+vg_name: "{{ lookup('env','VOLUME_GROUP_NAME') }}"
