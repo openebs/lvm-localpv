@@ -19,6 +19,8 @@ limitations under the License.
 package fake
 
 import (
+	"context"
+
 	v1alpha1 "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -39,7 +41,7 @@ var lvmnodesResource = schema.GroupVersionResource{Group: "local.openebs.io", Ve
 var lvmnodesKind = schema.GroupVersionKind{Group: "local.openebs.io", Version: "v1alpha1", Kind: "LVMNode"}
 
 // Get takes name of the lVMNode, and returns the corresponding lVMNode object, and an error if there is any.
-func (c *FakeLVMNodes) Get(name string, options v1.GetOptions) (result *v1alpha1.LVMNode, err error) {
+func (c *FakeLVMNodes) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.LVMNode, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(lvmnodesResource, c.ns, name), &v1alpha1.LVMNode{})
 
@@ -50,7 +52,7 @@ func (c *FakeLVMNodes) Get(name string, options v1.GetOptions) (result *v1alpha1
 }
 
 // List takes label and field selectors, and returns the list of LVMNodes that match those selectors.
-func (c *FakeLVMNodes) List(opts v1.ListOptions) (result *v1alpha1.LVMNodeList, err error) {
+func (c *FakeLVMNodes) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.LVMNodeList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(lvmnodesResource, lvmnodesKind, c.ns, opts), &v1alpha1.LVMNodeList{})
 
@@ -72,14 +74,14 @@ func (c *FakeLVMNodes) List(opts v1.ListOptions) (result *v1alpha1.LVMNodeList, 
 }
 
 // Watch returns a watch.Interface that watches the requested lVMNodes.
-func (c *FakeLVMNodes) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeLVMNodes) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(lvmnodesResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a lVMNode and creates it.  Returns the server's representation of the lVMNode, and an error, if there is any.
-func (c *FakeLVMNodes) Create(lVMNode *v1alpha1.LVMNode) (result *v1alpha1.LVMNode, err error) {
+func (c *FakeLVMNodes) Create(ctx context.Context, lVMNode *v1alpha1.LVMNode, opts v1.CreateOptions) (result *v1alpha1.LVMNode, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(lvmnodesResource, c.ns, lVMNode), &v1alpha1.LVMNode{})
 
@@ -90,7 +92,7 @@ func (c *FakeLVMNodes) Create(lVMNode *v1alpha1.LVMNode) (result *v1alpha1.LVMNo
 }
 
 // Update takes the representation of a lVMNode and updates it. Returns the server's representation of the lVMNode, and an error, if there is any.
-func (c *FakeLVMNodes) Update(lVMNode *v1alpha1.LVMNode) (result *v1alpha1.LVMNode, err error) {
+func (c *FakeLVMNodes) Update(ctx context.Context, lVMNode *v1alpha1.LVMNode, opts v1.UpdateOptions) (result *v1alpha1.LVMNode, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(lvmnodesResource, c.ns, lVMNode), &v1alpha1.LVMNode{})
 
@@ -101,7 +103,7 @@ func (c *FakeLVMNodes) Update(lVMNode *v1alpha1.LVMNode) (result *v1alpha1.LVMNo
 }
 
 // Delete takes name of the lVMNode and deletes it. Returns an error if one occurs.
-func (c *FakeLVMNodes) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeLVMNodes) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(lvmnodesResource, c.ns, name), &v1alpha1.LVMNode{})
 
@@ -109,15 +111,15 @@ func (c *FakeLVMNodes) Delete(name string, options *v1.DeleteOptions) error {
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeLVMNodes) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(lvmnodesResource, c.ns, listOptions)
+func (c *FakeLVMNodes) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(lvmnodesResource, c.ns, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.LVMNodeList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched lVMNode.
-func (c *FakeLVMNodes) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.LVMNode, err error) {
+func (c *FakeLVMNodes) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.LVMNode, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(lvmnodesResource, c.ns, name, pt, data, subresources...), &v1alpha1.LVMNode{})
 

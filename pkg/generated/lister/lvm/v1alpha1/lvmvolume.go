@@ -26,8 +26,10 @@ import (
 )
 
 // LVMVolumeLister helps list LVMVolumes.
+// All objects returned here must be treated as read-only.
 type LVMVolumeLister interface {
 	// List lists all LVMVolumes in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.LVMVolume, err error)
 	// LVMVolumes returns an object that can list and get LVMVolumes.
 	LVMVolumes(namespace string) LVMVolumeNamespaceLister
@@ -58,10 +60,13 @@ func (s *lVMVolumeLister) LVMVolumes(namespace string) LVMVolumeNamespaceLister 
 }
 
 // LVMVolumeNamespaceLister helps list and get LVMVolumes.
+// All objects returned here must be treated as read-only.
 type LVMVolumeNamespaceLister interface {
 	// List lists all LVMVolumes in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.LVMVolume, err error)
 	// Get retrieves the LVMVolume from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1alpha1.LVMVolume, error)
 	LVMVolumeNamespaceListerExpansion
 }

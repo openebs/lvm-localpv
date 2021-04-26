@@ -26,8 +26,10 @@ import (
 )
 
 // LVMSnapshotLister helps list LVMSnapshots.
+// All objects returned here must be treated as read-only.
 type LVMSnapshotLister interface {
 	// List lists all LVMSnapshots in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.LVMSnapshot, err error)
 	// LVMSnapshots returns an object that can list and get LVMSnapshots.
 	LVMSnapshots(namespace string) LVMSnapshotNamespaceLister
@@ -58,10 +60,13 @@ func (s *lVMSnapshotLister) LVMSnapshots(namespace string) LVMSnapshotNamespaceL
 }
 
 // LVMSnapshotNamespaceLister helps list and get LVMSnapshots.
+// All objects returned here must be treated as read-only.
 type LVMSnapshotNamespaceLister interface {
 	// List lists all LVMSnapshots in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.LVMSnapshot, err error)
 	// Get retrieves the LVMSnapshot from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1alpha1.LVMSnapshot, error)
 	LVMSnapshotNamespaceListerExpansion
 }

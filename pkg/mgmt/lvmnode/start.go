@@ -17,6 +17,7 @@
 package lvmnode
 
 import (
+	"context"
 	"sync"
 	"time"
 
@@ -59,7 +60,7 @@ func Start(controllerMtx *sync.RWMutex, stopCh <-chan struct{}) error {
 			options.FieldSelector = fields.OneTermEqualSelector("metadata.name", lvm.NodeID).String()
 		}))
 
-	k8sNode, err := kubeClient.CoreV1().Nodes().Get(lvm.NodeID, metav1.GetOptions{})
+	k8sNode, err := kubeClient.CoreV1().Nodes().Get(context.TODO(), lvm.NodeID, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "fetch k8s node %s", lvm.NodeID)
 	}

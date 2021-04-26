@@ -17,6 +17,7 @@ limitations under the License.
 package snapbuilder
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/openebs/lib-csi/pkg/common/kubernetes/client"
@@ -145,7 +146,7 @@ func defaultGet(
 ) (*apis.LVMSnapshot, error) {
 	return cli.LocalV1alpha1().
 		LVMSnapshots(namespace).
-		Get(name, opts)
+		Get(context.TODO(), name, opts)
 }
 
 // defaultList is the default implementation to list
@@ -157,7 +158,7 @@ func defaultList(
 ) (*apis.LVMSnapshotList, error) {
 	return cli.LocalV1alpha1().
 		LVMSnapshots(namespace).
-		List(opts)
+		List(context.TODO(), opts)
 }
 
 // defaultCreate is the default implementation to delete
@@ -171,7 +172,7 @@ func defaultDel(
 	opts.PropagationPolicy = &deletePropagation
 	err := cli.LocalV1alpha1().
 		LVMSnapshots(namespace).
-		Delete(name, opts)
+		Delete(context.TODO(), name, *opts)
 	return err
 }
 
@@ -184,7 +185,7 @@ func defaultCreate(
 ) (*apis.LVMSnapshot, error) {
 	return cli.LocalV1alpha1().
 		LVMSnapshots(namespace).
-		Create(vol)
+		Create(context.TODO(), vol, metav1.CreateOptions{})
 }
 
 // defaultUpdate is the default implementation to update
@@ -196,7 +197,7 @@ func defaultUpdate(
 ) (*apis.LVMSnapshot, error) {
 	return cli.LocalV1alpha1().
 		LVMSnapshots(namespace).
-		Update(vol)
+		Update(context.TODO(), vol, metav1.UpdateOptions{})
 }
 
 // withDefaults sets the default options

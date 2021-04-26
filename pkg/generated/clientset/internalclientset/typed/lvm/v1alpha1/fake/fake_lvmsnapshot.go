@@ -19,6 +19,8 @@ limitations under the License.
 package fake
 
 import (
+	"context"
+
 	v1alpha1 "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -39,7 +41,7 @@ var lvmsnapshotsResource = schema.GroupVersionResource{Group: "local.openebs.io"
 var lvmsnapshotsKind = schema.GroupVersionKind{Group: "local.openebs.io", Version: "v1alpha1", Kind: "LVMSnapshot"}
 
 // Get takes name of the lVMSnapshot, and returns the corresponding lVMSnapshot object, and an error if there is any.
-func (c *FakeLVMSnapshots) Get(name string, options v1.GetOptions) (result *v1alpha1.LVMSnapshot, err error) {
+func (c *FakeLVMSnapshots) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.LVMSnapshot, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(lvmsnapshotsResource, c.ns, name), &v1alpha1.LVMSnapshot{})
 
@@ -50,7 +52,7 @@ func (c *FakeLVMSnapshots) Get(name string, options v1.GetOptions) (result *v1al
 }
 
 // List takes label and field selectors, and returns the list of LVMSnapshots that match those selectors.
-func (c *FakeLVMSnapshots) List(opts v1.ListOptions) (result *v1alpha1.LVMSnapshotList, err error) {
+func (c *FakeLVMSnapshots) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.LVMSnapshotList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(lvmsnapshotsResource, lvmsnapshotsKind, c.ns, opts), &v1alpha1.LVMSnapshotList{})
 
@@ -72,14 +74,14 @@ func (c *FakeLVMSnapshots) List(opts v1.ListOptions) (result *v1alpha1.LVMSnapsh
 }
 
 // Watch returns a watch.Interface that watches the requested lVMSnapshots.
-func (c *FakeLVMSnapshots) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeLVMSnapshots) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(lvmsnapshotsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a lVMSnapshot and creates it.  Returns the server's representation of the lVMSnapshot, and an error, if there is any.
-func (c *FakeLVMSnapshots) Create(lVMSnapshot *v1alpha1.LVMSnapshot) (result *v1alpha1.LVMSnapshot, err error) {
+func (c *FakeLVMSnapshots) Create(ctx context.Context, lVMSnapshot *v1alpha1.LVMSnapshot, opts v1.CreateOptions) (result *v1alpha1.LVMSnapshot, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(lvmsnapshotsResource, c.ns, lVMSnapshot), &v1alpha1.LVMSnapshot{})
 
@@ -90,7 +92,7 @@ func (c *FakeLVMSnapshots) Create(lVMSnapshot *v1alpha1.LVMSnapshot) (result *v1
 }
 
 // Update takes the representation of a lVMSnapshot and updates it. Returns the server's representation of the lVMSnapshot, and an error, if there is any.
-func (c *FakeLVMSnapshots) Update(lVMSnapshot *v1alpha1.LVMSnapshot) (result *v1alpha1.LVMSnapshot, err error) {
+func (c *FakeLVMSnapshots) Update(ctx context.Context, lVMSnapshot *v1alpha1.LVMSnapshot, opts v1.UpdateOptions) (result *v1alpha1.LVMSnapshot, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(lvmsnapshotsResource, c.ns, lVMSnapshot), &v1alpha1.LVMSnapshot{})
 
@@ -102,7 +104,7 @@ func (c *FakeLVMSnapshots) Update(lVMSnapshot *v1alpha1.LVMSnapshot) (result *v1
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeLVMSnapshots) UpdateStatus(lVMSnapshot *v1alpha1.LVMSnapshot) (*v1alpha1.LVMSnapshot, error) {
+func (c *FakeLVMSnapshots) UpdateStatus(ctx context.Context, lVMSnapshot *v1alpha1.LVMSnapshot, opts v1.UpdateOptions) (*v1alpha1.LVMSnapshot, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateSubresourceAction(lvmsnapshotsResource, "status", c.ns, lVMSnapshot), &v1alpha1.LVMSnapshot{})
 
@@ -113,7 +115,7 @@ func (c *FakeLVMSnapshots) UpdateStatus(lVMSnapshot *v1alpha1.LVMSnapshot) (*v1a
 }
 
 // Delete takes name of the lVMSnapshot and deletes it. Returns an error if one occurs.
-func (c *FakeLVMSnapshots) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeLVMSnapshots) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(lvmsnapshotsResource, c.ns, name), &v1alpha1.LVMSnapshot{})
 
@@ -121,15 +123,15 @@ func (c *FakeLVMSnapshots) Delete(name string, options *v1.DeleteOptions) error 
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeLVMSnapshots) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(lvmsnapshotsResource, c.ns, listOptions)
+func (c *FakeLVMSnapshots) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(lvmsnapshotsResource, c.ns, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.LVMSnapshotList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched lVMSnapshot.
-func (c *FakeLVMSnapshots) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.LVMSnapshot, err error) {
+func (c *FakeLVMSnapshots) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.LVMSnapshot, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(lvmsnapshotsResource, c.ns, name, pt, data, subresources...), &v1alpha1.LVMSnapshot{})
 
