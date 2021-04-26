@@ -161,9 +161,12 @@ func (c *VolController) getVgPriorityList(vol *apis.LVMVolume) ([]apis.VolumeGro
 		if !re.MatchString(vg.Name) {
 			continue
 		}
-		// filter vgs having insufficient capacity.
-		if vg.Free.Value() < int64(capacity) {
-			continue
+		// skip the vgs capacity comparison in case of thin provision enable volume
+		if vol.Spec.ThinProvision != "yes" {
+			// filter vgs having insufficient capacity.
+			if vg.Free.Value() < int64(capacity) {
+				continue
+			}
 		}
 		filteredVgs = append(filteredVgs, vg)
 	}

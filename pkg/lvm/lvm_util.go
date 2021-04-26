@@ -85,7 +85,7 @@ func buildLVMCreateArgs(vol *apis.LVMVolume) []string {
 			LVMVolArg = append(LVMVolArg, "-L", size)
 		} else if !lvThinExists(vol.Spec.VolGroup, pool) {
 			// thinpool size can't be equal or greater than actual volumegroup size
-			LVMVolArg = append(LVMVolArg, "-L", getThinPoolSize(vol.Spec.VolGroup))
+			LVMVolArg = append(LVMVolArg, "-L", getThinPoolSize(vol.Spec.VolGroup, vol.Spec.Capacity))
 		}
 	}
 
@@ -450,7 +450,7 @@ func snapshotExists(snapVolumeName string) (bool, error) {
 
 // getVGSize get the size in bytes for given volumegroup name
 func getVGSize(vgname string) string {
-	cmd := exec.Command("vgs", vgname, "--noheadings", "-o", "vg_size", "--units", "b")
+	cmd := exec.Command("vgs", vgname, "--noheadings", "-o", "vg_free", "--units", "b", "--nosuffix")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		klog.Errorf("failed to list existing volumegroup:%v , %v", vgname, err)
@@ -459,15 +459,26 @@ func getVGSize(vgname string) string {
 	return strings.TrimSpace(string(out))
 }
 
-// getThinPoolSize gets size for a given volumegroup and returns
-// half of as a thinpool size
-func getThinPoolSize(vgname string) string {
-	outstr := getVGSize(vgname)
-	// split the output stringi, contains B as byte suffix i.e. 107369988096B
-	intNumber, err := strconv.Atoi(strings.Split(strings.TrimSpace(string(outstr)), "B")[0])
+// getThinPoolSize gets size for a given volumegroup, compares it with
+// the requested volume size and returns the minimum size as a thin pool size
+func getThinPoolSize(vgname, volsize string) string {
+	outStr := getVGSize(vgname)
+	vg_free_size, err := strconv.Atoi(strings.TrimSpace(string(outStr)))
 	if err != nil {
-		klog.Errorf("failed to convert to int, got size,:%v , %v", string(outstr), err)
+		klog.Errorf("failed to convert vg_size to int, got size,:%v , %v", outStr, err)
 		return ""
 	}
-	return fmt.Sprint(intNumber/2) + "b"
+
+	vol_size, err := strconv.Atoi(strings.TrimSpace(string(volsize)))
+	if err != nil {
+		klog.Errorf("failed to convert volsize to int, got size,:%v , %v", volsize, err)
+		return ""
+	}
+
+	if vg_free_size < vol_size {
+		// reducing 1073741824 bytes (1Gi) from the total byte size to round off
+		// blocks
+		return fmt.Sprint(vg_free_size-1073741824) + "b"
+	}
+	return volsize + "b"
 }

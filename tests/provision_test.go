@@ -90,7 +90,7 @@ func thinVolCreationTest() {
 	By("Deleting application deployment")
 	deleteAppDeployment(appName)
 	By("Deleting pvc")
-	deletePVC(pvcName)
+	deleteAndVerifyPVC(pvcName)
 	By("Deleting thinProvision storage class", deleteStorageClass)
 }
 
