@@ -46,7 +46,7 @@ var (
 	LVMClient        *volbuilder.Kubeclient
 	SCClient         *sc.Kubeclient
 	PVCClient        *pvc.Kubeclient
-	PVClient         *pv.Kubeclient
+	PVlient          *pv.Kubeclient
 	DeployClient     *deploy.Kubeclient
 	PodClient        *pod.KubeClient
 	nsName           = "lvm"
