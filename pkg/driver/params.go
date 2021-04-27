@@ -56,9 +56,11 @@ func NewVolumeParams(m map[string]string) (*VolumeParams, error) {
 
 	// for ensuring backward compatibility, we first check if
 	// there is any volgroup param exists for storage class.
-	vgPattern, ok := m["volgroup"]
-	if !ok {
-		vgPattern = m["vgpattern"]
+
+	vgPattern := m["vgpattern"]
+	volGroup, ok := m["volgroup"]
+	if ok {
+		vgPattern = fmt.Sprintf("^%v$", volGroup)
 	}
 
 	var err error
