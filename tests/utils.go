@@ -476,9 +476,9 @@ func verifyPVForPVC(shouldExist bool, pvcName string) {
 	ginkgo.By("verifying PVC for deleted PV exists")
 	matchingPVFound := gomega.BeFalse()
 	for _, pv := range pvList.Items {
-		if pv.claimRef != nil &&
-			pv.claimRef.name == pvcName &&
-			pv.claimRef.namespace == OpenEBSNamespace {
+		if pv.Spec.ClaimRef != nil &&
+			pv.Spec.ClaimRef.Name == pvcName &&
+			pv.Spec.ClaimRef.Namespace == OpenEBSNamespace {
 			matchingPVFound = gomega.BeTrue()
 		}
 	}
