@@ -473,6 +473,7 @@ func verifyPVForPVC(shouldExist bool, pvcName string) {
 		shouldPVExist = gomega.BeTrue()
 	}
 
+	ginkgo.By("verifying PVC for deleted PV exists")
 	matchingPVFound := gomega.BeFalse()
 	for _, pv := range pvList.Items {
 		if pv.claimRef != nil &&
