@@ -432,8 +432,11 @@ func lvThinExists(vg string, name string) bool {
 	return name == strings.TrimSpace(string(out))
 }
 
-func snapshotExists(snapVolumePath string) (bool, error) {
-	if _, err := os.Stat(snapVolumePath); err != nil {
+// snapshotExists checks if a snapshot volume exists given the name of the volume.
+// The name should be <vg-name>/<snapshot-name>
+func snapshotExists(snapVolumeName string) (bool, error) {
+	snapPath := DevPath + snapVolumeName
+	if _, err := os.Stat(snapPath); err != nil {
 		if os.IsNotExist(err) {
 			return false, nil
 		}
