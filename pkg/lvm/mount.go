@@ -18,17 +18,19 @@ package lvm
 import (
 	"errors"
 	"fmt"
-	"github.com/openebs/lib-csi/pkg/device/iolimit"
 	"math"
 	"os"
 	"strconv"
+
+	"github.com/openebs/lib-csi/pkg/device/iolimit"
 
 	mnt "github.com/openebs/lib-csi/pkg/mount"
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"k8s.io/klog"
-	"k8s.io/kubernetes/pkg/util/mount"
+	utilexec "k8s.io/utils/exec"
+	"k8s.io/utils/mount"
 )
 
 // MountInfo contains the volume related info
@@ -63,7 +65,7 @@ type PodLVInfo struct {
 
 // FormatAndMountVol formats and mounts the created volume to the desired mount path
 func FormatAndMountVol(devicePath string, mountInfo *MountInfo) error {
-	mounter := &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: mount.NewOsExec()}
+	mounter := &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: utilexec.New()}
 
 	err := mounter.FormatAndMount(devicePath, mountInfo.MountPath, mountInfo.FSType, mountInfo.MountOptions)
 	if err != nil {
@@ -80,7 +82,7 @@ func FormatAndMountVol(devicePath string, mountInfo *MountInfo) error {
 // UmountVolume unmounts the volume and the corresponding mount path is removed
 func UmountVolume(vol *apis.LVMVolume, targetPath string,
 ) error {
-	mounter := &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: mount.NewOsExec()}
+	mounter := &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: utilexec.New()}
 
 	dev, ref, err := mount.GetDeviceNameFromMount(mounter, targetPath)
 	if err != nil {
@@ -229,10 +231,10 @@ func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo, podLVInfo *PodLVInfo)
 
 	mountopt := []string{"bind"}
 
-	mounter := &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: mount.NewOsExec()}
+	mounter := &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: utilexec.New()}
 
 	// Create the mount point as a file since bind mount device node requires it to be a file
-	err := mounter.MakeFile(target)
+	err := makeFile(target)
 	if err != nil {
 		return status.Errorf(codes.Internal, "Could not create target file %q: %v", target, err)
 	}
@@ -288,6 +290,17 @@ func setIOLimits(vol *apis.LVMVolume, podLVInfo *PodLVInfo, devicePath string) e
 	})
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func makeFile(pathname string) error {
+	f, err := os.OpenFile(pathname, os.O_CREATE, os.FileMode(0644))
+	defer f.Close()
+	if err != nil {
+		if !os.IsExist(err) {
+			return err
+		}
 	}
 	return nil
 }

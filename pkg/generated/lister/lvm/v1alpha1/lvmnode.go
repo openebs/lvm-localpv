@@ -26,8 +26,10 @@ import (
 )
 
 // LVMNodeLister helps list LVMNodes.
+// All objects returned here must be treated as read-only.
 type LVMNodeLister interface {
 	// List lists all LVMNodes in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.LVMNode, err error)
 	// LVMNodes returns an object that can list and get LVMNodes.
 	LVMNodes(namespace string) LVMNodeNamespaceLister
@@ -58,10 +60,13 @@ func (s *lVMNodeLister) LVMNodes(namespace string) LVMNodeNamespaceLister {
 }
 
 // LVMNodeNamespaceLister helps list and get LVMNodes.
+// All objects returned here must be treated as read-only.
 type LVMNodeNamespaceLister interface {
 	// List lists all LVMNodes in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.LVMNode, err error)
 	// Get retrieves the LVMNode from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1alpha1.LVMNode, error)
 	LVMNodeNamespaceListerExpansion
 }

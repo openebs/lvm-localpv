@@ -19,6 +19,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"context"
 	time "time"
 
 	lvmv1alpha1 "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
@@ -61,13 +62,13 @@ func NewFilteredLVMNodeInformer(client internalclientset.Interface, namespace st
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.LocalV1alpha1().LVMNodes(namespace).List(options)
+				return client.LocalV1alpha1().LVMNodes(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.LocalV1alpha1().LVMNodes(namespace).Watch(options)
+				return client.LocalV1alpha1().LVMNodes(namespace).Watch(context.TODO(), options)
 			},
 		},
 		&lvmv1alpha1.LVMNode{},
