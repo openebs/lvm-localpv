@@ -79,7 +79,7 @@ func (c *SnapController) syncSnap(snap *apis.LVMSnapshot) error {
 	if c.isDeletionCandidate(snap) {
 		err = lvm.DestroySnapshot(snap)
 		if err == nil {
-			lvm.RemoveSnapFinalizer(snap)
+			err = lvm.RemoveSnapFinalizer(snap)
 		}
 	} else {
 		// if the status of the snapshot resource is Pending, then
