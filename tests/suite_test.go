@@ -76,6 +76,7 @@ func init() {
 	}
 	SCClient = sc.NewKubeClient(sc.WithKubeConfigPath(KubeConfigPath))
 	PVCClient = pvc.NewKubeClient(pvc.WithKubeConfigPath(KubeConfigPath))
+	PVClient = pv.NewKubeClient(pv.WithKubeConfigPath(KubeConfigPath))
 	DeployClient = deploy.NewKubeClient(deploy.WithKubeConfigPath(KubeConfigPath))
 	PodClient = pod.NewKubeClient(pod.WithKubeConfigPath(KubeConfigPath))
 	LVMClient = volbuilder.NewKubeclient(volbuilder.WithKubeConfigPath(KubeConfigPath))
