@@ -14,15 +14,24 @@
 name: build
 
 on:
+  create:
   push:
+    branches:
+      - 'master'
+      - 'v*'
     paths-ignore:
-    - 'docs/**'
-    # The line below will required once deploy/helm/ directory exists
-    # - 'deploy/helm/**'
-    - 'changelogs/**'
+      - '*.md'
+      - 'BUILDMETA'
+      - 'changelogs/**'
+      # - 'deploy/helm/**'
+      - 'docs/**'
+      - 'LICENSE'
+      - 'MAINTAINERS'
 
 jobs:
   lint:
+    # to ignore builds on release
+    if: ${{ (github.event.ref_type != 'tag') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -39,6 +48,8 @@ jobs:
 
 
   unit-test:
+    # to ignore builds on release
+    if: ${{ (github.event.ref_type != 'tag') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
