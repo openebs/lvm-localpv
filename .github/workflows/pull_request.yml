@@ -23,7 +23,7 @@ on:
       - '*.md'
       - 'BUILDMETA'
       - 'changelogs/**'
-      # - 'deploy/helm/**'
+      - 'deploy/helm/**'
       - 'docs/**'
       - 'LICENSE'
       - 'MAINTAINERS'
