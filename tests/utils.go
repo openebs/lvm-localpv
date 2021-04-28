@@ -469,14 +469,38 @@ func verifyPVForPVC(shouldExist bool, pvcName string) {
 		shouldPVExist = gomega.BeTrue()
 	}
 
-	ginkgo.By("verifying PVC for PV exists")
-	matchingPVFound := gomega.BeFalse()
+	ginkgo.By("verifying PV for PVC exists or not")
+	var matchingPVName string
+	matchingPVExists := false
 	for _, pv := range pvList.Items {
 		if pv.Spec.ClaimRef != nil &&
 			pv.Spec.ClaimRef.Name == pvcName &&
 			pv.Spec.ClaimRef.Namespace == OpenEBSNamespace {
-			matchingPVFound = gomega.BeTrue()
+			matchingPVExists = true
+			matchingPVName = pv.Name
+			break
 		}
 	}
-	gomega.Expect(matchingPVFound).To(shouldPVExist)
+
+	if matchingPVExists && !shouldExist {
+		if IsPVDeletedEventually(shouldExist, matchingPVName) {
+			matchingPVExists = false
+		}
+	}
+
+	gomega.Expect(matchingPVExists).To(shouldPVExist)
+}
+
+// IsPVDeletedEventually checks if the PV is deleted or not eventually
+func IsPVDeletedEventually(shouldExist bool, pvName string) bool {
+	shouldPVExist := gomega.BeFalse()
+	if shouldExist {
+		shouldPVExist = gomega.BeTrue()
+	}
+	return gomega.Eventually(func() bool {
+		_, err := PVClient.Get(pvName, metav1.GetOptions{})
+		return k8serrors.IsNotFound(err)
+	},
+		120, 10).
+		Should(shouldPVExist)
 }
