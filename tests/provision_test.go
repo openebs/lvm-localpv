@@ -48,17 +48,22 @@ func fsVolCreationTest() {
 			resizeAndVerifyPVC(false, "10Gi")
 		}
 
-		// delete PVC should succeed and PV should not be removed
-		deleteAndVerifyPVC(true, pvcName)
-		// PV should be present after PVC deletion
-		verifyPVForPVC(true, pvcName)
-
 		By("Deleting the application deployment")
 		deleteAppDeployment(appName)
 
-		By("Deleting snapshot and pvc")
+		// delete PVC should succeed
+		By("Deleting the PVC")
+		deleteAndVerifyPVC(pvcName)
+
+		// PV should be present after PVC deletion since snapshot is present
+		By("Verifying that PV exists after PVC deletion")
+		verifyPVForPVC(true, pvcName)
+
+		By("Deleting snapshot")
 		deleteSnapshot(pvcName, snapName)
-		deleteAndVerifyPVC(true, pvcName)
+
+		By("Verifying that PV is deleted after snapshot deletion")
+		verifyPVForPVC(false, pvcName)
 		By("Deleting storage class", deleteStorageClass)
 	}
 }
@@ -72,7 +77,7 @@ func blockVolCreationTest() {
 	By("Deleting application deployment")
 	deleteAppDeployment(appName)
 	By("Deleting pvc")
-	deleteAndVerifyPVC(true, pvcName)
+	deleteAndVerifyPVC(pvcName)
 	By("Deleting storage class", deleteStorageClass)
 }
 
