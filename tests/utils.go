@@ -85,9 +85,7 @@ func IsPodRunningEventually(namespace, podName string) bool {
 		Should(gomega.BeTrue())
 }
 
-// IsPVCDeletedEventually tries to get the deleted pvc
-// and returns true if pvc is not found
-// else returns false
+// IsPVCDeletedEventually checks if the PVC is deleted or not eventually
 func IsPVCDeletedEventually(pvcName string) bool {
 	return gomega.Eventually(func() bool {
 		_, err := PVCClient.
@@ -445,7 +443,7 @@ func deleteAppDeployment(appname string) {
 	gomega.Expect(err).ShouldNot(gomega.HaveOccurred(), "while deleting application pod")
 }
 
-func deletePVC(pvcname string) {
+func deleteAndVerifyPVC(pvcname string) {
 	err := PVCClient.WithNamespace(OpenEBSNamespace).Delete(pvcname, &metav1.DeleteOptions{})
 	gomega.Expect(err).To(
 		gomega.BeNil(),
@@ -456,4 +454,53 @@ func deletePVC(pvcname string) {
 	ginkgo.By("verifying deleted pvc")
 	status := IsPVCDeletedEventually(pvcname)
 	gomega.Expect(status).To(gomega.Equal(true), "while trying to get deleted pvc")
+}
+
+func verifyPVForPVC(shouldExist bool, pvcName string) {
+	pvList, err := PVClient.List(metav1.ListOptions{})
+	gomega.Expect(err).To(
+		gomega.BeNil(),
+		"while listing PV for PVC: %{s}",
+		pvcName,
+	)
+
+	shouldPVExist := gomega.BeFalse()
+	if shouldExist {
+		shouldPVExist = gomega.BeTrue()
+	}
+
+	ginkgo.By("verifying PV for PVC exists or not")
+	var matchingPVName string
+	matchingPVExists := false
+	for _, pv := range pvList.Items {
+		if pv.Spec.ClaimRef != nil &&
+			pv.Spec.ClaimRef.Name == pvcName &&
+			pv.Spec.ClaimRef.Namespace == OpenEBSNamespace {
+			matchingPVExists = true
+			matchingPVName = pv.Name
+			break
+		}
+	}
+
+	if matchingPVExists && !shouldExist {
+		if IsPVDeletedEventually(shouldExist, matchingPVName) {
+			matchingPVExists = false
+		}
+	}
+
+	gomega.Expect(matchingPVExists).To(shouldPVExist)
+}
+
+// IsPVDeletedEventually checks if the PV is deleted or not eventually
+func IsPVDeletedEventually(shouldExist bool, pvName string) bool {
+	shouldPVExist := gomega.BeFalse()
+	if shouldExist {
+		shouldPVExist = gomega.BeTrue()
+	}
+	return gomega.Eventually(func() bool {
+		_, err := PVClient.Get(pvName, metav1.GetOptions{})
+		return k8serrors.IsNotFound(err)
+	},
+		120, 10).
+		Should(shouldPVExist)
 }

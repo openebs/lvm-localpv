@@ -25,6 +25,7 @@ import (
 	"github.com/openebs/lvm-localpv/pkg/builder/volbuilder"
 	"github.com/openebs/lvm-localpv/tests/deploy"
 	"github.com/openebs/lvm-localpv/tests/pod"
+	"github.com/openebs/lvm-localpv/tests/pv"
 	"github.com/openebs/lvm-localpv/tests/pvc"
 	"github.com/openebs/lvm-localpv/tests/sc"
 	appsv1 "k8s.io/api/apps/v1"
@@ -45,6 +46,7 @@ var (
 	LVMClient        *volbuilder.Kubeclient
 	SCClient         *sc.Kubeclient
 	PVCClient        *pvc.Kubeclient
+	PVClient         *pv.Kubeclient
 	DeployClient     *deploy.Kubeclient
 	PodClient        *pod.KubeClient
 	nsName           = "lvm"
@@ -74,6 +76,7 @@ func init() {
 	}
 	SCClient = sc.NewKubeClient(sc.WithKubeConfigPath(KubeConfigPath))
 	PVCClient = pvc.NewKubeClient(pvc.WithKubeConfigPath(KubeConfigPath))
+	PVClient = pv.NewKubeClient(pv.WithKubeConfigPath(KubeConfigPath))
 	DeployClient = deploy.NewKubeClient(deploy.WithKubeConfigPath(KubeConfigPath))
 	PodClient = pod.NewKubeClient(pod.WithKubeConfigPath(KubeConfigPath))
 	LVMClient = volbuilder.NewKubeclient(volbuilder.WithKubeConfigPath(KubeConfigPath))

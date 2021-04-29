@@ -294,6 +294,17 @@ func CreateSnapshot(snap *apis.LVMSnapshot) error {
 func DestroySnapshot(snap *apis.LVMSnapshot) error {
 	snapVolume := snap.Spec.VolGroup + "/" + getLVMSnapName(snap.Name)
 
+	ok, err := snapshotExists(snapVolume)
+	if !ok {
+		klog.Infof("lvm: snapshot %s does not exist, skipping deletion", snapVolume)
+		return nil
+	}
+
+	if err != nil {
+		klog.Errorf("lvm: error checking for snapshot %s, error: %v", snapVolume, err)
+		return err
+	}
+
 	args := buildLVMSnapDestroyArgs(snap)
 	cmd := exec.Command(LVRemove, args...)
 	out, err := cmd.CombinedOutput()
@@ -419,4 +430,17 @@ func lvThinExists(vg string, name string) bool {
 		return false
 	}
 	return name == strings.TrimSpace(string(out))
+}
+
+// snapshotExists checks if a snapshot volume exists given the name of the volume.
+// The name should be <vg-name>/<snapshot-name>
+func snapshotExists(snapVolumeName string) (bool, error) {
+	snapPath := DevPath + snapVolumeName
+	if _, err := os.Stat(snapPath); err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }
