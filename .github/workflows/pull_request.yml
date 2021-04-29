@@ -113,7 +113,12 @@ jobs:
         with:
           version: v0.5.1
 
-      - name: Build Image
-        env:
-          IMG_RESULT: cache
-        run: make docker.buildx.csi-driver
+      - name: Build
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./buildscripts/lvm-driver/Dockerfile.buildx
+          push: false
+          platforms: linux/amd64, linux/arm64
+          tags: |
+            openebs/lvm-driver:ci
