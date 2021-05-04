@@ -201,6 +201,7 @@ Features
 - [x] [Snapshot](docs/snapshot.md)
 - [ ] Clone
 - [x] [Volume Resize](docs/resize.md)
+- [x] [Thin Provision](docs/thin_provision.md)
 - [ ] Backup/Restore
 - [ ] Ephemeral inline volume
 
