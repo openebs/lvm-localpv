@@ -52,9 +52,9 @@ func TestExtractingIoLimits(t *testing.T) {
 				WBpsLimitPerGB:  nil,
 			}, vgNames: &[]string{"lvmvg1-id1", "lvmvg2", "lvmvg3", "prfx-lvmvg2-sffx"},
 			expected: map[string]expectedIoLimitRate{
-				"lvmvg1-id1": {riops: 50, wiops: 70, rbps: 0, wbps: 0},
-				"lvmvg2":     {riops: 100, wiops: 120, rbps: 0, wbps: 0},
-				"lvmvg3":     {riops: 0, wiops: 0, rbps: 0, wbps: 0},
+				"lvmvg1-id1":       {riops: 50, wiops: 70, rbps: 0, wbps: 0},
+				"lvmvg2":           {riops: 100, wiops: 120, rbps: 0, wbps: 0},
+				"lvmvg3":           {riops: 0, wiops: 0, rbps: 0, wbps: 0},
 				"prfx-lvmvg2-sffx": {riops: 0, wiops: 0, rbps: 0, wbps: 0},
 			},
 		},

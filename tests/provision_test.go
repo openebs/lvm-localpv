@@ -81,7 +81,21 @@ func blockVolCreationTest() {
 	By("Deleting storage class", deleteStorageClass)
 }
 
+func thinVolCreationTest() {
+	By("Creating thinProvision storage class", createThinStorageClass)
+	By("creating and verifying PVC bound status", createAndVerifyPVC)
+
+	By("Creating and deploying app pod", createDeployVerifyApp)
+	By("verifying LVMVolume object", VerifyLVMVolume)
+	By("Deleting application deployment")
+	deleteAppDeployment(appName)
+	By("Deleting pvc")
+	deleteAndVerifyPVC(pvcName)
+	By("Deleting thinProvision storage class", deleteStorageClass)
+}
+
 func volumeCreationTest() {
 	By("Running volume creation test", fsVolCreationTest)
 	By("Running block volume creation test", blockVolCreationTest)
+	By("Running thin volume creation test", thinVolCreationTest)
 }

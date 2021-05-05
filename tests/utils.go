@@ -140,6 +140,28 @@ func createStorageClass() {
 	gomega.Expect(err).To(gomega.BeNil(), "while creating a default storageclass {%s}", scName)
 }
 
+func createThinStorageClass() {
+	var (
+		err error
+	)
+
+	parameters := map[string]string{
+		"volgroup":      VOLGROUP,
+		"thinProvision": "yes",
+	}
+
+	ginkgo.By("building a thinProvision storage class")
+	scObj, err = sc.NewBuilder().
+		WithGenerateName(scName).
+		WithParametersNew(parameters).
+		WithProvisioner(LocalProvisioner).Build()
+	gomega.Expect(err).ShouldNot(gomega.HaveOccurred(),
+		"while building thinProvision storageclass obj with prefix {%s}", scName)
+
+	scObj, err = SCClient.Create(scObj)
+	gomega.Expect(err).To(gomega.BeNil(), "while creating a thinProvision storageclass {%s}", scName)
+}
+
 // VerifyLVMVolume verify the properties of a lvm-volume
 func VerifyLVMVolume() {
 	ginkgo.By("fetching lvm volume")

@@ -22,8 +22,10 @@ disk=`sudo losetup -f /tmp/disk.img --show`
 sudo pvcreate "$disk"
 sudo vgcreate lvmvg "$disk"
 
-# install snapshot module for lvm
+# install snapshot and thin volume module for lvm
 sudo modprobe dm-snapshot
+sudo modprobe dm_thin_pool
+
 
 LVM_OPERATOR=deploy/lvm-operator.yaml
 SNAP_CLASS=deploy/sample/lvmsnapclass.yaml

@@ -34,6 +34,9 @@ import (
 const (
 	DevPath       = "/dev/"
 	DevMapperPath = "/dev/mapper/"
+	// MinExtentRoundOffSize represents minimum size (256Mi) to roundoff the volume
+	// group size in case of thin pool provisioning
+	MinExtentRoundOffSize = 268435456
 )
 
 // lvm command related constants
@@ -81,8 +84,11 @@ func buildLVMCreateArgs(vol *apis.LVMVolume) []string {
 
 	if len(vol.Spec.Capacity) != 0 {
 		// check if thin pool exists for given volumegroup requested thin volume
-		if strings.TrimSpace(vol.Spec.ThinProvision) != "yes" || !lvThinExists(vol.Spec.VolGroup, pool) {
+		if strings.TrimSpace(vol.Spec.ThinProvision) != "yes" {
 			LVMVolArg = append(LVMVolArg, "-L", size)
+		} else if !lvThinExists(vol.Spec.VolGroup, pool) {
+			// thinpool size can't be equal or greater than actual volumegroup size
+			LVMVolArg = append(LVMVolArg, "-L", getThinPoolSize(vol.Spec.VolGroup, vol.Spec.Capacity))
 		}
 	}
 
@@ -426,7 +432,7 @@ func lvThinExists(vg string, name string) bool {
 	cmd := exec.Command("lvs", vg+"/"+name, "--noheadings", "-o", "lv_name")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		klog.Infof("unable to list existing volumes:%v", err)
+		klog.Errorf("failed to list existing volumes:%v", err)
 		return false
 	}
 	return name == strings.TrimSpace(string(out))
@@ -443,4 +449,39 @@ func snapshotExists(snapVolumeName string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+// getVGSize get the size in bytes for given volumegroup name
+func getVGSize(vgname string) string {
+	cmd := exec.Command("vgs", vgname, "--noheadings", "-o", "vg_free", "--units", "b", "--nosuffix")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		klog.Errorf("failed to list existing volumegroup:%v , %v", vgname, err)
+		return ""
+	}
+	return strings.TrimSpace(string(out))
+}
+
+// getThinPoolSize gets size for a given volumegroup, compares it with
+// the requested volume size and returns the minimum size as a thin pool size
+func getThinPoolSize(vgname, volsize string) string {
+	outStr := getVGSize(vgname)
+	vg_free_size, err := strconv.ParseInt(strings.TrimSpace(string(outStr)), 10, 64)
+	if err != nil {
+		klog.Errorf("failed to convert vg_size to int, got size,:%v , %v", outStr, err)
+		return ""
+	}
+
+	vol_size, err := strconv.ParseInt(strings.TrimSpace(string(volsize)), 10, 64)
+	if err != nil {
+		klog.Errorf("failed to convert volsize to int, got size,:%v , %v", volsize, err)
+		return ""
+	}
+
+	if vg_free_size < vol_size {
+		// reducing 268435456 bytes (256Mi) from the total byte size to round off
+		// blocks extent
+		return fmt.Sprint(vg_free_size-MinExtentRoundOffSize) + "b"
+	}
+	return volsize + "b"
 }
