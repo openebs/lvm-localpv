@@ -80,6 +80,13 @@
             register: sc_result
             failed_when: "sc_result.rc != 0"
 
+          - name: Apply volume snapshot class yaml
+            shell: kubectl apply -f volume_snapshot_class.yml
+            args:
+              executable: /bin/bash
+            register: vol_snap_class
+            failed_when: "vol_snap_class.rc != 0"
+
          when: "{{ lookup('env','STORAGE_CLASS_CREATION') }} == true"
 
        - set_fact:

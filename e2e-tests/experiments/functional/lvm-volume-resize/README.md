@@ -16,7 +16,7 @@ provisioner: local.csi.openebs.io
 
 ## Supported platforms:
 
-K8S : 1.17+
+K8S : 1.18+
 
 OS : Ubuntu
 

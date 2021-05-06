@@ -4,7 +4,7 @@ This experiment deploys the lvm-localpv provisioner in kube-system namespace whi
 
 ## Supported platforms:
 
-K8S : 1.17+
+K8S : 1.18+
 
 OS : Ubuntu
 

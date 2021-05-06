@@ -2,9 +2,11 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: openebs-lvmsc
+  name: lvmsc-ext4-shared
 allowVolumeExpansion: true
 parameters:
+  fsType: "ext4"
+  shared: "yes"
   volgroup: "{{ vg_name }}"
 provisioner: local.csi.openebs.io
 
@@ -12,21 +14,11 @@ provisioner: local.csi.openebs.io
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: openebs-lvmsc-wfc
-allowVolumeExpansion: true
-volumeBindingMode: WaitForFirstConsumer
-parameters:
-  volgroup: "{{ vg_name }}"
-provisioner: local.csi.openebs.io
-
----
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: openebs-lvmsc-xfs
+  name: lvmsc-xfs-shared
 allowVolumeExpansion: true
 parameters:
   fsType: "xfs"
+  shared: "yes"
   volgroup: "{{ vg_name }}"
 provisioner: local.csi.openebs.io
 
@@ -34,9 +26,10 @@ provisioner: local.csi.openebs.io
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: openebs-lvmsc-btrfs
+  name: lvmsc-btrfs-shared
 allowVolumeExpansion: true
 parameters:
   fsType: "btrfs"
+  shared: "yes"
   volgroup: "{{ vg_name }}"
 provisioner: local.csi.openebs.io

@@ -1,18 +1,17 @@
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: app-busybox
+  name: busybox-custom-topology-test
   labels:
-    lkey: lvalue
+    test: custom-topology-app
 spec:
   selector:
     matchLabels:
-      lkey: lvalue
+      test: custom-topology-app
   template:
     metadata:
       labels:
-        lkey: lvalue
+        test: custom-topology-app
     spec:
       containers:
       - name: app-busybox
@@ -27,16 +26,17 @@ spec:
       volumes:
       - name: data-vol
         persistentVolumeClaim:
-          claimName: testclaim
+          claimName: pvc-custom-topology
+
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: testclaim
+  name: pvc-custom-topology
 spec:
-  storageClassName: testclass
+  storageClassName: lvmpv-custom-topology
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: teststorage
+      storage: 1Gi

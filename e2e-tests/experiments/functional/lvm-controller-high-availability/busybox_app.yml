@@ -21,7 +21,7 @@ spec:
       containers:
       - name: app-busybox
         imagePullPolicy: IfNotPresent
-        image: busybox
+        image: gcr.io/google-containers/busybox
         command: ["/bin/sh"]
         args: ["-c", "while true; do sleep 10;done"]
         env:

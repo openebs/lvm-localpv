@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: app-busybox
-        image: busybox
+        image: gcr.io/google-containers/busybox
         imagePullPolicy: IfNotPresent
         command:
            - sh
