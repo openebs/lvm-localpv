@@ -24,19 +24,19 @@ import (
 // ListBuilder enables building an instance of
 // PVlist
 type ListBuilder struct {
-	list    *PVList
+	list    *List
 	filters PredicateList
 	errs    []error
 }
 
 // NewListBuilder returns an instance of ListBuilder
 func NewListBuilder() *ListBuilder {
-	return &ListBuilder{list: &PVList{}}
+	return &ListBuilder{list: &List{}}
 }
 
 // ListBuilderForAPIObjects builds the ListBuilder object based on PV api list
 func ListBuilderForAPIObjects(pvs *corev1.PersistentVolumeList) *ListBuilder {
-	b := &ListBuilder{list: &PVList{}}
+	b := &ListBuilder{list: &List{}}
 	if pvs == nil {
 		b.errs = append(b.errs, errors.New("failed to build pv list: missing api list"))
 		return b
@@ -49,7 +49,7 @@ func ListBuilderForAPIObjects(pvs *corev1.PersistentVolumeList) *ListBuilder {
 }
 
 // ListBuilderForObjects builds the ListBuilder object based on PVList
-func ListBuilderForObjects(pvs *PVList) *ListBuilder {
+func ListBuilderForObjects(pvs *List) *ListBuilder {
 	b := &ListBuilder{}
 	if pvs == nil {
 		b.errs = append(b.errs, errors.New("failed to build pv list: missing object list"))
@@ -62,14 +62,14 @@ func ListBuilderForObjects(pvs *PVList) *ListBuilder {
 // List returns the list of pv
 // instances that was built by this
 // builder
-func (b *ListBuilder) List() (*PVList, error) {
+func (b *ListBuilder) List() (*List, error) {
 	if len(b.errs) > 0 {
 		return nil, errors.Errorf("failed to list pv: %+v", b.errs)
 	}
 	if b.filters == nil || len(b.filters) == 0 {
 		return b.list, nil
 	}
-	filteredList := &PVList{}
+	filteredList := &List{}
 	for _, pv := range b.list.items {
 		if b.filters.all(pv) {
 			filteredList.items = append(filteredList.items, pv)

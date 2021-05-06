@@ -29,21 +29,21 @@ type PV struct {
 	object *corev1.PersistentVolume
 }
 
-// PVList is a wrapper over persistentvolume api
+// List is a wrapper over persistentvolume api
 // object. It provides build, validations and other common
 // logic to be used by various feature specific callers.
-type PVList struct {
+type List struct {
 	items []*PV
 }
 
 // Len returns the number of items present
 // in the PVList
-func (p *PVList) Len() int {
+func (p *List) Len() int {
 	return len(p.items)
 }
 
 // ToAPIList converts PVList to API PVList
-func (p *PVList) ToAPIList() *corev1.PersistentVolumeList {
+func (p *List) ToAPIList() *corev1.PersistentVolumeList {
 	plist := &corev1.PersistentVolumeList{}
 	for _, pvc := range p.items {
 		plist.Items = append(plist.Items, *pvc.object)
