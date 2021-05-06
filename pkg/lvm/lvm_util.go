@@ -466,22 +466,22 @@ func getVGSize(vgname string) string {
 // the requested volume size and returns the minimum size as a thin pool size
 func getThinPoolSize(vgname, volsize string) string {
 	outStr := getVGSize(vgname)
-	vg_free_size, err := strconv.ParseInt(strings.TrimSpace(string(outStr)), 10, 64)
+	vgFreeSize, err := strconv.ParseInt(strings.TrimSpace(string(outStr)), 10, 64)
 	if err != nil {
 		klog.Errorf("failed to convert vg_size to int, got size,:%v , %v", outStr, err)
 		return ""
 	}
 
-	vol_size, err := strconv.ParseInt(strings.TrimSpace(string(volsize)), 10, 64)
+	volSize, err := strconv.ParseInt(strings.TrimSpace(string(volsize)), 10, 64)
 	if err != nil {
-		klog.Errorf("failed to convert volsize to int, got size,:%v , %v", volsize, err)
+		klog.Errorf("failed to convert volsize to int, got size,:%v , %v", volSize, err)
 		return ""
 	}
 
-	if vg_free_size < vol_size {
+	if vgFreeSize < volSize {
 		// reducing 268435456 bytes (256Mi) from the total byte size to round off
 		// blocks extent
-		return fmt.Sprint(vg_free_size-MinExtentRoundOffSize) + "b"
+		return fmt.Sprint(vgFreeSize-MinExtentRoundOffSize) + "b"
 	}
 	return volsize + "b"
 }
