@@ -1058,7 +1058,7 @@ rules:
     verbs: ["get", "list"]
   - apiGroups: [""]
     resources: ["namespaces"]
-    verbs: ["*"]
+    verbs: ["get", "list", "watch"]
   - apiGroups: [""]
     resources: ["persistentvolumes", "services"]
     verbs: ["get", "list", "watch", "create", "delete", "update", "patch"]
