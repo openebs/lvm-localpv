@@ -159,7 +159,7 @@ func (ns *node) NodePublishVolume(
 	}
 
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	return &csi.NodePublishVolumeResponse{}, nil
