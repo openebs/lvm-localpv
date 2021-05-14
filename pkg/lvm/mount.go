@@ -198,7 +198,11 @@ func MountVolume(vol *apis.LVMVolume, mount *MountInfo, podLVInfo *PodLVInfo) er
 
 	err = FormatAndMountVol(devicePath, mount)
 	if err != nil {
-		return status.Error(codes.Internal, "not able to format and mount the volume")
+		return status.Errorf(
+			codes.Internal,
+			"failed to format and mount the volume error: %s",
+			err.Error(),
+		)
 	}
 
 	klog.Infof("lvm: volume %v mounted %v fs %v", volume, mount.MountPath, mount.FSType)
