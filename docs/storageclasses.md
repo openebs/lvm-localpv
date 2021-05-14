@@ -79,7 +79,7 @@ metadata:
  name: nvme-lvmsc
 allowVolumeExpansion: true
 parameters:
- volumegroup: "lvmvg"
+ volgroup: "lvmvg"
 provisioner: local.csi.openebs.io
 allowedTopologies:
 - matchLabelExpressions:
