@@ -16,6 +16,7 @@ A Helm chart for openebs lvm localpv provisioner. This chart bootstraps OpenEBS 
 | ---- | ------ | --- |
 | pawanpraka1 | pawan@mayadata.io |  |
 | prateekpandey14 | prateek.pandey@mayadata.io |  |
+| iyashu | yashpal.c1995@gmail.com |  |
 
 
 ## Get Repo Info
