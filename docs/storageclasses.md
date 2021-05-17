@@ -1,12 +1,24 @@
 ## Parameters
 
-### volgroup (*must* parameter)
+### volgroup (*must* parameter if vgpattern is not provided, otherwise optional)
 
-volgroup specifies the name of the volume group on nodes from which the volumes will be created. The *volgroup* is the must argument.
+volgroup specifies the name of the volume group on nodes from which the volumes will be created. The *volgroup* is the must argument if `vgpattern` is not provided in the storageclass.
 
 ```
 volgroup: "lvmvg"
 ```
+
+### vgpattern (*must* parameter if volgroup is not provided, otherwise optional)
+
+vgpattern specifies the regular expression for the volume groups on node from which the volumes can be created. The *vgpattern* is the must argument if `volgroup` parameter is not provided in the storageclass. Here, in this case the driver will pick the volume groups matching the vgpattern with enough free capacity to accomodate the volume and will use the one which has largest capacity available for provisioning the volume.
+
+```
+vgpattern: "lvmvg.*"
+```
+
+if `volgroup` and `vgpattern` both the paramaters are defined in the storageclass then `volgroup` will get higher priority and the driver will use that to provision to the volume.
+
+**Note:** Please note that either volgroup or vgpattern should be present in the storageclass parameters to make the provisioning successful.
 
 ### thinProvision (*optional* parameter)
 

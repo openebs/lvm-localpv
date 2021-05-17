@@ -1,4 +1,5 @@
 # OpenEBS LVM CSI Driver
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fopenebs%2Flvm-localpv.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fopenebs%2Flvm-localpv?ref=badge_shield)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/3523/badge)](https://bestpractices.coreinfrastructure.org/en/projects/4548)
 [![Slack](https://img.shields.io/badge/chat!!!-slack-ff1493.svg?style=flat-square)](https://openebsslacksignup.herokuapp.com/)
 [![Community Meetings](https://img.shields.io/badge/Community-Meetings-blue)](https://hackmd.io/yJb407JWRyiwLU-XDndOLA?view)
@@ -11,6 +12,10 @@ CSI driver for provisioning Local PVs backed by LVM and more.
 ## Project Status
 
 Currently the LVM CSI Driver is in beta.
+
+## Project Tracker
+
+See [roadmap](https://github.com/orgs/openebs/projects/30).
 
 ## Usage
 
@@ -27,7 +32,7 @@ must meet the following prerequisites:
 
 ### Supported System
 
-K8S : 1.18+
+K8S : 1.20+
 
 OS : Ubuntu
 
