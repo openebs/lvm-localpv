@@ -49,6 +49,8 @@ const (
 	LVExtend = "lvextend"
 
 	PVScan = "pvscan"
+
+	YES = "yes"
 )
 
 // ExecError holds the process output along with underlying
@@ -84,7 +86,7 @@ func buildLVMCreateArgs(vol *apis.LVMVolume) []string {
 
 	if len(vol.Spec.Capacity) != 0 {
 		// check if thin pool exists for given volumegroup requested thin volume
-		if strings.TrimSpace(vol.Spec.ThinProvision) != "yes" {
+		if strings.TrimSpace(vol.Spec.ThinProvision) != YES {
 			LVMVolArg = append(LVMVolArg, "-L", size)
 		} else if !lvThinExists(vol.Spec.VolGroup, pool) {
 			// thinpool size can't be equal or greater than actual volumegroup size
@@ -94,7 +96,7 @@ func buildLVMCreateArgs(vol *apis.LVMVolume) []string {
 
 	// command to create thinpool and thin volume if thinProvision is enabled
 	// `lvcreate -L 1G -T lvmvg/mythinpool -V 1G -n thinvol`
-	if strings.TrimSpace(vol.Spec.ThinProvision) == "yes" {
+	if strings.TrimSpace(vol.Spec.ThinProvision) == YES {
 		LVMVolArg = append(LVMVolArg, "-T", vol.Spec.VolGroup+"/"+pool, "-V", size)
 	}
 
@@ -102,7 +104,7 @@ func buildLVMCreateArgs(vol *apis.LVMVolume) []string {
 		LVMVolArg = append(LVMVolArg, "-n", volume)
 	}
 
-	if strings.TrimSpace(vol.Spec.ThinProvision) != "yes" {
+	if strings.TrimSpace(vol.Spec.ThinProvision) != YES {
 		LVMVolArg = append(LVMVolArg, vol.Spec.VolGroup)
 	}
 	return LVMVolArg
@@ -218,7 +220,7 @@ func buildVolumeResizeArgs(vol *apis.LVMVolume, resizefs bool) []string {
 
 	LVMVolArg = append(LVMVolArg, dev, "-L", size)
 
-	if resizefs == true {
+	if resizefs {
 		LVMVolArg = append(LVMVolArg, "-r")
 	}
 
@@ -360,6 +362,10 @@ func decodeVgsJSON(raw []byte) ([]apis.VolumeGroup, error) {
 
 func parseVolumeGroup(m map[string]string) (apis.VolumeGroup, error) {
 	var vg apis.VolumeGroup
+	var count int
+	var sizeBytes int64
+	var err error
+
 	vg.Name = m["vg_name"]
 	vg.UUID = m["vg_uuid"]
 
@@ -368,7 +374,7 @@ func parseVolumeGroup(m map[string]string) (apis.VolumeGroup, error) {
 		"lv_count": &vg.LVCount,
 	}
 	for key, value := range int32Map {
-		count, err := strconv.Atoi(m[key])
+		count, err = strconv.Atoi(m[key])
 		if err != nil {
 			err = fmt.Errorf("invalid format of %v=%v for vg %v: %v", key, m[key], vg.Name, err)
 		}
@@ -381,7 +387,7 @@ func parseVolumeGroup(m map[string]string) (apis.VolumeGroup, error) {
 	}
 
 	for key, value := range resQuantityMap {
-		sizeBytes, err := strconv.ParseInt(
+		sizeBytes, err = strconv.ParseInt(
 			strings.TrimSuffix(strings.ToLower(m[key]), "b"),
 			10, 64)
 		if err != nil {
@@ -390,7 +396,7 @@ func parseVolumeGroup(m map[string]string) (apis.VolumeGroup, error) {
 		quantity := resource.NewQuantity(sizeBytes, resource.BinarySI)
 		*value = *quantity //
 	}
-	return vg, nil
+	return vg, err
 }
 
 // ReloadLVMMetadataCache refreshes lvmetad daemon cache used for

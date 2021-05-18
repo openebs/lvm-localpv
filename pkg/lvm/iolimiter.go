@@ -39,10 +39,7 @@ var (
 func isSet() bool {
 	rwlock.RLock()
 	defer rwlock.RUnlock()
-	if set {
-		return true
-	}
-	return false
+	return set
 }
 
 func extractRateValues(rateVals *[]string) (map[string]uint64, error) {

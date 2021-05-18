@@ -46,6 +46,11 @@ jobs:
           pattern: '*.sh'
           exclude: './.git/*,./vendor/*'
 
+      - name: install golangci-lint
+        run: make install-golangci-lint
+
+      - name: Lint checks
+        run: make golint
 
   unit-test:
     # to ignore builds on release

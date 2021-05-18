@@ -68,13 +68,13 @@ func isInfotrmativeLog(info string) bool {
 func logGRPC(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 
 	log := isInfotrmativeLog(info.FullMethod)
-	if log == true {
+	if log {
 		klog.Infof("GRPC call: %s requests %s", info.FullMethod, protosanitizer.StripSecrets(req))
 	}
 
 	resp, err := handler(ctx, req)
 
-	if log == true {
+	if log {
 		if err != nil {
 			klog.Errorf("GRPC error: %v", err)
 		} else {
@@ -126,8 +126,6 @@ func (s *nonBlockingGRPCServer) Start() {
 	s.wg.Add(1)
 
 	go s.serve(s.endpoint, s.idntyServer, s.ctrlServer, s.agentServer)
-
-	return
 }
 
 // Wait for the service to stop
@@ -192,6 +190,9 @@ func (s *nonBlockingGRPCServer) serve(endpoint string, ids csi.IdentityServer, c
 	klog.Infof("Listening for connections on address: %#v", listener.Addr())
 
 	// Start serving requests on the grpc server created
-	server.Serve(listener)
+	err = server.Serve(listener)
+	if err != nil {
+		klog.Fatalf("Failed to start server error: %v", err)
+	}
 
 }

@@ -300,7 +300,10 @@ func setIOLimits(vol *apis.LVMVolume, podLVInfo *PodLVInfo, devicePath string) e
 
 func makeFile(pathname string) error {
 	f, err := os.OpenFile(pathname, os.O_CREATE, os.FileMode(0644))
-	defer f.Close()
+	defer func(f *os.File) {
+		err = f.Close()
+		klog.Errorf("failed to close file %s error: %v", f.Name(), err)
+	}(f)
 	if err != nil {
 		if !os.IsExist(err) {
 			return err

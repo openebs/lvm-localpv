@@ -57,7 +57,7 @@ func (v *VersionSet) fetchAndSetVersion() error {
 	if err != nil {
 		return err
 	}
-	env.Set(clusterUUID, v.id)
+	_ = env.Set(clusterUUID, v.id)
 
 	k8s, err := k8sapi.GetServerVersion()
 	if err != nil {
@@ -66,15 +66,16 @@ func (v *VersionSet) fetchAndSetVersion() error {
 	// eg. linux/amd64
 	v.k8sArch = k8s.Platform
 	v.k8sVersion = k8s.GitVersion
-	env.Set(clusterArch, v.k8sArch)
-	env.Set(clusterVersion, v.k8sVersion)
+	// Explicitly informing linters that we intended to avoid errors(errcheck)
+	_ = env.Set(clusterArch, v.k8sArch)
+	_ = env.Set(clusterVersion, v.k8sVersion)
 	v.nodeType, err = k8sapi.GetOSAndKernelVersion()
-	env.Set(nodeType, v.nodeType)
+	_ = env.Set(nodeType, v.nodeType)
 	if err != nil {
 		return err
 	}
 	v.openebsVersion = openebsversion.GetVersionDetails()
-	env.Set(openEBSversion, v.openebsVersion)
+	_ = env.Set(openEBSversion, v.openebsVersion)
 	return nil
 }
 
