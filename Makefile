@@ -31,7 +31,6 @@ EXTERNAL_TOOLS=\
 	github.com/onsi/ginkgo/ginkgo \
 	github.com/onsi/gomega/...
 
-
 # The images can be pushed to any docker/image registeries
 # like docker hub, quay. The registries are specified in
 # the `build/push` script.
@@ -134,11 +133,21 @@ vendor: go.mod go.sum deps
 # Bootstrap downloads tools required
 # during build
 .PHONY: bootstrap
-bootstrap: controller-gen
+bootstrap: controller-gen install-golangci-lint
 	@for tool in  $(EXTERNAL_TOOLS) ; do \
 		echo "+ Installing $$tool" ; \
 		cd && GO111MODULE=on go get $$tool; \
 	done
+
+## golangci-lint tool used to check linting tools in codebase
+## Example: golangci-lint document is not recommending
+##			to use `go get <path>`. For more info:
+##          https://golangci-lint.run/usage/install/#install-from-source
+##
+## Install golangci-lint only if tool doesn't exist in system
+.PHONY: install-golangci-lint
+install-golangci-lint:
+	$(if $(shell which golangci-lint), echo "golangci-lint already exist in system", (curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sudo sh -s -- -b "${GOPATH}/bin" v1.40.1))
 
 .PHONY: controller-gen
 controller-gen:
@@ -253,11 +262,23 @@ deploy-images:
 deploy-e2e-images:
 	@DIMAGE="${IMAGE_ORG}/lvm-localpv-e2e" ./buildscripts/push
 
+## Currently we are running with Default options + other options
+## Explanation for explicitly mentioned linters:
+## exportloopref: checks for pointers to enclosing loop variables
+## dupl: Tool for code clone detection within repo
+## revive: Drop-in replacement of golint. It allows to enable or disable
+##         rules using configuration file.
+## bodyclose: checks whether HTTP response body is closed successfully
+## goconst: Find repeated strings that could be replaced by a constant
+## misspell: Finds commonly misspelled English words in comments
+##
+## NOTE: Disabling structcheck since it is reporting false positive cases
+##       for more information look at https://github.com/golangci/golangci-lint/issues/537
 .PHONY: golint
 golint:
 	@echo "--> Running golint"
-	@golint -set_exit_status $(PACKAGES)
-	@echo "Completed golint no recommendations !!"
+	golangci-lint run -E exportloopref,dupl,revive,bodyclose,goconst,misspell -D structcheck --timeout 5m0s
+	@echo "Completed golangci-lint no recommendations !!"
 	@echo "--------------------------------"
 	@echo ""
 
