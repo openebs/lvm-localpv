@@ -78,7 +78,7 @@ func (c *NodeController) syncNode(namespace string, name string) error {
 		}
 
 		klog.Infof("lvm node controller: creating new node object for %+v", node)
-		if node, err = nodebuilder.NewKubeclient().WithNamespace(namespace).Create(node); err != nil {
+		if _, err = nodebuilder.NewKubeclient().WithNamespace(namespace).Create(node); err != nil {
 			return fmt.Errorf("create lvm node %s/%s: %v", namespace, name, err)
 		}
 		klog.Infof("lvm node controller: created node object %s/%s", namespace, name)
@@ -108,7 +108,7 @@ func (c *NodeController) syncNode(namespace string, name string) error {
 	}
 
 	klog.Infof("lvm node controller: updating node object with %+v", node)
-	if node, err = nodebuilder.NewKubeclient().WithNamespace(namespace).Update(node); err != nil {
+	if _, err = nodebuilder.NewKubeclient().WithNamespace(namespace).Update(node); err != nil {
 		return fmt.Errorf("update lvm node %s/%s: %v", namespace, name, err)
 	}
 	klog.Infof("lvm node controller: updated node object %s/%s", namespace, name)

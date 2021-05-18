@@ -27,7 +27,7 @@ import (
 	informers "github.com/openebs/lvm-localpv/pkg/generated/informer/externalversions"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"golang.org/x/net/context"
@@ -149,7 +149,7 @@ func waitForLVMVolume(ctx context.Context,
 		errMsg = volErr.Message
 		reschedule = true
 	} else {
-		errMsg = fmt.Sprintf("failed lvmvol must have error set")
+		errMsg = "failed lvmvol must have error set"
 	}
 
 	if reschedule {
@@ -792,18 +792,6 @@ func (cs *controller) ListVolumes(
 ) (*csi.ListVolumesResponse, error) {
 
 	return nil, status.Error(codes.Unimplemented, "")
-}
-
-// validateCapabilities validates if provided capabilities
-// are supported by this driver
-func validateCapabilities(caps []*csi.VolumeCapability) bool {
-
-	for _, cap := range caps {
-		if !IsSupportedVolumeCapabilityAccessMode(cap.AccessMode.Mode) {
-			return false
-		}
-	}
-	return true
 }
 
 func (cs *controller) validateDeleteVolumeReq(req *csi.DeleteVolumeRequest) error {

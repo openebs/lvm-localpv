@@ -37,7 +37,8 @@ import (
 	"google.golang.org/grpc/status"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
+
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 // node is the server implementation
@@ -384,7 +385,7 @@ func (ns *node) NodeGetVolumeStats(
 		return nil, status.Error(codes.InvalidArgument, "path is not provided")
 	}
 
-	if mount.IsMountPath(path) == false {
+	if !mount.IsMountPath(path) {
 		return nil, status.Error(codes.NotFound, "path is not a mount path")
 	}
 
