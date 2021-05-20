@@ -1,4 +1,4 @@
-test_name: zfspv-custom-topology-test
+test_name: lvmpv-custom-topology-test
 
 app_ns: "{{ lookup('env','APP_NAMESPACE') }}"
 
