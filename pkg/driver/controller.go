@@ -923,6 +923,21 @@ func (cs *controller) validateVolumeCreateReq(req *csi.CreateVolumeRequest) erro
 			"failed to handle create volume request: missing volume capabilities",
 		)
 	}
+
+	for _, volcap := range volCapabilities {
+		// VolumeCapabilities will contain volume mode
+		if mode := volcap.GetAccessMode(); mode != nil {
+			modeName := csi.VolumeCapability_AccessMode_Mode_name[int32(mode.GetMode())]
+			// At the moment we only support SINGLE_NODE_WRITER
+			if mode.GetMode() != csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER {
+				return status.Errorf(codes.InvalidArgument,
+					"only SINGLE_NODE_WRITER supported, unsupported access mode requested: %s",
+					modeName,
+				)
+			}
+		}
+	}
+
 	return nil
 }
 
