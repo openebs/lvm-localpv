@@ -25,6 +25,8 @@ import (
 	k8sapi "github.com/openebs/lib-csi/pkg/client/k8s"
 	clientset "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset"
 	informers "github.com/openebs/lvm-localpv/pkg/generated/informer/externalversions"
+	"github.com/openebs/lvm-localpv/pkg/mgmt/csipv"
+	corev1 "k8s.io/api/core/v1"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
@@ -67,6 +69,8 @@ type controller struct {
 
 	k8sNodeInformer cache.SharedIndexInformer
 	lvmNodeInformer cache.SharedIndexInformer
+
+	leakProtection *csipv.LeakProtectionController
 }
 
 // NewController returns a new instance
@@ -210,6 +214,22 @@ func (cs *controller) init() error {
 		cs.k8sNodeInformer.HasSynced,
 		cs.lvmNodeInformer.HasSynced)
 	klog.Info("synced k8s & lvm node informer caches")
+
+	klog.Infof("initializing csi provisioning leak protection controller")
+	pvcInformer := kubeInformerFactory.Core().V1().PersistentVolumeClaims()
+	go pvcInformer.Informer().Run(stopCh)
+	if cs.leakProtection, err = csipv.NewLeakProtectionController(kubeClient,
+		pvcInformer, cs.driver.config.DriverName,
+		func(pvc *corev1.PersistentVolumeClaim, volumeName string) error {
+			// use default timeout of 10s for deletion.
+			ctx, cancelCtx := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancelCtx()
+			return cs.deleteVolume(ctx, volumeName)
+		},
+	); err != nil {
+		return errors.Wrap(err, "failed to init leak protection controller")
+	}
+	go cs.leakProtection.Run(2, stopCh)
 	return nil
 }
 
@@ -312,6 +332,15 @@ func (cs *controller) CreateVolume(
 	} else if contentSource != nil && contentSource.GetVolume() != nil {
 		return nil, status.Error(codes.Unimplemented, "")
 	} else {
+		// mark volume for leak protection if pvc gets deleted
+		// before the creation of pv.
+		var finishCreateVolume func()
+		if finishCreateVolume, err = cs.leakProtection.BeginCreateVolume(volName,
+			params.PVCNamespace, params.PVCName); err != nil {
+			return nil, err
+		}
+		defer finishCreateVolume()
+
 		vol, err = CreateLVMVolume(ctx, req, params)
 	}
 
@@ -339,49 +368,41 @@ func (cs *controller) DeleteVolume(
 	ctx context.Context,
 	req *csi.DeleteVolumeRequest) (*csi.DeleteVolumeResponse, error) {
 
-	klog.Infof("received request to delete volume {%s}", req.VolumeId)
-
-	var (
-		err error
-	)
-
+	var err error
 	if err = cs.validateDeleteVolumeReq(req); err != nil {
 		return nil, err
 	}
-
 	volumeID := strings.ToLower(req.GetVolumeId())
-
-	// verify if the volume has already been deleted
-	vol, err := lvm.GetLVMVolume(volumeID)
-	if vol != nil && vol.DeletionTimestamp != nil {
-		goto deleteResponse
+	if err = cs.deleteVolume(ctx, volumeID); err != nil {
+		return nil, err
 	}
+	return csipayload.NewDeleteVolumeResponseBuilder().Build(), nil
+}
 
+func (cs *controller) deleteVolume(ctx context.Context, volumeID string) error {
+	klog.Infof("received request to delete volume %q", volumeID)
+	vol, err := lvm.GetLVMVolume(volumeID)
 	if err != nil {
 		if k8serror.IsNotFound(err) {
-			goto deleteResponse
+			return nil
 		}
-		return nil, errors.Wrapf(
-			err,
-			"failed to get volume for {%s}",
-			volumeID,
-		)
+		return errors.Wrapf(err,
+			"failed to get volume for {%s}", volumeID)
 	}
 
-	// Delete the corresponding ZV CR
-	err = lvm.DeleteVolume(volumeID)
-	if err != nil {
-		return nil, errors.Wrapf(
-			err,
-			"failed to handle delete volume request for {%s}",
-			volumeID,
-		)
+	// if volume is not already triggered for deletion, delete the volume.
+	// otherwise, just wait for the existing deletion operation to complete.
+	if vol.GetDeletionTimestamp() == nil {
+		if err = lvm.DeleteVolume(volumeID); err != nil {
+			return errors.Wrapf(err,
+				"failed to handle delete volume request for {%s}", volumeID)
+		}
 	}
-
+	if err = lvm.WaitForLVMVolumeDestroy(ctx, volumeID); err != nil {
+		return err
+	}
 	sendEventOrIgnore("", volumeID, vol.Spec.Capacity, "lvm-localpv", analytics.VolumeDeprovision)
-
-deleteResponse:
-	return csipayload.NewDeleteVolumeResponseBuilder().Build(), nil
+	return nil
 }
 
 func isValidVolumeCapabilities(volCaps []*csi.VolumeCapability) bool {
