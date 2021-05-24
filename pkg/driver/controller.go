@@ -924,17 +924,38 @@ func (cs *controller) validateVolumeCreateReq(req *csi.CreateVolumeRequest) erro
 		)
 	}
 
-	for _, volcap := range volCapabilities {
+	validateSupportedVolumeCapabilities := func(volCap *csi.VolumeCapability) error {
 		// VolumeCapabilities will contain volume mode
-		if mode := volcap.GetAccessMode(); mode != nil {
-			modeName := csi.VolumeCapability_AccessMode_Mode_name[int32(mode.GetMode())]
-			// At the moment we only support SINGLE_NODE_WRITER
-			if mode.GetMode() != csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER {
+		if mode := volCap.GetAccessMode(); mode != nil {
+			inputMode := mode.GetMode()
+			// At the moment we only support SINGLE_NODE_WRITER i.e Read-Write-Once
+			var isModeSupported bool
+			for _, supporteVolCapability := range SupportedVolumeCapabilityAccessModes {
+				if inputMode == supporteVolCapability.Mode {
+					isModeSupported = true
+					break
+				}
+			}
+
+			if !isModeSupported {
 				return status.Errorf(codes.InvalidArgument,
-					"only SINGLE_NODE_WRITER supported, unsupported access mode requested: %s",
-					modeName,
+					"only ReadwriteOnce access mode is supported",
 				)
 			}
+		}
+
+		if volCap.GetBlock() == nil && volCap.GetMount() == nil {
+			return status.Errorf(codes.InvalidArgument,
+				"only Block mode (or) FileSystem mode is supported",
+			)
+		}
+
+		return nil
+	}
+
+	for _, volCap := range volCapabilities {
+		if err := validateSupportedVolumeCapabilities(volCap); err != nil {
+			return err
 		}
 	}
 
