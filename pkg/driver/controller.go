@@ -923,6 +923,42 @@ func (cs *controller) validateVolumeCreateReq(req *csi.CreateVolumeRequest) erro
 			"failed to handle create volume request: missing volume capabilities",
 		)
 	}
+
+	validateSupportedVolumeCapabilities := func(volCap *csi.VolumeCapability) error {
+		// VolumeCapabilities will contain volume mode
+		if mode := volCap.GetAccessMode(); mode != nil {
+			inputMode := mode.GetMode()
+			// At the moment we only support SINGLE_NODE_WRITER i.e Read-Write-Once
+			var isModeSupported bool
+			for _, supporteVolCapability := range SupportedVolumeCapabilityAccessModes {
+				if inputMode == supporteVolCapability.Mode {
+					isModeSupported = true
+					break
+				}
+			}
+
+			if !isModeSupported {
+				return status.Errorf(codes.InvalidArgument,
+					"only ReadwriteOnce access mode is supported",
+				)
+			}
+		}
+
+		if volCap.GetBlock() == nil && volCap.GetMount() == nil {
+			return status.Errorf(codes.InvalidArgument,
+				"only Block mode (or) FileSystem mode is supported",
+			)
+		}
+
+		return nil
+	}
+
+	for _, volCap := range volCapabilities {
+		if err := validateSupportedVolumeCapabilities(volCap); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
