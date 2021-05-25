@@ -21,11 +21,13 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 
 	"strings"
 
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/klog"
 )
@@ -37,6 +39,9 @@ const (
 	// MinExtentRoundOffSize represents minimum size (256Mi) to roundoff the volume
 	// group size in case of thin pool provisioning
 	MinExtentRoundOffSize = 268435456
+
+	// BlockCleanerCommand is the command used to clean filesystem on the device
+	BlockCleanerCommand = "wipefs"
 )
 
 // lvm command related constants
@@ -166,6 +171,11 @@ func DestroyVolume(vol *apis.LVMVolume) error {
 	if !volExists {
 		klog.Infof("lvm: volume (%s) doesn't exists, skipping its deletion", volume)
 		return nil
+	}
+
+	err = removeVolumeFilesystem(vol)
+	if err != nil {
+		return err
 	}
 
 	args := buildLVMDestroyArgs(vol)
@@ -490,4 +500,26 @@ func getThinPoolSize(vgname, volsize string) string {
 		return fmt.Sprint(vgFreeSize-MinExtentRoundOffSize) + "b"
 	}
 	return volsize + "b"
+}
+
+// removeVolumeFilesystem will erases the filesystem signature from lvm volume
+func removeVolumeFilesystem(lvmVolume *apis.LVMVolume) error {
+	devicePath := filepath.Join(DevPath, lvmVolume.Spec.VolGroup, lvmVolume.Name)
+
+	// wipefs erases the filesystem signature from the lvm volume
+	// -a    wipe all magic strings
+	// -f    force erasure
+	// Command: wipefs -af /dev/lvmvg/volume1
+	cleanCommand := exec.Command(BlockCleanerCommand, "-af", devicePath)
+	output, err := cleanCommand.CombinedOutput()
+	if err != nil {
+		return errors.Wrapf(
+			err,
+			"failed to wipe filesystem on device path: %s resp: %s",
+			devicePath,
+			string(output),
+		)
+	}
+	klog.V(4).Infof("Successfully wiped filesystem on device path: %s", devicePath)
+	return nil
 }
