@@ -49,97 +49,97 @@ parameters:
 
 LVM-LocalPV storageclass supports various parameters for different use cases. Following are the supported parameters
 
-#### FsType (Optional)
+- #### FsType (Optional)
 
-Admin can specify filesystem in storageclass. lvm-localpv CSI-Driver will format block device with specified filesystem and mount in application pod. If fsType is not specified defaults to "ext4" filesystem.
-```yaml
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: openebs-lvm
-allowVolumeExpansion: true
-provisioner: local.csi.openebs.io
-parameters:
-  storage: "lvm"
-  vgpattern: "lvmvg.*"
-  fsType: xfs               ## Supported filesystems are ext2, ext3, ext4, xfs & btrfs
-```
+  Admin can specify filesystem in storageclass. lvm-localpv CSI-Driver will format block device with specified filesystem and mount in application pod. If fsType is not specified defaults to "ext4" filesystem.
+  ```yaml
+  apiVersion: storage.k8s.io/v1
+  kind: StorageClass
+  metadata:
+    name: openebs-lvm
+  allowVolumeExpansion: true
+  provisioner: local.csi.openebs.io
+  parameters:
+    storage: "lvm"
+    vgpattern: "lvmvg.*"
+    fsType: xfs               ## Supported filesystems are ext2, ext3, ext4, xfs & btrfs
+  ```
 
-#### Shared (Optional)
+- #### Shared (Optional)
 
-lvm-localpv volume mount point can be shared among the multiple pods on the same node. Applications that can share the volume can set value of `shared` parameter to true.
-```yaml
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
- name: nvme-lvmsc
-allowVolumeExpansion: true
-parameters:
- volgroup: "lvmvg"
- shared: "yes"
-provisioner: local.csi.openebs.io
-```
+  lvm-localpv volume mount point can be shared among the multiple pods on the same node. Applications that can share the volume can set value of `shared` parameter to true.
+  ```yaml
+  apiVersion: storage.k8s.io/v1
+  kind: StorageClass
+  metadata:
+    name: nvme-lvmsc
+  allowVolumeExpansion: true
+  provisioner: local.csi.openebs.io
+  parameters:
+    volgroup: "lvmvg"
+    shared: "yes"             ## Parameter that states volume can be shared among multiple pods
+  ```
 
-#### vgpattern (*must* parameter if volgroup is not provided, otherwise optional)
+- #### vgpattern (*must* parameter if volgroup is not provided, otherwise optional)
 
-vgpattern specifies the regular expression for the volume groups on node from which the volumes can be created. The *vgpattern* is the must argument if `volgroup` parameter is not provided in the storageclass. Here, in this case the driver will pick the volume groups matching the vgpattern with enough free capacity to accomodate the volume and will use the one which has largest capacity available for provisioning the volume.
+  vgpattern specifies the regular expression for the volume groups on node from which the volumes can be created. The *vgpattern* is the must argument if `volgroup` parameter is not provided in the storageclass. Here, in this case the driver will pick the volume groups matching the vgpattern with enough free capacity to accomodate the volume and will use the one which has largest capacity available for provisioning the volume.
 
-```yaml
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: openebs-lvm
-provisioner: local.csi.openebs.io
-parameters:
-  storage: "lvm"
-  vgpattern: "lvmvg.*"     ## vgpattern specifies pattern of lvm volume group name
-```
+  ```yaml
+  apiVersion: storage.k8s.io/v1
+  kind: StorageClass
+  metadata:
+    name: openebs-lvm
+  provisioner: local.csi.openebs.io
+  parameters:
+    storage: "lvm"
+    vgpattern: "lvmvg.*"     ## vgpattern specifies pattern of lvm volume group name
+  ```
 
-if `volgroup` and `vgpattern` both the paramaters are defined in the storageclass then `volgroup` will get higher priority and the driver will use that to provision to the volume.
+  if `volgroup` and `vgpattern` both the paramaters are defined in the storageclass then `volgroup` will get higher priority and the driver will use that to provision to the volume.
 
-**Note:** Please note that either volgroup or vgpattern should be present in the storageclass parameters to make the provisioning successful.
+  **Note:** Please note that either volgroup or vgpattern should be present in the storageclass parameters to make the provisioning successful.
 
-#### volgroup (*must* parameter if vgpattern is not provided, otherwise optional)
+- #### volgroup (*must* parameter if vgpattern is not provided, otherwise optional)
 
-volgroup specifies the name of the volume group on nodes from which the volumes will be created. The *volgroup* is the must argument if `vgpattern` is not provided in the storageclass.
+  volgroup specifies the name of the volume group on nodes from which the volumes will be created. The *volgroup* is the must argument if `vgpattern` is not provided in the storageclass.
 
-```yaml
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: openebs-lvm
-provisioner: local.csi.openebs.io
-parameters:
-  storage: "lvm"
-  volgroup: "lvmvg"       ## volgroup specifies name of lvm volume group
-```
+  ```yaml
+  apiVersion: storage.k8s.io/v1
+  kind: StorageClass
+  metadata:
+    name: openebs-lvm
+  provisioner: local.csi.openebs.io
+  parameters:
+    storage: "lvm"
+    volgroup: "lvmvg"       ## volgroup specifies name of lvm volume group
+  ```
 
-#### thinProvision (Optional)
+- #### thinProvision (Optional)
 
-For creating thin-provisioned volume, use thinProvision parameter in storage class. It's allowed values are: "yes" and "no". If we don't use this parameter by default it's value will be "no" and it will work as thick provisioned volumes.
+  For creating thin-provisioned volume, use thinProvision parameter in storage class. It's allowed values are: "yes" and "no". If we don't use this parameter by default it's value will be "no" and it will work as thick provisioned volumes.
 
-```yaml
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: openebs-lvm
-provisioner: local.csi.openebs.io
-parameters:
-  storage: "lvm"
-  volgroup: "lvmvg"
-  thinProvision: "yes"      ## Parameter that specifies thinprovisioning
-```
-Before creating thin provision volume, make ensure that required thin provisioning kernel module `dm_thin_pool` is loaded on all the nodes.
+  ```yaml
+  apiVersion: storage.k8s.io/v1
+  kind: StorageClass
+  metadata:
+    name: openebs-lvm
+  provisioner: local.csi.openebs.io
+  parameters:
+    storage: "lvm"
+    volgroup: "lvmvg"
+    thinProvision: "yes"      ## Parameter that enables thinprovisioning
+  ```
+  Before creating thin provision volume, make ensure that required thin provisioning kernel module `dm_thin_pool` is loaded on all the nodes.
 
-To verify if the modules are loaded, run:
-```
-lsmod | grep dm_thin_pool
-```
+  To verify if the modules are loaded, run:
+  ```sh
+  $ lsmod | grep dm_thin_pool
+  ```
 
-If modules are not loaded, then execute the following command to load the modules:
-```
-modprobe dm_thin_pool
-```
+  If modules are not loaded, then execute the following command to load the modules:
+  ```sh
+  $ modprobe dm_thin_pool
+  ```
 
 ### VolumeBindingMode (Optional)
 

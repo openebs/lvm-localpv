@@ -7,7 +7,7 @@ Following matrix shows supported PersistentVolumeClaim parameters for lvm-localp
 | [AccessMode](#accessmode) <br> Supported access modes are <li> ReadWriteOnce </li> </br> | Supported | [Yes](https://github.com/openebs/lvm-localpv/tree/master/e2e-tests/experiments/lvm-localpv-provisioner#readme) |
 | [Storageclass](#storageclassname) | Supported | [Yes](https://github.com/openebs/lvm-localpv/tree/master/e2e-tests/experiments/lvm-localpv-provisioner#readme) |
 | [Capacity Resource](#capacity-resource) | Supported | Yes |
-| [VolumeMode](#volumemode) <br> Supported volume modes are <li> Block </li> <li> Filesystem </li> </br> | Supported | Yes <br> Test exist only for Filesystem mode </br>|
+| [VolumeMode](#volumemode) <br> Supported volume modes are <li> Block </li> <li> Filesystem </li> </br> | Supported | Yes <br> Test cases available for Filesystem mode </br>|
 | [Selectors](#selectors)   | Supported | Pending |
 | [VolumeName](#volumename) | Supported | Pending | 
 
@@ -23,7 +23,7 @@ metadata:
   name: csi-lvmpv
 spec:
   accessModes:
-    - ReadWriteOnce        ## Specify the ReadWriteOnce(RWO) access modes
+    - ReadWriteOnce        ## Specify ReadWriteOnce(RWO) access modes
   storageClassName: openebs-lvm
   resources:
     requests:
@@ -42,7 +42,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: openebs-lvm    ## It must be OpenEBS LVM storageclass
+  storageClassName: openebs-lvm    ## It must be OpenEBS LVM storageclass for provisioning LVM volumes
   resources:
     requests:
       storage: 4Gi
@@ -63,7 +63,7 @@ spec:
   storageClassName: openebs-lvm
   resources:
     requests:
-      storage: 4Gi       ## It must be supported only once
+      storage: 4Gi       ## Specify required storage for an application
 ```
 
 ### VolumeMode
@@ -90,22 +90,27 @@ spec:
 
 ### Selectors
 
-Users can bind the retained lvm volumes to new PersistentVolumeClaim object via selector. Follow below steps
-to specify selector on PersistentVolumeClaim:
+Users can bind any of retained lvm volumes to new PersistentVolumeClaim object via selector field.
+Follow below steps to specify selector on PersistentVolumeClaim:
 
 - List the persistentvolumes(PVs) which has status Released.
 ```sh
-kubectl get pv -ojsonpath='{range .items[?(@.status.phase=="Released")]}{.metadata.name} {.metadata.labels}{"\n"}'
+$ kubectl get pv -ojsonpath='{range .items[?(@.status.phase=="Released")]}{.metadata.name} {.metadata.labels}{"\n"}'
 
 pvc-8376b776-75f9-4786-8311-f8780adfabdb {"openebs.io/lvm-volume":"reuse"}
 ```
-- Remove the claimRef on selected persistentvolume using patch command
+**Note**: If labels doesn't exist for persistent volume then it is required to add labels to PV
 ```sh
-kubectl patch pv pvc-8376b776-75f9-4786-8311-f8780adfabdb -p '{"spec":{"claimRef": null}}'
-
-persistentvolume/pvc-8376b776-75f9-4786-8311-f8780adfabdb patched (no change)
+$ kubectl label pv pvc-8376b776-75f9-4786-8311-f8780adfabdb openebs.io/lvm-volume=reuse
 ```
-- Create pvc with the following selector
+
+- Remove the claimRef on selected persistentvolumes using patch command(This will mark PV as `Available` for binding).
+```sh
+$ kubectl patch pv pvc-8376b776-75f9-4786-8311-f8780adfabdb -p '{"spec":{"claimRef": null}}'
+
+persistentvolume/pvc-8376b776-75f9-4786-8311-f8780adfabdb patched
+```
+- Create pvc with the selector
 ```yaml
 kind: PersistentVolumeClaim
 apiVersion: v1
@@ -113,7 +118,8 @@ metadata:
   name: csi-lvmpv
 spec:
   storageClassName: openebs-lvmpv
-  selector:                          ## Specify the selector matching to retained PVs, K8s will bound to any of existing PV
+  ## Specify selector matching to available PVs label, K8s will bound to any of available PV matches to specified labels
+  selector:
     matchLabels:
       openebs.io/lvm-volume: reuse
   accessModes:
@@ -124,7 +130,7 @@ spec:
 ```
 - Verify bound status of PV
 ```sh
-kubectl get pv
+$ kubectl get pv
 NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM               STORAGECLASS    REASON   AGE
 pvc-8376b776-75f9-4786-8311-f8780adfabdb   6Gi        RWO            Retain           Bound    default/csi-lvmpv   openebs-lvmpv   9h
 ```
@@ -132,7 +138,7 @@ pvc-8376b776-75f9-4786-8311-f8780adfabdb   6Gi        RWO            Retain     
 ### VolumeName
 
 VolumeName can be used to bind PersistentVolumeClaim(PVC) to retained PersistentVolume(PV). When VolumeName is specified K8s will ignore selector field.
-Note: Before creating PVC mark PersistentVolume `Available` by removing claimRef on PersistentVolume.
+Note: Before creating PVC make PersistentVolume `Available` by removing claimRef on PersistentVolume.
 ```yaml
 kind: PersistentVolumeClaim
 apiVersion: v1
@@ -140,7 +146,7 @@ metadata:
   name: csi-lvmpv
 spec:
   storageClassName: openebs-lvmpv
-  volumeName: pvc-8376b776-75f9-4786-8311-f8780adfabdb   ## LVM volume present in Available state
+  volumeName: pvc-8376b776-75f9-4786-8311-f8780adfabdb   ## Name of LVM volume present in Available state
   accessModes:
     - ReadWriteOnce
   resources:
