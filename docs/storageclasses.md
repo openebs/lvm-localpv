@@ -1,21 +1,138 @@
 ## StorageClass Parameters Conformance matrix
 
-Following matrix shows supported storageclass parameters for lvm-localpv
+Following matrix shows standard storageclass parameters for lvm-localpv
 
-| StorageClass Parameters | LVM CSI Driver | E2E Coverage |
-| ----------------------- | -------------- | ------------ |
-|   [allowVolumeExpansion](#allowvolumeexpansion-optional) <br> _(Supports expansion on ext2, ext3, ext4 & xfs)_ </br> | Supported | [Yes](https://github.com/openebs/lvm-localpv/tree/master/e2e-tests/experiments/functional/lvm-volume-resize#about-this-experiment) <br> _(Test coverage exist for ext4 & xfs)_ </br> |
-| [MountOptions](#mountoptions-optional) | Supported | Pending |
-| Parameters <ol type="a"> <li> [Passing Secrets](https://kubernetes-csi.github.io/docs/secrets-and-credentials-storage-class.html#examples) </li> <li> [fsType](#fstype-optional) <br> _(Supports ext2, ext3, ext4, xfs & btrfs filesystem)_ </br> </li> <li> [shared](#shared-optional) </li> <li> [vgpattern](#vgpattern-must-parameter-if-volgroup-is-not-provided-otherwise-optional) </li> <li> [volgroup](#volgroup-must-parameter-if-vgpattern-is-not-provided-otherwise-optional) </li> <li> [thinProvision](#thinprovision-optional) </ol> |  <ol type="a"> <li> No Use Case </li> <li> Supported <br>  </br> </li>  <li> Supported </li> <li> Supported </li> <li> Supported </li> <li> Supported </li> </ul>|  <ol type="a"> <li> NA </li> <li> [Yes](https://github.com/openebs/lvm-localpv/tree/master/e2e-tests/experiments/functional/lvm-controller-high-availability#readme) <br> _(Test coverage exist for ext4 & xfs)_ </br> </li> <li> [Yes](https://github.com/openebs/lvm-localpv/tree/master/e2e-tests/experiments/functional/lvmpv-shared-mount#readme) </li> <li> Pending </li> <li> [Yes](https://github.com/openebs/lvm-localpv/blob/master/e2e-tests/experiments/lvm-localpv-provisioner/openebs-lvmsc.j2) </li> <li> Pending </li> </ol> |
-| Reclaim Policy <br> _(Supports Retain & Delete reclaim policy)_ </br> | Supported  | Yes <br> _(Test coverage exist for Delete reclaim policy)_ </br> |
-| [VolumeBindingMode](#volumebindingmode-optional) <br> _(Supports  Immediate & WaitForFirstConsumer modes)_ | Supported | Yes |
-| [allowedTopologies](#storageclass-with-custom-node-labels) | Supported | [Yes](https://github.com/openebs/lvm-localpv/tree/master/e2e-tests/experiments/functional/lvmpv-custom-topology#readme) |
+### Standard StorageClass Parameters
+
+<table>
+  <tr>
+    <th> Parameter </th>
+    <th colspan=2> Values </th>
+    <th> Development Status </th>
+    <th> E2E Coverage </th>
+  </tr>
+  
+  <tr>
+    <td rowspan=2> <a href="#allowvolumeexpansion-optional"> allowVolumeExpansion </a> </td>
+    <td> true </td>
+    <td></td>
+    <td> Supported </td>
+    <td rowspan=2> <a href="https://github.com/openebs/lvm-localpv/tree/master/e2e-tests/experiments/functional/lvm-volume-resize#about-this-experiment"> Yes </a> <br><i> (Test coverage exist for ext4 & xfs) </i></br> </td>
+  </tr>
+  <tr>
+    <td> false </td>
+    <td></td>
+    <td> Supported </td>
+  </tr>
+
+  <tr>
+    <td> <a href="#mountoptions-optional"> MountOptions </a> </td>
+    <td> Options supported by filesystem </td>
+    <td></td>
+    <td> Supported </td>
+    <td> Pending </td>
+  </tr>
+
+  <tr>
+    <td rowspan=2> <a href="#volumebindingmode-optional"> VolumeBindingMode </a> </td>
+    <td> Immediate </td>
+    <td></td>
+    <td> Supported </td>
+    <td rowspan=2> Yes </td>
+  </tr>
+  <tr>
+    <td> WaitForFirstConsumer </td>
+    <td></td>
+    <td> Supported </td>
+  </tr>
+
+  <tr>
+    <td rowspan=2> Reclaim Policy </td>
+    <td> Retain </td>
+    <td></td>
+    <td> Supported </td>
+    <td rowspan=2> Yes <br> <i> (Test coverage exist for Delete reclaim policy) </i> </br> </td>
+  </tr>
+  <tr>
+    <td> Delete </td>
+    <td></td>
+    <td> Supported </td>
+  </tr>
+
+  <tr>
+    <td> <a href="#storageclass-with-custom-node-labels"> allowedTopologies </a> </td>
+    <td> - </td>
+    <td></td>
+    <td> Supported </td>
+    <td> <a href="https://github.com/openebs/lvm-localpv/tree/master/e2e-tests/experiments/functional/lvmpv-custom-topology#readme"> Yes </a> </td>
+  </tr>
+
+  <tr>
+    <td rowspan=6> Parameters </td>
+    <td> <a href="https://kubernetes-csi.github.io/docs/secrets-and-credentials-storage-class.html#examples"> Passing Secrets </td>
+    <td></td>
+    <td> No Use Case </td>
+    <td> NA </td>
+  </tr>
+  <tr>
+    <td rowspan=5> <a href="#fstype-optional"> fsType </a> </td>
+    <td>ext2</td>
+    <td rowspan=5> Supported </td>
+    <td rowspan=5> <a href="https://github.com/openebs/lvm-localpv/tree/master/e2e-tests/experiments/functional/lvm-controller-high-availability#readme"> Yes </a> <br> <i> (Test coverage exist for ext4 & xfs) </i></br> </td>
+  </tr>
+  <tr> <td> ext3 </td> </tr>
+  <tr> <td> ext4 </td> </tr>
+  <tr> <td> xfs </td> </tr>
+  <tr> <td> btrfs </td> </tr>
+</table>
+
+### LVM Supported StorageClass Parameters
+
+<table>
+  <tr>
+    <th> Parameter </th>
+    <th colspan=2> Values </th>
+    <th> Development Status </th>
+    <th> E2E Coverage </th>
+  </tr>
+
+  <tr>
+    <td rowspan=6> Parameters </td>
+    <td> <a href="#shared-optional"> shared </td>
+    <td> yes </td>
+    <td> Supported </td>
+    <td> <a href="https://github.com/openebs/lvm-localpv/tree/master/e2e-tests/experiments/functional/lvmpv-shared-mount#readme"> Yes </a> </td>
+  </tr>
+
+  <tr>
+    <td> <a href="#vgpattern-must-parameter-if-volgroup-is-not-provided-otherwise-optional"> vgpattern </td>
+    <td> Regular expression of volume group name </td>
+    <td> Supported </td>
+    <td> Pending </td>
+  </tr>
+
+  <tr>
+    <td> <a href="#volgroup-must-parameter-if-vgpattern-is-not-provided-otherwise-optional"> volgroup </td>
+    <td> Name of volume group </td>
+    <td> Supported </td>
+    <td> <a href="https://github.com/openebs/lvm-localpv/blob/master/e2e-tests/experiments/lvm-localpv-provisioner/openebs-lvmsc.j2"> Yes </a> </td>
+  </tr>
+
+  <tr>
+    <td> <a href="#thinprovision-optional"> thinProvision </td>
+    <td> yes </td>
+    <td> Supported </td>
+    <td> Pending </td>
+  </tr>
+
+</table>
+
 
 ## StorageClass Options
 
 ### AllowVolumeExpansion (Optional)
 
-Users can expand the volumes when the underlying StorageClass `allowVolumeExpansion` field set to true.
+Users can expand the volumes only when `allowVolumeExpansion` field is set to true in storageclass. If a field is unspecified, then volume expansion is not supported.
 ```yaml
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -30,7 +147,7 @@ parameters:
 
 ### MountOptions (Optional)
 
-Volumes that are provisioned via lvm-localpv will use the mount options specified in storageclass during volume mounting time.
+Volumes that are provisioned via LVM-LocalPV will use the mount options specified in storageclass during volume mounting time inside an application. If a field is unspecified, `-o default` option will be added to mount the volume.
 **Note**: Mount options are not validated. If mount options are invalid, then volume mount fails.
 ```yaml
 apiVersion: storage.k8s.io/v1
@@ -51,7 +168,7 @@ LVM-LocalPV storageclass supports various parameters for different use cases. Fo
 
 - #### FsType (Optional)
 
-  Admin can specify filesystem in storageclass. lvm-localpv CSI-Driver will format block device with specified filesystem and mount in application pod. If fsType is not specified defaults to "ext4" filesystem.
+  Admin can specify filesystem in storageclass. LVM-LocalPV CSI-Driver will format block device with specified filesystem and mount in application pod. If fsType is not specified defaults to `ext4` filesystem.
   ```yaml
   apiVersion: storage.k8s.io/v1
   kind: StorageClass
@@ -67,7 +184,7 @@ LVM-LocalPV storageclass supports various parameters for different use cases. Fo
 
 - #### Shared (Optional)
 
-  lvm-localpv volume mount point can be shared among the multiple pods on the same node. Applications that can share the volume can set value of `shared` parameter to true.
+  lvm-localpv volume mount point can be shared among the multiple pods on the same node. Applications that can share the volume can set value of `shared` parameter to yes defaults to no.
   ```yaml
   apiVersion: storage.k8s.io/v1
   kind: StorageClass
@@ -116,7 +233,7 @@ LVM-LocalPV storageclass supports various parameters for different use cases. Fo
 
 - #### thinProvision (Optional)
 
-  For creating thin-provisioned volume, use thinProvision parameter in storage class. It's allowed values are: "yes" and "no". If we don't use this parameter by default it's value will be "no" and it will work as thick provisioned volumes.
+  For creating thin-provisioned volume, use thinProvision parameter in storage class. It's allowed values are: "yes" and "no". If we don't set thinProvision parameter by default it's value will be `no` and it will work as thick provisioned volumes.
 
   ```yaml
   apiVersion: storage.k8s.io/v1
