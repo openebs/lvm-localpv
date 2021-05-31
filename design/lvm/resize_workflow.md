@@ -116,4 +116,4 @@ kubectl describe pvc csi-lvmpv
 
 Below is high level sequence diagram for volume expansion workflow
 
-![Volume Expansion Workflow](./images/resize_sequence_diagram.png)
+![Volume Expansion Workflow](./images/resize_sequence_diagram.jpg)
