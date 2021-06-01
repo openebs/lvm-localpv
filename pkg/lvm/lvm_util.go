@@ -52,6 +52,8 @@ const (
 	LVCreate = "lvcreate"
 	LVRemove = "lvremove"
 	LVExtend = "lvextend"
+	LVS      = "lvs"
+	BTRFS    = "btrfs"
 
 	PVScan = "pvscan"
 
@@ -252,6 +254,94 @@ func ResizeLVMVolume(vol *apis.LVMVolume, resizefs bool) error {
 	}
 
 	return err
+}
+
+// ResizeBTRFSVolume resizes the LVM volume as well as expand btrfs
+// Step1: Expanding LVM Volume (lvextend lvmvg -n <volume_name> -L size)
+// Step2: Expanding btrfs filesystem (btrfs filesystem resize max <mount_path>)
+func ResizeBTRFSVolume(vol *apis.LVMVolume, mountPath string) error {
+
+	desiredVolSize, err := strconv.ParseUint(vol.Spec.Capacity, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	curVolSize, err := getVolumeSize(vol)
+	if err != nil {
+		return err
+	}
+
+	// Handle a case where LVM is expanded but not the filesystem
+	if desiredVolSize > curVolSize {
+		err := ResizeLVMVolume(vol, false)
+		if err != nil {
+			return err
+		}
+	}
+
+	args := []string{"filesystem", "resize", "max", mountPath}
+	cmd := exec.Command(BTRFS, args...)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		klog.Errorf(
+			"lvm could not expand btrfs filesystem of volume %v cmd %v error: %s",
+			filepath.Join(vol.Spec.VolGroup, vol.Name),
+			args,
+			string(out),
+		)
+		return errors.Wrap(err, string(out))
+	}
+	return nil
+}
+
+// getVolumeSize will return current LVM volume size on bytes
+func getVolumeSize(vol *apis.LVMVolume) (uint64, error) {
+	lvmVolumeName := vol.Spec.VolGroup + "/" + vol.Name
+
+	args := []string{
+		lvmVolumeName,
+		"--reportformat", "json",
+		"--units", "b",
+	}
+
+	cmd := exec.Command(LVS, args...)
+	raw, err := cmd.CombinedOutput()
+	if err != nil {
+		return 0, errors.Wrapf(
+			err,
+			"could not get size of volume %v output: %s",
+			lvmVolumeName,
+			string(raw),
+		)
+	}
+
+	var curVolSize uint64
+	output := &struct {
+		Reports []struct {
+			Volumes []map[string]string `json:"lv"`
+		} `json:"report"`
+	}{}
+	if err = json.Unmarshal(raw, output); err != nil {
+		return 0, err
+	}
+
+	// Only one entry will exist since we made a query with volume name
+	for _, report := range output.Reports {
+		for _, volData := range report.Volumes {
+			if volData["lv_name"] == vol.Name {
+				size := volData["lv_size"]
+				if size != "" {
+					size = size[:len(size)-1]
+				}
+				curVolSize, err = strconv.ParseUint(size, 10, 64)
+				if err != nil {
+					return 0, err
+				}
+			}
+		}
+	}
+	return curVolSize, nil
 }
 
 func buildLVMSnapCreateArgs(snap *apis.LVMSnapshot) []string {

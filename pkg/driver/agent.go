@@ -354,7 +354,14 @@ func (ns *node) NodeExpandVolume(
 		resizefs = true
 	}
 
-	if err = lvm.ResizeLVMVolume(vol, resizefs); err != nil {
+	switch req.GetVolumeCapability().GetMount().GetFsType() {
+	case "btrfs":
+		err = lvm.ResizeBTRFSVolume(vol, req.GetVolumePath())
+	default:
+		err = lvm.ResizeLVMVolume(vol, resizefs)
+	}
+
+	if err != nil {
 		return nil, status.Errorf(
 			codes.Internal,
 			"failed to handle NodeExpandVolume Request for %s, {%s}",
