@@ -256,7 +256,7 @@ func ResizeLVMVolume(vol *apis.LVMVolume, resizefs bool) error {
 	return err
 }
 
-// ResizeBTRFSVolume resizes the LVM volume as well as expand btrfs
+// ResizeBTRFSVolume resizes the LVM volume as well as expand btrfs filesystem
 // Step1: Expanding LVM Volume (lvextend lvmvg -n <volume_name> -L size)
 // Step2: Expanding btrfs filesystem (btrfs filesystem resize max <mount_path>)
 func ResizeBTRFSVolume(vol *apis.LVMVolume, mountPath string) error {
@@ -266,12 +266,15 @@ func ResizeBTRFSVolume(vol *apis.LVMVolume, mountPath string) error {
 		return err
 	}
 
-	curVolSize, err := getVolumeSize(vol)
+	curVolSize, err := getLVSize(vol)
 	if err != nil {
 		return err
 	}
 
-	// Handle a case where LVM is expanded but not the filesystem
+	// Expand LVM volume only when desired volume size is greater
+	// than current volume size. This will handles a case where
+	// LVM expansion is succeeded but not the FS expansion in earlier
+	// requests
 	if desiredVolSize > curVolSize {
 		err := ResizeLVMVolume(vol, false)
 		if err != nil {
@@ -285,7 +288,7 @@ func ResizeBTRFSVolume(vol *apis.LVMVolume, mountPath string) error {
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		klog.Errorf(
-			"lvm could not expand btrfs filesystem of volume %v cmd %v error: %s",
+			"btrfs utility could not expand btrfs filesystem of volume %v cmd %v error: %s",
 			filepath.Join(vol.Spec.VolGroup, vol.Name),
 			args,
 			string(out),
@@ -295,8 +298,8 @@ func ResizeBTRFSVolume(vol *apis.LVMVolume, mountPath string) error {
 	return nil
 }
 
-// getVolumeSize will return current LVM volume size on bytes
-func getVolumeSize(vol *apis.LVMVolume) (uint64, error) {
+// getLVSize will return current LVM volume size in bytes
+func getLVSize(vol *apis.LVMVolume) (uint64, error) {
 	lvmVolumeName := vol.Spec.VolGroup + "/" + vol.Name
 
 	args := []string{
@@ -316,7 +319,7 @@ func getVolumeSize(vol *apis.LVMVolume) (uint64, error) {
 		)
 	}
 
-	var curVolSize uint64
+	var volSize uint64
 	output := &struct {
 		Reports []struct {
 			Volumes []map[string]string `json:"lv"`
@@ -334,14 +337,14 @@ func getVolumeSize(vol *apis.LVMVolume) (uint64, error) {
 				if size != "" {
 					size = size[:len(size)-1]
 				}
-				curVolSize, err = strconv.ParseUint(size, 10, 64)
+				volSize, err = strconv.ParseUint(size, 10, 64)
 				if err != nil {
 					return 0, err
 				}
 			}
 		}
 	}
-	return curVolSize, nil
+	return volSize, nil
 }
 
 func buildLVMSnapCreateArgs(snap *apis.LVMSnapshot) []string {
