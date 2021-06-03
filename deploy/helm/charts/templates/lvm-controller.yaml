@@ -85,6 +85,7 @@ spec:
             - "--leader-election"
             - "--enable-capacity={{ .Values.storageCapacity }}"
             - "--extra-create-metadata=true"
+            - "--default-fstype=ext4"
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
