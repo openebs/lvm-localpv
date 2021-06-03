@@ -53,6 +53,10 @@ const (
 	LVMStatusFailed string = "Failed"
 	// LVMStatusReady shows object has been processed
 	LVMStatusReady string = "Ready"
+	// OpenEBSCasTypeKey for the cas-type label
+	OpenEBSCasTypeKey string = "openebs.io/cas-type"
+	// LVMCasTypeName for the name of the cas-type
+	LVMCasTypeName string = "localpv-lvm"
 )
 
 var (
