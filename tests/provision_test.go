@@ -35,10 +35,7 @@ func fsVolCreationTest() {
 		By("Creating and deploying app pod", createDeployVerifyApp)
 		By("verifying LVMVolume object", VerifyLVMVolume)
 
-		// btrfs does not support online resize
-		if fstype != "btrfs" {
-			resizeAndVerifyPVC(true, "8Gi")
-		}
+		resizeAndVerifyPVC(true, "8Gi")
 		// do not resize after creating the snapshot(not supported)
 		createSnapshot(pvcName, snapName)
 		verifySnapshotCreated(snapName)

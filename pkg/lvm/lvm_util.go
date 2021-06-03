@@ -26,6 +26,7 @@ import (
 
 	"strings"
 
+	"github.com/openebs/lib-csi/pkg/btrfs"
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -53,7 +54,6 @@ const (
 	LVRemove = "lvremove"
 	LVExtend = "lvextend"
 	LVS      = "lvs"
-	BTRFS    = "btrfs"
 
 	PVScan = "pvscan"
 
@@ -282,18 +282,10 @@ func ResizeBTRFSVolume(vol *apis.LVMVolume, mountPath string) error {
 		}
 	}
 
-	args := []string{"filesystem", "resize", "max", mountPath}
-	cmd := exec.Command(BTRFS, args...)
-
-	out, err := cmd.CombinedOutput()
+	// Expand btrfs filesystem
+	err = btrfs.ResizeBTRFS(mountPath)
 	if err != nil {
-		klog.Errorf(
-			"btrfs utility could not expand btrfs filesystem of volume %v cmd %v error: %s",
-			filepath.Join(vol.Spec.VolGroup, vol.Name),
-			args,
-			string(out),
-		)
-		return errors.Wrap(err, string(out))
+		return err
 	}
 	return nil
 }
@@ -304,8 +296,10 @@ func getLVSize(vol *apis.LVMVolume) (uint64, error) {
 
 	args := []string{
 		lvmVolumeName,
-		"--reportformat", "json",
+		"--noheadings",
+		"-o", "lv_size",
 		"--units", "b",
+		"--nosuffix",
 	}
 
 	cmd := exec.Command(LVS, args...)
@@ -319,31 +313,11 @@ func getLVSize(vol *apis.LVMVolume) (uint64, error) {
 		)
 	}
 
-	var volSize uint64
-	output := &struct {
-		Reports []struct {
-			Volumes []map[string]string `json:"lv"`
-		} `json:"report"`
-	}{}
-	if err = json.Unmarshal(raw, output); err != nil {
+	volSize, err := strconv.ParseUint(strings.TrimSpace(string(raw)), 10, 64)
+	if err != nil {
 		return 0, err
 	}
 
-	// Only one entry will exist since we made a query with volume name
-	for _, report := range output.Reports {
-		for _, volData := range report.Volumes {
-			if volData["lv_name"] == vol.Name {
-				size := volData["lv_size"]
-				if size != "" {
-					size = size[:len(size)-1]
-				}
-				volSize, err = strconv.ParseUint(size, 10, 64)
-				if err != nil {
-					return 0, err
-				}
-			}
-		}
-	}
 	return volSize, nil
 }
 
