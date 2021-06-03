@@ -352,7 +352,7 @@ func (cs *controller) CreateVolume(
 		"lvm-localpv", analytics.VolumeProvision)
 
 	topology := map[string]string{lvm.LVMTopologyKey: vol.Spec.OwnerNodeID}
-	cntx := map[string]string{lvm.VolGroupKey: vol.Spec.VolGroup}
+	cntx := map[string]string{lvm.VolGroupKey: vol.Spec.VolGroup, lvm.OpenEBSCasTypeKey: lvm.LVMCasTypeName}
 
 	return csipayload.NewCreateVolumeResponseBuilder().
 		WithName(volName).
