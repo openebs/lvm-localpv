@@ -3,6 +3,33 @@ entries:
   lvm-localpv:
   - apiVersion: v2
     appVersion: 0.5.0
+    created: "2021-06-03T13:57:52.446596151Z"
+    description: CSI Driver for dynamic provisioning of LVM Persistent Local Volumes.
+    digest: 3baacf853e18748d0adff2e7e14a6b8653be081ef4a156666ea38d3f16fd86d8
+    home: http://www.openebs.io/
+    icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/openebs/icon/color/openebs-icon-color.png
+    keywords:
+    - cloud-native-storage
+    - block-storage
+    - filesystem
+    - LVM
+    - Local Persistent Volumes
+    - storage
+    maintainers:
+    - email: prateek.pandey@mayadata.io
+      name: prateekpandey14
+    - email: pawan@mayadata.io
+      name: pawanpraka1
+    - email: yashpal.c1995@gmail.com
+      name: iyashu
+    name: lvm-localpv
+    sources:
+    - https://github.com/openebs/lvm-localpv
+    urls:
+    - https://github.com/openebs/lvm-localpv/releases/download/lvm-localpv-0.5.1/lvm-localpv-0.5.1.tgz
+    version: 0.5.1
+  - apiVersion: v2
+    appVersion: 0.5.0
     created: "2021-05-14T20:23:08.777437806Z"
     description: CSI Driver for dynamic provisioning of LVM Persistent Local Volumes.
     digest: bcd7a102d5b47fc77c594cd725f6e7d13b52310bbb0fc7cb338137ff91e005e1
@@ -26,4 +53,4 @@ entries:
     urls:
     - https://github.com/openebs/lvm-localpv/releases/download/lvm-localpv-0.5.0/lvm-localpv-0.5.0.tgz
     version: 0.5.0
-generated: "2021-05-14T20:23:08.777449206Z"
+generated: "2021-06-03T13:57:52.447242162Z"
