@@ -142,6 +142,6 @@ func getIOLimitsStr(deviceNumber *DeviceNumber, ioMax *IOMax) string {
 
 func setIOLimits(request *ValidRequest) error {
 	line := getIOLimitsStr(request.DeviceNumber, request.IOMax)
-	err := ioutil.WriteFile(request.FilePath, []byte(line), 0700)
+	err := ioutil.WriteFile(request.FilePath, []byte(line), 0600)
 	return err
 }

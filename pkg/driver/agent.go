@@ -18,11 +18,11 @@ package driver
 
 import (
 	"errors"
-	"os"
 	"strings"
 	"sync"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/openebs/lib-csi/pkg/btrfs"
 	k8sapi "github.com/openebs/lib-csi/pkg/client/k8s"
 	"github.com/openebs/lib-csi/pkg/mount"
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
@@ -341,26 +341,17 @@ func (ns *node) NodeExpandVolume(
 		)
 	}
 
-	// find if it is block device so that we don't attempt filesystem resize
-	st, err := os.Stat(req.GetVolumePath())
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to stat mountpath %s", err.Error())
+	isBlockMode := req.GetVolumeCapability().GetBlock() != nil
+	fsType := req.GetVolumeCapability().GetMount().GetFsType()
+
+	resizeFS := true
+	if isBlockMode || fsType == "btrfs" {
+		// In case of volume block mode (or) btrfs filesystem mode
+		// lvm doesn't expansion of fs natively
+		resizeFS = false
 	}
 
-	resizefs := false
-	// doing this dirty check as volume capabilities are not passed for NodeExpandVolume
-	if st.IsDir() {
-		// it is not a block device, resize the filesystem
-		resizefs = true
-	}
-
-	switch req.GetVolumeCapability().GetMount().GetFsType() {
-	case "btrfs":
-		err = lvm.ResizeBTRFSVolume(vol, req.GetVolumePath())
-	default:
-		err = lvm.ResizeLVMVolume(vol, resizefs)
-	}
-
+	err = lvm.ResizeLVMVolume(vol, resizeFS)
 	if err != nil {
 		return nil, status.Errorf(
 			codes.Internal,
@@ -368,6 +359,19 @@ func (ns *node) NodeExpandVolume(
 			req.VolumeId,
 			err.Error(),
 		)
+	}
+
+	// Expand btrfs filesystem
+	if fsType == "btrfs" {
+		err = btrfs.ResizeBTRFS(req.GetVolumePath())
+		if err != nil {
+			return nil, status.Errorf(
+				codes.Internal,
+				"failed to handle NodeExpandVolume Request for %s, {%s}",
+				req.VolumeId,
+				err.Error(),
+			)
+		}
 	}
 
 	return &csi.NodeExpandVolumeResponse{

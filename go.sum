@@ -465,6 +465,8 @@ github.com/openebs/lib-csi v0.2.0 h1:hkaJuB+5bO5DRHqMdWt4pIAru7VBEiQBxluyXQioZdQ
 github.com/openebs/lib-csi v0.2.0/go.mod h1:v2CPHjFG6C6VAW6duKdQrH7WlpgCdsXJ6H4HspFTBKs=
 github.com/openebs/lib-csi v0.4.0 h1:bhtTLQahF+l4FoPOp9nh49BWs48NCwnNGm126iso9l8=
 github.com/openebs/lib-csi v0.4.0/go.mod h1:uruyzJiTwRoytQPQXOf4spaezn1cjkiAXjvFGw6aY/8=
+github.com/openebs/lib-csi v0.5.0 h1:/Y38PtranPhynvSwWvxYl3LaAM1Py6V8fx1hcXe34Gs=
+github.com/openebs/lib-csi v0.5.0/go.mod h1:uruyzJiTwRoytQPQXOf4spaezn1cjkiAXjvFGw6aY/8=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pborman/uuid v0.0.0-20170612153648-e790cca94e6c/go.mod h1:VyrYX9gd7irzKovcSS6BIIEwPRkP2Wm2m9ufcdFSJ34=
 github.com/pborman/uuid v1.2.0/go.mod h1:X/NO0urCmaxf9VXbdlT7C2Yzkj2IKimNn4k+gtPdI/k=

@@ -26,7 +26,6 @@ import (
 
 	"strings"
 
-	"github.com/openebs/lib-csi/pkg/btrfs"
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -239,8 +238,37 @@ func buildVolumeResizeArgs(vol *apis.LVMVolume, resizefs bool) []string {
 	return LVMVolArg
 }
 
-// ResizeLVMVolume resizes the volume
+// ResizeLVMVolume resizes the underlying LVM volume and FS if resizefs
+// is set to true
+// Note:
+//	1. Triggering `lvextend <dev_path> -L <size> -r` multiple times with
+//     same size will not return any errors
+//  2. Triggering `lvextend <dev_path> -L <size>` more than one time will
+//     cause errors
 func ResizeLVMVolume(vol *apis.LVMVolume, resizefs bool) error {
+
+	// In case if resizefs is not enabled then check current size
+	// before exapnding LVM volume(If volume is already expanded then
+	// it might be error prone). This also makes ResizeLVMVolume func
+	// idempotent
+	if !resizefs {
+		desiredVolSize, err := strconv.ParseUint(vol.Spec.Capacity, 10, 64)
+		if err != nil {
+			return err
+		}
+
+		curVolSize, err := getLVSize(vol)
+		if err != nil {
+			return err
+		}
+
+		// Trigger resize only when desired volume size is greater than
+		// current volume size else return
+		if desiredVolSize <= curVolSize {
+			return nil
+		}
+	}
+
 	volume := vol.Spec.VolGroup + "/" + vol.Name
 
 	args := buildVolumeResizeArgs(vol, resizefs)
@@ -254,40 +282,6 @@ func ResizeLVMVolume(vol *apis.LVMVolume, resizefs bool) error {
 	}
 
 	return err
-}
-
-// ResizeBTRFSVolume resizes the LVM volume as well as expand btrfs filesystem
-// Step1: Expanding LVM Volume (lvextend lvmvg -n <volume_name> -L size)
-// Step2: Expanding btrfs filesystem (btrfs filesystem resize max <mount_path>)
-func ResizeBTRFSVolume(vol *apis.LVMVolume, mountPath string) error {
-
-	desiredVolSize, err := strconv.ParseUint(vol.Spec.Capacity, 10, 64)
-	if err != nil {
-		return err
-	}
-
-	curVolSize, err := getLVSize(vol)
-	if err != nil {
-		return err
-	}
-
-	// Expand LVM volume only when desired volume size is greater
-	// than current volume size. This will handles a case where
-	// LVM expansion is succeeded but not the FS expansion in earlier
-	// requests
-	if desiredVolSize > curVolSize {
-		err := ResizeLVMVolume(vol, false)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Expand btrfs filesystem
-	err = btrfs.ResizeBTRFS(mountPath)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // getLVSize will return current LVM volume size in bytes
