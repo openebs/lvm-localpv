@@ -1,6 +1,8 @@
 ## LVM-LocalPV Volume Resize
 
-We can resize the volume by updating the PVC yaml to the desired size and apply it. The LVM Driver will take care of expanding the volume via lvextent command using "-r" option which will resize the filesystem.
+We can resize the volume by updating the PVC yaml to the desired size and apply it. The LVM Driver will take care of expanding the volume via lvextend command using "-r" option which will resize the filesystem.
+
+**Note**: Online Volume Expansion for `Block` mode and `btrfs` Filesystem mode is supported only from **K8s 1.19+** version
 
 For resize, storageclass that provisions the pvc must support resize. We should have allowVolumeExpansion as true in storageclass
 
