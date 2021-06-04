@@ -52,6 +52,7 @@ const (
 	LVCreate = "lvcreate"
 	LVRemove = "lvremove"
 	LVExtend = "lvextend"
+	LVS      = "lvs"
 
 	PVScan = "pvscan"
 
@@ -237,8 +238,37 @@ func buildVolumeResizeArgs(vol *apis.LVMVolume, resizefs bool) []string {
 	return LVMVolArg
 }
 
-// ResizeLVMVolume resizes the volume
+// ResizeLVMVolume resizes the underlying LVM volume and FS if resizefs
+// is set to true
+// Note:
+//	1. Triggering `lvextend <dev_path> -L <size> -r` multiple times with
+//     same size will not return any errors
+//  2. Triggering `lvextend <dev_path> -L <size>` more than one time will
+//     cause errors
 func ResizeLVMVolume(vol *apis.LVMVolume, resizefs bool) error {
+
+	// In case if resizefs is not enabled then check current size
+	// before exapnding LVM volume(If volume is already expanded then
+	// it might be error prone). This also makes ResizeLVMVolume func
+	// idempotent
+	if !resizefs {
+		desiredVolSize, err := strconv.ParseUint(vol.Spec.Capacity, 10, 64)
+		if err != nil {
+			return err
+		}
+
+		curVolSize, err := getLVSize(vol)
+		if err != nil {
+			return err
+		}
+
+		// Trigger resize only when desired volume size is greater than
+		// current volume size else return
+		if desiredVolSize <= curVolSize {
+			return nil
+		}
+	}
+
 	volume := vol.Spec.VolGroup + "/" + vol.Name
 
 	args := buildVolumeResizeArgs(vol, resizefs)
@@ -252,6 +282,37 @@ func ResizeLVMVolume(vol *apis.LVMVolume, resizefs bool) error {
 	}
 
 	return err
+}
+
+// getLVSize will return current LVM volume size in bytes
+func getLVSize(vol *apis.LVMVolume) (uint64, error) {
+	lvmVolumeName := vol.Spec.VolGroup + "/" + vol.Name
+
+	args := []string{
+		lvmVolumeName,
+		"--noheadings",
+		"-o", "lv_size",
+		"--units", "b",
+		"--nosuffix",
+	}
+
+	cmd := exec.Command(LVS, args...)
+	raw, err := cmd.CombinedOutput()
+	if err != nil {
+		return 0, errors.Wrapf(
+			err,
+			"could not get size of volume %v output: %s",
+			lvmVolumeName,
+			string(raw),
+		)
+	}
+
+	volSize, err := strconv.ParseUint(strings.TrimSpace(string(raw)), 10, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	return volSize, nil
 }
 
 func buildLVMSnapCreateArgs(snap *apis.LVMSnapshot) []string {
