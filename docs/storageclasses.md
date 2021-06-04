@@ -38,7 +38,7 @@ Following matrix shows standard storageclass parameters for lvm-localpv
     <td> Immediate </td>
     <td></td>
     <td> Supported </td>
-    <td rowspan=2> Yes </td>
+    <td rowspan=2> <a href="https://github.com/openebs/lvm-localpv/tree/master/e2e-tests/experiments/functional/lvmpv-custom-topology#readme"> Yes  </a> </td>
   </tr>
   <tr>
     <td> WaitForFirstConsumer </td>
@@ -47,11 +47,11 @@ Following matrix shows standard storageclass parameters for lvm-localpv
   </tr>
 
   <tr>
-    <td rowspan=2> Reclaim Policy </td>
-    <td> Retain </td>
+    <td rowspan=2> <a href="#reclaim-policy-optional"> Reclaim Policy </a> </td>
+    <td>  Retain </td>
     <td></td>
     <td> Supported </td>
-    <td rowspan=2> Yes <br> <i> (Test coverage exist for Delete reclaim policy) </i> </br> </td>
+    <td rowspan=2> <a href="https://github.com/openebs/lvm-localpv/blob/master/e2e-tests/apps/percona/deployers/run_e2e_test.yml"> Yes </a> <br> <i> (Test coverage exist for Delete reclaim policy) </i> </br> </td>
   </tr>
   <tr>
     <td> Delete </td>
@@ -274,6 +274,24 @@ parameters:
   vgpattern: "lvmvg.*"
 volumeBindingMode: WaitForFirstConsumer     ## It can also replaced by Immediate volume binding mode depends on use case.
 ```
+
+### Reclaim Policy (Optional)
+
+lvm-localpv supports both types of reclaim policy that are `Delete` & `Retain`. If not specified defaults to `Delete`.
+- Delete: Indicates that backend volume resources(PV, LVMVolume) will be delete as soon as after deleting PVC.
+- Retain: Indicates backend volume resources can be recalimed by PVCs or retained the cluster.
+```yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: openebs-lvm
+provisioner: local.csi.openebs.io
+parameters:
+  storage: "lvm"
+  vgpattern: "lvmvg.*"
+reclaimPolicy: Delete          ## Reclaim policy can be specified here. It also accepts Retain
+```
+
 
 ### StorageClass With Custom Node Labels
 
