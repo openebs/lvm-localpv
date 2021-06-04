@@ -347,7 +347,7 @@ func (ns *node) NodeExpandVolume(
 	resizeFS := true
 	if isBlockMode || fsType == "btrfs" {
 		// In case of volume block mode (or) btrfs filesystem mode
-		// lvm doesn't expansion of fs natively
+		// lvm doesn't expand the fs natively
 		resizeFS = false
 	}
 
