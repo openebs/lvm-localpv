@@ -23,8 +23,12 @@ status: Implemented
     - [Implementation Details](#implementation-details)
         - [Controller Expansion](#controller-expansion)
         - [Filesystem Expansion](#filesystem-expansion)
-        - [Steps to perform volume expansion](#steps-to-perform-volume-expansion)
+    - [Steps to perform volume expansion](#steps-to-perform-volume-expansion)
     - [High level Sequence Diagram](#high-level-sequence-diagram)
+    - [Test Plan](#test-plan)
+  - [Graduation Criteria](#graduation-criteria)
+  - [Drawbacks](#drawbacks)
+  - [Alternatives](#alternatives)
 
 ## Summary
 
@@ -77,7 +81,7 @@ it gets triggered upon updating PVC capacity.
 
   Note: Kubelet will send requests only when the volume is published on a node.
 
-##### Steps to perform volume expansion
+### Steps to perform volume expansion
 
 1. Edit PVC and update capacity to desired value. In below example updated
    the PVC capacity from 4Gi to 8Gi.
@@ -117,3 +121,22 @@ kubectl describe pvc csi-lvmpv
 Below is high level sequence diagram for volume expansion workflow
 
 ![Volume Expansion Workflow](./images/resize_sequence_diagram.jpg)
+
+### Test Plan
+A test plan will include following test cases:
+- Test volume expansion operation on all supported filesystems(ext3, ext4, xfs, btrfs).
+- Test volume expansion while expansion of the volume is already in progress.
+- Restart LVM-Node-CSI-driver pod while filesystem expansion is in progress.
+- Test volume expansion while application is not consuming the volume(It should succeed only after application mounts the volume).
+- Shutdown the node while filesystem expansion is in progress and after recovering volume expansion should be succeeded.
+
+
+## Graduation Criteria
+
+All testcases mentioned in [Test Plan](#test-plan) section need to be automated
+
+## Drawbacks
+NA
+
+## Alternatives
+NA
