@@ -19,7 +19,7 @@ Following matrix shows lvm-localpv controller driver capabilities.
 
 
 
-## Node driver capability
+## CSI Node driver compliance
 
 Following matrix shows lvm-localpv node driver capabilities.
 
