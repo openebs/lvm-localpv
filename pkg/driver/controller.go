@@ -23,9 +23,9 @@ import (
 	"time"
 
 	k8sapi "github.com/openebs/lib-csi/pkg/client/k8s"
+	"github.com/openebs/lib-csi/pkg/csipv"
 	clientset "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset"
 	informers "github.com/openebs/lvm-localpv/pkg/generated/informer/externalversions"
-	"github.com/openebs/lvm-localpv/pkg/mgmt/csipv"
 	corev1 "k8s.io/api/core/v1"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
