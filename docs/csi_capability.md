@@ -1,4 +1,4 @@
-## Controller driver capability
+## CSI Controller driver compliance
 
 Following matrix shows lvm-localpv controller driver capabilities.
 
@@ -45,4 +45,3 @@ Following matrix shows lvm-localpv VolumeCapability.
 | AccessMode - MULTI_NODE_READER_ONLY | Volume can be published as readonly at multiple nodes simultaneously. | Not Supported |  |
 | AccessMode - MULTI_NODE_SINGLE_WRITER | Volume can be published at multiple nodes simultaneously. Only one of the node can be used as read/write. The rest will be readonly. | Not Supported |  |
 | AccessMode - MULTI_NODE_MULTI_WRITER | Volume can be published as read/write at multiple nodes simultaneously | Not Supported |  |
-
