@@ -32,7 +32,7 @@ Following matrix shows lvm-localpv node driver capabilities.
 
 
 
-## VolumeCapability
+## CSI VolumeCapability compliance
 
 Following matrix shows lvm-localpv VolumeCapability.
 
