@@ -113,6 +113,9 @@ func buildLVMCreateArgs(vol *apis.LVMVolume) []string {
 	if strings.TrimSpace(vol.Spec.ThinProvision) != YES {
 		LVMVolArg = append(LVMVolArg, vol.Spec.VolGroup)
 	}
+
+	// -y is used to wipe the signatures before creating LVM volume
+	LVMVolArg = append(LVMVolArg, "-y")
 	return LVMVolArg
 }
 
