@@ -125,7 +125,7 @@ github.com/onsi/gomega/matchers/support/goraph/edge
 github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 github.com/onsi/gomega/types
-# github.com/openebs/lib-csi v0.5.0
+# github.com/openebs/lib-csi v0.6.0
 ## explicit
 github.com/openebs/lib-csi/pkg/btrfs
 github.com/openebs/lib-csi/pkg/client/k8s
@@ -133,6 +133,7 @@ github.com/openebs/lib-csi/pkg/common/env
 github.com/openebs/lib-csi/pkg/common/errors
 github.com/openebs/lib-csi/pkg/common/helpers
 github.com/openebs/lib-csi/pkg/common/kubernetes/client
+github.com/openebs/lib-csi/pkg/csipv
 github.com/openebs/lib-csi/pkg/device/iolimit
 github.com/openebs/lib-csi/pkg/mount
 github.com/openebs/lib-csi/pkg/scheduler
