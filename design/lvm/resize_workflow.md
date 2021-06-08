@@ -18,6 +18,7 @@ status: Implemented
   - [Summary](#summary)
   - [Motivation](#motivation)
     - [Goals](#goals)
+    - [Non-Goals](#non-goals)
   - [Proposal](#proposal)
     - [User Stories](#user-stories)
     - [Implementation Details](#implementation-details)
@@ -40,6 +41,10 @@ This proposal charts out the design details to implement expansion workflow on L
 
 - As a user, I should be able to resize the volumes provisioned via LVM-LocalPV by updating the size
   on PersistentVolumeClaim(PVC).
+
+### Non-Goals
+
+- Support for volume expansion when underlying volume has lvm snapshots.
 
 ## Proposal
 
@@ -70,6 +75,8 @@ it gets triggered upon updating PVC capacity.
     resource and return success response to the request.
 - Once external-resizer gets success response it will mark PVC pending for filesystem expansion else
   it will retry until it receives success response.
+
+Note: `ControllerExpandVolume` gRPC request retrun an error if volume has snapshots.
 
 ##### Filesystem Expansion
 
@@ -125,10 +132,12 @@ Below is high level sequence diagram for volume expansion workflow
 ### Test Plan
 A test plan will include following test cases:
 - Test volume expansion operation on all supported filesystems(ext3, ext4, xfs, btrfs).
-- Test volume expansion while expansion of the volume is already in progress.
-- Restart LVM-Node-CSI-driver pod while filesystem expansion is in progress.
+- Test volume expansion while previous expansion of the volume is already in progress.
+- Restart of node LVM-Node-CSI-driver while filesystem expansion is in progress.
 - Test volume expansion while application is not consuming the volume(It should succeed only after application mounts the volume).
 - Shutdown the node while filesystem expansion is in progress and after recovering volume expansion should be succeeded.
+- Test volume expansion on statefulset application with multiple replicas.
+- Test volume expansion of thin provisioned volume.
 
 
 ## Graduation Criteria
