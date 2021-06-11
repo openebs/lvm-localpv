@@ -69,8 +69,8 @@ it gets triggered upon updating PVC capacity.
   to LVM-CSI controller plugin.
 - LVM-CSI controller plugin is another container in the same pod where external-resizer is running.
   Once the controller plugin receives the `ControllerExpandVolume` gRPC request it does the following steps:
-  - List active snapshots on resizing volume, if there are any snapshots plugin will return an error
-    as a response to the request.
+  - List active snapshots on resizing volume, if there are any snapshots plugin will return an error as
+    a response to the request since LVM does not support online resizing of volume if snapshot(s) exist.
   - If there are no snapshots then the plugin will update the capacity on the corresponding LVMVolume
     resource and return success response to the request.
 - Once external-resizer gets success response it will mark PVC pending for filesystem expansion else
@@ -138,6 +138,8 @@ A test plan will include following test cases:
 - Shutdown the node while filesystem expansion is in progress and after recovering volume expansion should be succeeded.
 - Test volume expansion on statefulset application with multiple replicas.
 - Test volume expansion of thin provisioned volume.
+- Test volume expansion with snapshot(s).
+- Test volume expansion for thick provisioned volume group by increasing size greater then vg size.
 
 
 ## Graduation Criteria
