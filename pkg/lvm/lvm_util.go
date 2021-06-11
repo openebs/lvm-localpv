@@ -49,6 +49,7 @@ const (
 	VGCreate = "vgcreate"
 	VGList   = "vgs"
 
+	LVList   = "lvs"
 	LVCreate = "lvcreate"
 	LVRemove = "lvremove"
 	LVExtend = "lvextend"
@@ -58,6 +59,34 @@ const (
 
 	YES = "yes"
 )
+
+// LogicalVolume specifies attributes of a given lv exists on node.
+type LogicalVolume struct {
+
+	// Name of the lvm logical volume
+	Name string `json:"name"`
+
+	// Full name of the lvm logical volume
+	FullName string `json:"fullName"`
+
+	// UUID denotes a unique identity of a lvm logical volume.
+	UUID string `json:"uuid"`
+
+	// Size specifies the total size of logical volume
+	Size int64 `json:"size"`
+
+	// Path specifies LVM logical volume path
+	Path string `json:"path"`
+
+	// DMPath specifies device mapper path
+	DMPath string `json:"dmPath"`
+
+	// LVM logical volume device
+	Device string `json:"device"`
+
+	// Name of the VG in which LVM logical volume is created
+	VGName string `json:"vgName"`
+}
 
 // ExecError holds the process output along with underlying
 // error returned by exec.CombinedOutput function.
@@ -505,6 +534,94 @@ func ListLVMVolumeGroup() ([]apis.VolumeGroup, error) {
 		return nil, err
 	}
 	return decodeVgsJSON(output)
+}
+
+/*
+Function to get LVM Logical volume device
+*/
+func getLvDeviceName(path string) string {
+	symLink, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		klog.Errorf("lvm: error in getting device name")
+	}
+	deviceName := strings.Split(symLink, "/")
+	return deviceName[len(deviceName)-1]
+}
+
+/*
+To parse the output of lvs command and store it in LogicalVolume
+*/
+func parseLogicalVolume(m map[string]string) (LogicalVolume, error) {
+	var lv LogicalVolume
+	var err error
+
+	lv.Name = m["lv_name"]
+	lv.FullName = m["lv_full_name"]
+	lv.UUID = m["lv_uuid"]
+	lv.Path = m["lv_path"]
+	lv.DMPath = m["lv_dm_path"]
+	lv.VGName = m["vg_name"]
+	sizeBytes, err := strconv.ParseInt(strings.TrimSuffix(strings.ToLower(m["lv_size"]), "b"), 10, 64)
+
+	if err != nil {
+		err = fmt.Errorf("invalid format of lv_size=%v for lv %v: %v", m["lv_size"], lv.Name, err)
+	}
+
+	lv.Size = sizeBytes
+	lv.Device = getLvDeviceName("/dev/" + lv.FullName)
+	return lv, err
+}
+
+/*
+Decode json format and store logical volumes in map[string]string
+*/
+func decodeLvsJSON(raw []byte) ([]LogicalVolume, error) {
+	output := &struct {
+		Report []struct {
+			LogicalVolumes []map[string]string `json:"lv"`
+		} `json:"report"`
+	}{}
+	var err error
+	if err = json.Unmarshal(raw, output); err != nil {
+		return nil, err
+	}
+
+	if len(output.Report) != 1 {
+		return nil, fmt.Errorf("expected exactly one lvm report")
+	}
+
+	items := output.Report[0].LogicalVolumes
+	lvs := make([]LogicalVolume, 0, len(items))
+	for _, item := range items {
+		var lv LogicalVolume
+		if lv, err = parseLogicalVolume(item); err != nil {
+			return lvs, err
+		}
+		lvs = append(lvs, lv)
+	}
+	return lvs, nil
+}
+
+/*
+ListLVMLogicalVolume invokes `lvs` to list all the available logical volumes in the node.
+*/
+func ListLVMLogicalVolume() ([]LogicalVolume, error) {
+	if err := ReloadLVMMetadataCache(); err != nil {
+		return nil, err
+	}
+
+	args := []string{
+		"--options", "lv_all,vg_name",
+		"--reportformat", "json",
+		"--units", "b",
+	}
+	cmd := exec.Command(LVList, args...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		klog.Errorf("lvm: list logical volume cmd %v: %v", args, err)
+		return nil, err
+	}
+	return decodeLvsJSON(output)
 }
 
 // lvThinExists verifies if thin pool/volume already exists for given volumegroup
