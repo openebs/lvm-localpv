@@ -539,13 +539,14 @@ func ListLVMVolumeGroup() ([]apis.VolumeGroup, error) {
 /*
 Function to get LVM Logical volume device
 */
-func getLvDeviceName(path string) string {
+func getLvDeviceName(path string) (string, error) {
 	symLink, err := filepath.EvalSymlinks(path)
 	if err != nil {
 		klog.Errorf("lvm: error in getting device name")
+		return "", err
 	}
 	deviceName := strings.Split(symLink, "/")
-	return deviceName[len(deviceName)-1]
+	return deviceName[len(deviceName)-1], nil
 }
 
 /*
@@ -568,7 +569,6 @@ func parseLogicalVolume(m map[string]string) (LogicalVolume, error) {
 	}
 
 	lv.Size = sizeBytes
-	lv.Device = getLvDeviceName("/dev/" + lv.FullName)
 	return lv, err
 }
 
@@ -597,6 +597,12 @@ func decodeLvsJSON(raw []byte) ([]LogicalVolume, error) {
 		if lv, err = parseLogicalVolume(item); err != nil {
 			return lvs, err
 		}
+		deviceName, err := getLvDeviceName("/dev/" + lv.FullName)
+		if err != nil {
+			klog.Error(err)
+			return nil, err
+		}
+		lv.Device = deviceName
 		lvs = append(lvs, lv)
 	}
 	return lvs, nil
