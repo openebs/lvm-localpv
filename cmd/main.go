@@ -68,7 +68,7 @@ func exposeMetrics() {
 
 	http.Handle(*metricsPath, promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`<html>
+		_, _ = w.Write([]byte(`<html>
 			<head><title>LVM Exporter</title></head>
 			<body>
 			<h1>LVM Exporter</h1>
