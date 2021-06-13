@@ -25,6 +25,7 @@ import (
 	"github.com/openebs/lvm-localpv/pkg/lvm"
 	"github.com/openebs/lvm-localpv/pkg/version"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	"k8s.io/klog"
@@ -57,8 +58,8 @@ func exposeMetrics() {
 
 	if !*disableExporterMetrics {
 		registry.MustRegister(
-			prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}),
-			prometheus.NewGoCollector(),
+			collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
+			collectors.NewGoCollector(),
 		)
 	}
 	lvmExporter := collector.NewLvmCollector()
