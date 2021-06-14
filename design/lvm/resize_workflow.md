@@ -55,7 +55,7 @@ As an application developer, I should be able to resize volume on the fly(When a
 Steps To Be Performed By User:
 1. Update the PVC capacity using `kubectl edit pvc <pvc_name>`
 
-Note: StorageClass should allow expanding the volume(i.e allowVolumeExpansion field must set to true).
+Note: StorageClass should allow expanding the volume(i.e allowVolumeExpansion field must be set to true).
 
 ### Implementation Details
 
@@ -71,12 +71,12 @@ it gets triggered upon updating PVC capacity.
   Once the controller plugin receives the `ControllerExpandVolume` gRPC request it does the following steps:
   - List active snapshots on resizing volume, if there are any snapshots plugin will return an error as
     a response to the request since LVM does not support online resizing of volume if snapshot(s) exist.
-  - If there are no snapshots then the plugin will update the capacity on the corresponding LVMVolume
+  - If there are no snapshots then the plugin will update the desired capacity on corresponding LVMVolume
     resource and return success response to the request.
 - Once external-resizer gets success response it will mark PVC pending for filesystem expansion else
   it will retry until it receives success response.
 
-Note: `ControllerExpandVolume` gRPC request retrun an error if volume has snapshots.
+Note: `ControllerExpandVolume` gRPC request returns an error if volume has snapshots.
 
 ##### Filesystem Expansion
 
