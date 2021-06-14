@@ -57,10 +57,10 @@ sudo vgcreate lvmvg /dev/loop0       ## here lvmvg is the volume group name to b
 
 ### Installation
 
-We can install the LVM-LocalPV driver by running the following command.
+We can install the latest release of OpenEBS LVM driver by running the following command.
 
 ```
-kubectl apply -f https://raw.githubusercontent.com/openebs/lvm-localpv/master/deploy/lvm-operator.yaml
+$ kubectl apply -f https://openebs.github.io/charts/lvm-operator.yaml
 ```
 
 Verify that the LVM driver Components are installed and running using below command :
