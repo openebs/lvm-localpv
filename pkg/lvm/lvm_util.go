@@ -60,7 +60,7 @@ const (
 	YES = "yes"
 )
 
-// LogicalVolume specifies attributes of a given lv exists on node.
+// LogicalVolume specifies attributes of a given lv that exists on the node.
 type LogicalVolume struct {
 
 	// Name of the lvm logical volume
@@ -72,7 +72,7 @@ type LogicalVolume struct {
 	// UUID denotes a unique identity of a lvm logical volume.
 	UUID string `json:"uuid"`
 
-	// Size specifies the total size of logical volume
+	// Size specifies the total size of logical volume in Bytes
 	Size int64 `json:"size"`
 
 	// Path specifies LVM logical volume path
@@ -538,11 +538,15 @@ func ListLVMVolumeGroup() ([]apis.VolumeGroup, error) {
 
 /*
 Function to get LVM Logical volume device
+It returns LVM logical volume device(dm-*).
+This is used as a label in metrics(lvm_lv_total_size) which helps us to map lv_name to device.
+
+Example: pvc-f147582c-adbd-4015-8ca9-fe3e0a4c2452(lv_name) -> dm-0(device)
 */
 func getLvDeviceName(path string) (string, error) {
 	symLink, err := filepath.EvalSymlinks(path)
 	if err != nil {
-		klog.Errorf("lvm: error in getting device name")
+		klog.Errorf("lvm: error in getting device name from path: %v", path)
 		return "", err
 	}
 	deviceName := strings.Split(symLink, "/")
@@ -551,6 +555,18 @@ func getLvDeviceName(path string) (string, error) {
 
 /*
 To parse the output of lvs command and store it in LogicalVolume
+It returns LogicalVolume.
+
+Example: LogicalVolume{
+		Name:     "pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
+		FullName: "linuxlvmvg/pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
+		UUID:     "UJp2Dh-Knfo-E0fO-KjPB-RSHO-X7JO-AI2FZW",
+		Size:     3221225472,
+		Path:     "/dev/linuxlvmvg/pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
+		DMPath:   "/dev/mapper/linuxlvmvg-pvc--213ca1e6--e271--4ec8--875c--c7def3a4908d",
+		VGName:   "linuxlvmvg",
+	}
+
 */
 func parseLogicalVolume(m map[string]string) (LogicalVolume, error) {
 	var lv LogicalVolume
@@ -566,6 +582,7 @@ func parseLogicalVolume(m map[string]string) (LogicalVolume, error) {
 
 	if err != nil {
 		err = fmt.Errorf("invalid format of lv_size=%v for lv %v: %v", m["lv_size"], lv.Name, err)
+		return LogicalVolume{}, err
 	}
 
 	lv.Size = sizeBytes
@@ -573,7 +590,38 @@ func parseLogicalVolume(m map[string]string) (LogicalVolume, error) {
 }
 
 /*
-Decode json format and store logical volumes in map[string]string
+decodeLvsJSON([]bytes): Decode json format and pass the unmarshalled json to parseLogicalVolume to store logical volumes in LogicalVolume
+
+Output of lvs command will be in json format:
+
+{
+	"report": [
+		{
+			"lv": [
+					{
+						"lv_name":"pvc-ba7b648e-b08b-47bb-beef-60738a33fbd2",
+						...
+					}
+				]
+		}
+	]
+}
+
+This function is used to decode the output of lvs command.
+It returns []LogicalVolume.
+
+Example: []LogicalVolume{
+	{
+		Name:     "pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
+		FullName: "linuxlvmvg/pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
+		UUID:     "UJp2Dh-Knfo-E0fO-KjPB-RSHO-X7JO-AI2FZW",
+		Size:     3221225472,
+		Path:     "/dev/linuxlvmvg/pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
+		DMPath:   "/dev/mapper/linuxlvmvg-pvc--213ca1e6--e271--4ec8--875c--c7def3a4908d",
+		VGName:   "linuxlvmvg",
+		Device:	  "dm-0"
+	}
+}
 */
 func decodeLvsJSON(raw []byte) ([]LogicalVolume, error) {
 	output := &struct {
@@ -610,6 +658,27 @@ func decodeLvsJSON(raw []byte) ([]LogicalVolume, error) {
 
 /*
 ListLVMLogicalVolume invokes `lvs` to list all the available logical volumes in the node.
+This function is used to run 'lvs' command.
+
+Output of lvs command:
+
+{
+	"report": [
+		{
+			"lv": [
+					{
+						"lv_name":"pvc-ba7b648e-b08b-47bb-beef-60738a33fbd2",
+						...
+					},
+					{
+						...
+					}
+				]
+		}
+	]
+}
+
+It returns the parsed LogicalVolume.
 */
 func ListLVMLogicalVolume() ([]LogicalVolume, error) {
 	if err := ReloadLVMMetadataCache(); err != nil {
@@ -624,7 +693,7 @@ func ListLVMLogicalVolume() ([]LogicalVolume, error) {
 	cmd := exec.Command(LVList, args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		klog.Errorf("lvm: list logical volume cmd %v: %v", args, err)
+		klog.Errorf("lvm: error while running command &v %v: %v", LVList, args, err)
 		return nil, err
 	}
 	return decodeLvsJSON(output)

@@ -73,7 +73,7 @@ func Test_parseLogicalVolume(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := parseLogicalVolume(tt.args.m)
-			if  tt.wantErr && !(err!=nil) {
+			if tt.wantErr && !(err != nil) {
 				t.Errorf("parseLogicalVolume() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}

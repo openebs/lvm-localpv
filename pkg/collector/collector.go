@@ -34,15 +34,15 @@ type lvmCollector struct {
 func NewLvmCollector() *lvmCollector {
 	return &lvmCollector{
 		vgFreeMetric: prometheus.NewDesc(prometheus.BuildFQName("lvm", "vg", "free_size"),
-			"Shows LVM VG free size",
+			"Shows LVM VG free size in Bytes",
 			[]string{"vg_name"}, nil,
 		),
 		vgSizeMetric: prometheus.NewDesc(prometheus.BuildFQName("lvm", "vg", "total_size"),
-			"Shows LVM VG total size",
+			"Shows LVM VG total size in Bytes",
 			[]string{"vg_name"}, nil,
 		),
 		lvSizeMetric: prometheus.NewDesc(prometheus.BuildFQName("lvm", "lv", "total_size"),
-			"Shows LVM LV total size",
+			"Shows LVM LV total size in Bytes",
 			[]string{"lv_name", "lv_full_name", "lv_uuid", "lv_path", "lv_dm_path", "vg_name", "device"}, nil,
 		),
 	}
@@ -57,21 +57,21 @@ func (collector *lvmCollector) Describe(ch chan<- *prometheus.Desc) {
 func (collector *lvmCollector) Collect(ch chan<- prometheus.Metric) {
 	vgList, err := lvm.ListLVMVolumeGroup()
 	if err != nil {
-		klog.Errorf("Error in getting the list of LVM volume groups:%v", err)
-	}
-
-	for _, vg := range vgList {
-		ch <- prometheus.MustNewConstMetric(collector.vgFreeMetric, prometheus.GaugeValue, vg.Free.AsApproximateFloat64(), vg.Name)
-		ch <- prometheus.MustNewConstMetric(collector.vgSizeMetric, prometheus.GaugeValue, vg.Size.AsApproximateFloat64(), vg.Name)
+		klog.Errorf("error in getting the list of lvm volume groups: %v", err)
+	}else {
+		for _, vg := range vgList {
+			ch <- prometheus.MustNewConstMetric(collector.vgFreeMetric, prometheus.GaugeValue, vg.Free.AsApproximateFloat64(), vg.Name)
+			ch <- prometheus.MustNewConstMetric(collector.vgSizeMetric, prometheus.GaugeValue, vg.Size.AsApproximateFloat64(), vg.Name)
+		}
 	}
 
 	lvList, err := lvm.ListLVMLogicalVolume()
 	if err != nil {
-		klog.Errorf("Error in getting the list of LVM logical volume:%v", err)
-	}
+		klog.Errorf("error in getting the list of lvm logical volumes: %v", err)
+	}else {
+		for _, lv := range lvList {
+			ch <- prometheus.MustNewConstMetric(collector.lvSizeMetric, prometheus.GaugeValue, float64(lv.Size), lv.Name, lv.FullName, lv.UUID, lv.Path, lv.DMPath, lv.VGName, lv.Device)
 
-	for _, lv := range lvList {
-		ch <- prometheus.MustNewConstMetric(collector.lvSizeMetric, prometheus.GaugeValue, float64(lv.Size), lv.Name, lv.FullName, lv.UUID, lv.Path, lv.DMPath, lv.VGName, lv.Device)
-
+		}
 	}
 }
