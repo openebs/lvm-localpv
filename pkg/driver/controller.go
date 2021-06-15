@@ -570,6 +570,12 @@ func (cs *controller) CreateSnapshot(
 		return nil, err
 	}
 
+	params, err := NewSnapshotParams(req.GetParameters())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument,
+			"failed to parse csi volume params: %v", err)
+	}
+
 	snapTimeStamp := time.Now().Unix()
 	state, err := lvm.GetLVMSnapshotStatus(req.Name)
 
@@ -613,7 +619,18 @@ func (cs *controller) CreateSnapshot(
 		)
 	}
 
-	snapObj.Spec = vol.Spec
+	capacity, _ := strconv.Atoi(vol.Spec.Capacity)
+	snapSize := int(float64(capacity) * (params.Size / 100))
+
+	snapObj.Spec = lvmapi.LVMSnapshotSpec{
+		SnapshotSize: strconv.Itoa(snapSize),
+		VolumeInfo: lvmapi.VolumeInfo{
+			OwnerNodeID: vol.Spec.OwnerNodeID,
+			VolGroup:    vol.Spec.VolGroup,
+			Capacity:    vol.Spec.Capacity,
+		},
+	}
+
 	snapObj.Status.State = lvm.LVMStatusPending
 
 	if err := lvm.ProvisionSnapshot(snapObj); err != nil {

@@ -219,7 +219,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: VolumeInfo defines LVM info
+            description: LVMSnapshotSpec defines LVMSnapshot spec
             properties:
               capacity:
                 description: Capacity of the volume
@@ -238,6 +238,10 @@ spec:
                 enum:
                 - "yes"
                 - "no"
+                type: string
+              snapshotSize:
+                description: Size of the snapshot
+                minLength: 1
                 type: string
               thinProvision:
                 description: ThinProvision specifies whether logical volumes can be
@@ -259,6 +263,7 @@ spec:
             required:
             - capacity
             - ownerNodeID
+            - snapshotSize
             - vgPattern
             - volGroup
             type: object

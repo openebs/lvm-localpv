@@ -29,8 +29,17 @@ type LVMSnapshot struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   VolumeInfo `json:"spec"`
-	Status SnapStatus `json:"status"`
+	Spec   LVMSnapshotSpec `json:"spec"`
+	Status SnapStatus      `json:"status"`
+}
+
+// LVMSnapshotSpec defines LVMSnapshot spec
+type LVMSnapshotSpec struct {
+	VolumeInfo `json:",inline"`
+	// Size of the snapshot
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	SnapshotSize string `json:"snapshotSize"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

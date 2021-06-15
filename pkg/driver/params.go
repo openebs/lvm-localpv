@@ -19,6 +19,8 @@ package driver
 import (
 	"fmt"
 	"regexp"
+	"strconv"
+	"strings"
 
 	"github.com/openebs/lib-csi/pkg/common/helpers"
 )
@@ -39,6 +41,12 @@ type VolumeParams struct {
 	PVCName      string
 	PVCNamespace string
 	PVName       string
+}
+
+// SnapshotParams holds collection of supported settings that can
+// be configured in snapshot class.
+type SnapshotParams struct {
+	Size float64
 }
 
 // NewVolumeParams parses the input params and instantiates new VolumeParams.
@@ -85,6 +93,32 @@ func NewVolumeParams(m map[string]string) (*VolumeParams, error) {
 	params.PVCName = m["csi.storage.k8s.io/pvc/name"]
 	params.PVCNamespace = m["csi.storage.k8s.io/pvc/namespace"]
 	params.PVName = m["csi.storage.k8s.io/pv/name"]
+
+	return params, nil
+}
+
+// NewSnapshotParams parses the input params and instantiates new SnapshotParams.
+func NewSnapshotParams(m map[string]string) (*SnapshotParams, error) {
+	var err error
+	params := &SnapshotParams{ // set up defaults, if any.
+		Size: 50,
+	}
+	// parameter keys may be mistyped from the CRD specification when declaring
+	// the storageclass, which kubectl validation will not catch. Because
+	// parameter keys (not values!) are all lowercase, keys may safely be forced
+	// to the lower case.
+	m = helpers.GetCaseInsensitiveMap(&m)
+
+	size, ok := m["size"]
+	if ok {
+		if strings.HasSuffix(size, "%") {
+			size = size[:len(size)-1]
+		}
+		params.Size, err = strconv.ParseFloat(size, 64)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	return params, nil
 }

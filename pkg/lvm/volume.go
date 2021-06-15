@@ -299,6 +299,11 @@ func UpdateSnapInfo(snap *apis.LVMSnapshot) error {
 	return err
 }
 
+// UpdateSnapShot updates LVMSnapshot CR
+func UpdateSnapShot(snap *apis.LVMSnapshot) (*apis.LVMSnapshot, error) {
+	return snapbuilder.NewKubeclient().WithNamespace(LvmNamespace).Update(snap)
+}
+
 // RemoveSnapFinalizer adds finalizer to LVMSnapshot CR
 func RemoveSnapFinalizer(snap *apis.LVMSnapshot) error {
 	snap.Finalizers = nil
