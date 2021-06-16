@@ -139,7 +139,9 @@ A test plan will include following test cases:
 - Test volume expansion on statefulset application with multiple replicas.
 - Test volume expansion of thin provisioned volume.
 - Test volume expansion with snapshot(s).
-- Test volume expansion for thick provisioned volume group by increasing size greater then vg size.
+- Test volume expansion of thick provisioned volume group by increasing volume size greater than underlying vg size.
+- Simulate failures in volume expansion workflow and verify the accessibility of volume as well as data integrity checks.
+- Deletion of volume while volume expansion is in progress.
 
 
 ## Graduation Criteria
