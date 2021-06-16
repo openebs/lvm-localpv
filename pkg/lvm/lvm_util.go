@@ -49,11 +49,10 @@ const (
 	VGCreate = "vgcreate"
 	VGList   = "vgs"
 
-	LVList   = "lvs"
 	LVCreate = "lvcreate"
 	LVRemove = "lvremove"
 	LVExtend = "lvextend"
-	LVS      = "lvs"
+	LVSList  = "lvs"
 
 	PVScan = "pvscan"
 
@@ -63,29 +62,29 @@ const (
 // LogicalVolume specifies attributes of a given lv that exists on the node.
 type LogicalVolume struct {
 
-	// Name of the lvm logical volume
-	Name string `json:"name"`
+	// Name of the lvm logical volume(name: pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d)
+	Name string
 
-	// Full name of the lvm logical volume
-	FullName string `json:"fullName"`
+	// Full name of the lvm logical volume (fullName: linuxlvmvg/pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d)
+	FullName string
 
 	// UUID denotes a unique identity of a lvm logical volume.
-	UUID string `json:"uuid"`
+	UUID string
 
 	// Size specifies the total size of logical volume in Bytes
-	Size int64 `json:"size"`
+	Size int64
 
 	// Path specifies LVM logical volume path
-	Path string `json:"path"`
+	Path string
 
 	// DMPath specifies device mapper path
-	DMPath string `json:"dmPath"`
+	DMPath string
 
 	// LVM logical volume device
-	Device string `json:"device"`
+	Device string
 
 	// Name of the VG in which LVM logical volume is created
-	VGName string `json:"vgName"`
+	VGName string
 }
 
 // ExecError holds the process output along with underlying
@@ -328,7 +327,7 @@ func getLVSize(vol *apis.LVMVolume) (uint64, error) {
 		"--nosuffix",
 	}
 
-	cmd := exec.Command(LVS, args...)
+	cmd := exec.Command(LVSList, args...)
 	raw, err := cmd.CombinedOutput()
 	if err != nil {
 		return 0, errors.Wrapf(
@@ -517,9 +516,13 @@ func ReloadLVMMetadataCache() error {
 
 // ListLVMVolumeGroup invokes `vgs` to list all the available volume
 // groups in the node.
-func ListLVMVolumeGroup() ([]apis.VolumeGroup, error) {
-	if err := ReloadLVMMetadataCache(); err != nil {
-		return nil, err
+//
+//If we will call this function from collector.go for metrics collection, exporter will be set as true otherwise false.
+func ListLVMVolumeGroup(exporter bool) ([]apis.VolumeGroup, error) {
+	if !exporter {
+		if err := ReloadLVMMetadataCache(); err != nil {
+			return nil, err
+		}
 	}
 
 	args := []string{
@@ -544,12 +547,12 @@ This is used as a label in metrics(lvm_lv_total_size) which helps us to map lv_n
 Example: pvc-f147582c-adbd-4015-8ca9-fe3e0a4c2452(lv_name) -> dm-0(device)
 */
 func getLvDeviceName(path string) (string, error) {
-	symLink, err := filepath.EvalSymlinks(path)
+	dmPath, err := filepath.EvalSymlinks(path)
 	if err != nil {
-		klog.Errorf("lvm: error in getting device name from path: %v", path)
+		klog.Errorf("failed to resolve device mapper from lv path %v: %v", path, err)
 		return "", err
 	}
-	deviceName := strings.Split(symLink, "/")
+	deviceName := strings.Split(dmPath, "/")
 	return deviceName[len(deviceName)-1], nil
 }
 
@@ -573,8 +576,6 @@ func parseLogicalVolume(m map[string]string) (LogicalVolume, error) {
 	var err error
 
 	lv.Name = m["lv_name"]
-	lv.FullName = m["lv_full_name"]
-	lv.UUID = m["lv_uuid"]
 	lv.Path = m["lv_path"]
 	lv.DMPath = m["lv_dm_path"]
 	lv.VGName = m["vg_name"]
@@ -645,7 +646,7 @@ func decodeLvsJSON(raw []byte) ([]LogicalVolume, error) {
 		if lv, err = parseLogicalVolume(item); err != nil {
 			return lvs, err
 		}
-		deviceName, err := getLvDeviceName("/dev/" + lv.FullName)
+		deviceName, err := getLvDeviceName(lv.Path)
 		if err != nil {
 			klog.Error(err)
 			return nil, err
@@ -660,40 +661,18 @@ func decodeLvsJSON(raw []byte) ([]LogicalVolume, error) {
 ListLVMLogicalVolume invokes `lvs` to list all the available logical volumes in the node.
 This function is used to run 'lvs' command.
 
-Output of lvs command:
-
-{
-	"report": [
-		{
-			"lv": [
-					{
-						"lv_name":"pvc-ba7b648e-b08b-47bb-beef-60738a33fbd2",
-						...
-					},
-					{
-						...
-					}
-				]
-		}
-	]
-}
-
-It returns the parsed LogicalVolume.
+It returns the parsed []LogicalVolume.
 */
 func ListLVMLogicalVolume() ([]LogicalVolume, error) {
-	if err := ReloadLVMMetadataCache(); err != nil {
-		return nil, err
-	}
-
 	args := []string{
 		"--options", "lv_all,vg_name",
 		"--reportformat", "json",
 		"--units", "b",
 	}
-	cmd := exec.Command(LVList, args...)
+	cmd := exec.Command(LVSList, args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		klog.Errorf("lvm: error while running command &v %v: %v", LVList, args, err)
+		klog.Errorf("lvm: error while running command %s %v: %v", LVSList, args, err)
 		return nil, err
 	}
 	return decodeLvsJSON(output)

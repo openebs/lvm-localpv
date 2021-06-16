@@ -19,19 +19,15 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/openebs/lvm-localpv/pkg/collector"
+	"log"
+	"os"
+
 	config "github.com/openebs/lvm-localpv/pkg/config"
 	"github.com/openebs/lvm-localpv/pkg/driver"
 	"github.com/openebs/lvm-localpv/pkg/lvm"
 	"github.com/openebs/lvm-localpv/pkg/version"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/collectors"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	"k8s.io/klog"
-	"log"
-	"net/http"
-	"os"
 )
 
 /*
@@ -42,46 +38,6 @@ import (
  * --plugin=controller and to start it as agent, we have
  * to pass --plugin=agent.
  */
-
-var (
-	enableLvmMetrics       = flag.Bool("enable-lvm-metrics", true, "If set, LVM metrics will be collected")
-	listenAddress          = flag.String("listen-address", ":9080", "Address on which to expose metrics and web interface.")
-	metricsPath            = flag.String("telemetry-path", "/metrics", "Path under which to expose metrics.")
-	disableExporterMetrics = flag.Bool("disable-exporter-metrics", true, "Exclude metrics about the exporter itself (promhttp_*, process_*, go_*).")
-)
-
-func exposeMetrics() {
-
-	klog.Info("Starting lvm-exporter")
-
-	registry := prometheus.NewRegistry()
-
-	if !*disableExporterMetrics {
-		registry.MustRegister(
-			collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
-			collectors.NewGoCollector(),
-		)
-	}
-	lvmExporter := collector.NewLvmCollector()
-
-	registry.MustRegister(lvmExporter)
-
-	http.Handle(*metricsPath, promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write([]byte(`<html>
-			<head><title>LVM Exporter</title></head>
-			<body>
-			<h1>LVM Exporter</h1>
-			<p><a href="` + *metricsPath + `">Metrics</a></p>
-			</body>
-			</html>`))
-	})
-
-	if err := http.ListenAndServe(*listenAddress, nil); err != nil {
-		log.Fatalln(err)
-	}
-
-}
 
 func main() {
 	_ = flag.CommandLine.Parse([]string{})
@@ -129,6 +85,18 @@ func main() {
 		"Whether to set iops, bps rate limit for pods accessing volumes",
 	)
 
+	cmd.PersistentFlags().StringVar(
+		&config.ListenAddress, "listen-address", "", "The TCP network address where the prometheus metrics endpoint will listen (example: `:9080`). The default is empty string, which means metrics endpoint is disabled.",
+	)
+
+	cmd.PersistentFlags().StringVar(
+		&config.MetricsPath, "metrics-path", "/metrics", "The HTTP path where prometheus metrics will be exposed. Default is `/metrics`.",
+	)
+
+	cmd.PersistentFlags().BoolVar(
+		&config.DisableExporterMetrics, "disable-exporter-metrics", true, "Exclude metrics about the exporter itself (process_*, go_*).",
+	)
+
 	config.RIopsLimitPerGB = cmd.PersistentFlags().StringSlice(
 		"riops-per-gb", []string{},
 		"Read IOPS per GB limit to use for each volume group prefix, "+
@@ -163,10 +131,6 @@ func main() {
 func run(config *config.Config) {
 	if config.Version == "" {
 		config.Version = version.Current()
-	}
-
-	if config.PluginType == "agent" && *enableLvmMetrics {
-		go exposeMetrics()
 	}
 
 	klog.Infof("LVM Driver Version :- %s - commit :- %s", version.Current(), version.GetGitCommit())

@@ -23,7 +23,7 @@ import (
 )
 
 /*
-To store vg total size, vg free size and lv size metrics
+lvmCollector collects vg total size, vg free size and lv size metrics
 */
 type lvmCollector struct {
 	vgFreeMetric *prometheus.Desc
@@ -31,46 +31,46 @@ type lvmCollector struct {
 	lvSizeMetric *prometheus.Desc
 }
 
-func NewLvmCollector() *lvmCollector {
+func NewLvmCollector() prometheus.Collector {
 	return &lvmCollector{
-		vgFreeMetric: prometheus.NewDesc(prometheus.BuildFQName("lvm", "vg", "free_size"),
-			"Shows LVM VG free size in Bytes",
-			[]string{"vg_name"}, nil,
+		vgFreeMetric: prometheus.NewDesc(prometheus.BuildFQName("lvm", "vg", "free_size_bytes"),
+			"LVM VG free size in bytes",
+			[]string{"name"}, nil,
 		),
-		vgSizeMetric: prometheus.NewDesc(prometheus.BuildFQName("lvm", "vg", "total_size"),
-			"Shows LVM VG total size in Bytes",
-			[]string{"vg_name"}, nil,
+		vgSizeMetric: prometheus.NewDesc(prometheus.BuildFQName("lvm", "vg", "total_size_bytes"),
+			"LVM VG total size in bytes",
+			[]string{"name"}, nil,
 		),
-		lvSizeMetric: prometheus.NewDesc(prometheus.BuildFQName("lvm", "lv", "total_size"),
-			"Shows LVM LV total size in Bytes",
-			[]string{"lv_name", "lv_full_name", "lv_uuid", "lv_path", "lv_dm_path", "vg_name", "device"}, nil,
+		lvSizeMetric: prometheus.NewDesc(prometheus.BuildFQName("lvm", "lv", "total_size_bytes"),
+			"LVM LV total size in bytes",
+			[]string{"name", "path", "dm_path", "vg", "device"}, nil,
 		),
 	}
 }
 
-func (collector *lvmCollector) Describe(ch chan<- *prometheus.Desc) {
-	ch <- collector.vgFreeMetric
-	ch <- collector.vgSizeMetric
-	ch <- collector.lvSizeMetric
+func (c *lvmCollector) Describe(ch chan<- *prometheus.Desc) {
+	ch <- c.vgFreeMetric
+	ch <- c.vgSizeMetric
+	ch <- c.lvSizeMetric
 }
 
-func (collector *lvmCollector) Collect(ch chan<- prometheus.Metric) {
-	vgList, err := lvm.ListLVMVolumeGroup()
+func (c *lvmCollector) Collect(ch chan<- prometheus.Metric) {
+	vgList, err := lvm.ListLVMVolumeGroup(true)
 	if err != nil {
 		klog.Errorf("error in getting the list of lvm volume groups: %v", err)
-	}else {
+	} else {
 		for _, vg := range vgList {
-			ch <- prometheus.MustNewConstMetric(collector.vgFreeMetric, prometheus.GaugeValue, vg.Free.AsApproximateFloat64(), vg.Name)
-			ch <- prometheus.MustNewConstMetric(collector.vgSizeMetric, prometheus.GaugeValue, vg.Size.AsApproximateFloat64(), vg.Name)
+			ch <- prometheus.MustNewConstMetric(c.vgFreeMetric, prometheus.GaugeValue, vg.Free.AsApproximateFloat64(), vg.Name)
+			ch <- prometheus.MustNewConstMetric(c.vgSizeMetric, prometheus.GaugeValue, vg.Size.AsApproximateFloat64(), vg.Name)
 		}
 	}
 
 	lvList, err := lvm.ListLVMLogicalVolume()
 	if err != nil {
 		klog.Errorf("error in getting the list of lvm logical volumes: %v", err)
-	}else {
+	} else {
 		for _, lv := range lvList {
-			ch <- prometheus.MustNewConstMetric(collector.lvSizeMetric, prometheus.GaugeValue, float64(lv.Size), lv.Name, lv.FullName, lv.UUID, lv.Path, lv.DMPath, lv.VGName, lv.Device)
+			ch <- prometheus.MustNewConstMetric(c.lvSizeMetric, prometheus.GaugeValue, float64(lv.Size), lv.Name, lv.Path, lv.DMPath, lv.VGName, lv.Device)
 
 		}
 	}
