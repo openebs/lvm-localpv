@@ -99,7 +99,7 @@ func NewNode(d *CSIDriver) csi.NodeServer {
 /*
 Function to register collectors to collect LVM related metrics and exporter metrics.
 
-If disableExporterMetrics is set to false, exporter will include metrics about itself i.e (promhttp_*, process_*, go_*).
+If disableExporterMetrics is set to false, exporter will include metrics about itself i.e (process_*, go_*).
 */
 func registerCollectors(disableExporterMetrics bool) (*prometheus.Registry, error) {
 	registry := prometheus.NewRegistry()
