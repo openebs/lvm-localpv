@@ -124,14 +124,13 @@ This involves two phases - identifying the metrics and making them available for
 - Status
 Since each LV corresponds to a device-mapper volume on the node, the performance statistics like IOPs, Throughput, Latency and Outstanding IOs can be obtained by running the standard `iostat -N` command on the node. The Status of each LV can be obtained from the `lvs -o lv_full_name,lv_active` command output.
 #### Metrics Export
-##### Node-Exporter
-##### Custom-Exporter
-
+##### Node Exporter
+Node Exporter is a Prometheus exporter for collecting hardware and OS kernel metrics exposed by *NIX* kernels using pluggable metrics collectors. There are many in-built collectors which are enabled by default in the node exporter. Using collectors 'diskstats' and 'filesystem', the node exporter is able to collect and export all the capacity and performance metrics for LVM Logical Volumes. These metrics can be stored in a  time-series database like Prometheus and visualized in Grafana with promQL queries. Since a thin pool is also an LV, the node exporter is able to collect its usage metrics as well.
+##### Custom Exporter
+Node exporter is able to fetch all metrics related to Logical Volumes. However, there is currently no in-built support for collecting metrics related to Volume Groups. We need a custom exporter to scrape VG metrics like vg_size, vg_used and vg_free.
 ### Sample Dashboards
 
 Below are sample Grafana dashboards:
-
-![Volume Expansion Workflow](./images/resize_sequence_diagram.jpg)
 
 ### Test Plan
 
