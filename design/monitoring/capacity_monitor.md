@@ -52,20 +52,21 @@ Platform SREs must be able to easily query the capacity details at per node leve
   - Outstanding IOs (PV)
   - Status ( online / offline )
 
+This document lists the relevant metrics for the above information and the steps to fetch the same.
+
 ### Non-Goals
 
-- Support for volume expansion when underlying volume has lvm snapshots.
+- The visualization and alerting for the above metrics.
 
 ## Proposal
 
 ### User Stories
 
-As an application developer, I should be able to resize volume on the fly(When application consuming volume).
+As a platform SRE, I should be able to efficiently manage the provisioning of LVM LocalPV on my cluster nodes.
 
-Steps To Be Performed By User:
-1. Update the PVC capacity using `kubectl edit pvc <pvc_name>`
+### Concepts
 
-Note: StorageClass should allow expanding the volume(i.e allowVolumeExpansion field must be set to true).
+
 
 ### Implementation Details
 
