@@ -74,9 +74,21 @@ Benefits of using LVM:
 - Snapshots and data protection
 
 Following are the basic concepts (components) that LVM manages:
-- Physical Volumes
-- Volume Groups
-- Logical Volumes
+- Physical Volume
+- Volume Group
+- Logical Volume
+
+##### Physical Volume
+A Physical Volume is a disk or block device, it forms the underlying storage unit for a LVM Logical Volume. In order to use a block device or its partition for LVM, it should be first initialized as a Physical Volume using `pvcreate` command from the LVM2 utils package. This places an LVM label near the start of the device.
+
+##### Volume Group
+A Volume Group (VG) is a named collection of physical and logical volumes. Physical Volumes are combined into Volume Groups. This creates a pool of disk space out of which Logical Volumes can be allocated. A Volume Group is divided into fixed-sized chunk called extents, which is the smallest unit of allocatable space. A VG can be created using the `vgcreate` command.
+
+##### Logical Volume
+A Logical Volume (LV) is an allocatable storage space of the required capacity from the VG. LVs look like devices to applications and can be mounted as file-systems. An LV is like a partition, but it is named (not numbered like a partition), can span across multiple underlying physical volumes in the VG and need not be contiguous. An LV can be created using the `lvcreate` command.
+
+##### Thinly-provisioned Logical Volume
+Logical Volumes can be thinly provisioned, which allows to create an LV, larger than the available physical extents. Using thin provisioning, a storage pool of free space known as a thin pool can be allocated to an arbitrary number of devices as thin LVs when needed by applications. The storage administrator can over-commit (over-provision) the physical storage by allocating LVs from the thin pool. As and when applications write the data and the thin pool fills up gradually, the underlying volume group (VG) can be expanded dynamically (using `vgextend`) by adding Physical Volumes on the fly. Once, VG is expanded, the thin pool can also be expanded (using `lvextend`).
 
 ### Implementation Details
 
