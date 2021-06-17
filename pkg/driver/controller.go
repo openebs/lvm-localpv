@@ -609,12 +609,21 @@ func (cs *controller) CreateSnapshot(
 	snapObj, err := snapbuilder.NewBuilder().
 		WithName(req.Name).
 		WithLabels(labels).
-		// the capacity of the snapshot will be set according to the params
-		// defined in the snapshot class
-		WithSnapSize(strconv.FormatInt(snapSize, 10)).
 		WithOwnerNode(vol.Spec.OwnerNodeID).
 		WithVolGroup(vol.Spec.VolGroup).
 		Build()
+
+	// the capacity of the snapshot will be set according to the params
+	// defined in the snapshot class
+	if snapSize != 0 {
+		snapObj, err = snapbuilder.BuildFrom(snapObj).
+			WithSnapSize(strconv.FormatInt(snapSize, 10)).
+			Build()
+	} else if vol.Spec.ThinProvision != lvm.YES {
+		snapObj, err = snapbuilder.BuildFrom(snapObj).
+			WithSnapSize(vol.Spec.Capacity).
+			Build()
+	}
 
 	if err != nil {
 		return nil, status.Errorf(
@@ -648,7 +657,7 @@ func (cs *controller) CreateSnapshot(
 
 func getSnapSize(params *SnapshotParams, capacity int64) int64 {
 	var snapSize int64
-	if !params.AbsSnapSize {
+	if !params.AbsSnapSize && params.SnapSize != 0 {
 		snapSize = int64(float64(capacity) * (params.SnapSize / 100))
 	} else {
 		snapSize = int64(params.SnapSize)
