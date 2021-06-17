@@ -29,7 +29,7 @@ status: In-progress
     - [Implementation Details](#implementation-details)
       - [Metrics Identification](#metrics-identification)
         - [Capacity-based Metrics](#capacity-based-metrics)
-        - [Usage-based Metrics](#usage-metrics-metrics)
+        - [Usage-based Metrics](#usage-based-metrics)
       - [Metrics Export](#metrics-export)
         - [Node Exporter](#node-exporter)
         - [Custom Exporter](#custom-exporter)
