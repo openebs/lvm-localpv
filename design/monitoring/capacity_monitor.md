@@ -105,11 +105,11 @@ This involves two phases - identifying the metrics and making them available for
 
 #### Metrics Identification
 ##### Capacity-based Metrics
-- Total Provisioned Capacity on a node is the aggregate capacity of all Volume Groups on that node. Run the command to get the total capacity of a VG.
+- Total Provisioned Capacity on a node is the aggregate capacity of all Volume Groups on that node. Run the command to get the total capacity (vg_size) of a VG.
 `vgdisplay -v <VG name> | grep 'VG Size'`
-- Total Used Capacity on a node is the aggregate used capacity of all Volume Groups on that node. Run the command to get the used capacity of a VG.
+- Total Used Capacity on a node is the aggregate used capacity of all Volume Groups on that node. Run the command to get the used capacity (vg_used) of a VG.
 `vgdisplay -v <VG name> | grep 'Alloc PE'`
-- Total Free Capacity on a node is the aggregate free capacity of all Volume Groups on that node. Run the command to get the free capacity of a VG.
+- Total Free Capacity on a node is the aggregate free capacity of all Volume Groups on that node. Run the command to get the free capacity (vg_free) of a VG.
 `vgdisplay -v <VG name> | grep 'Free PE'`
 - Total Allocated Capacity on a node is the aggregate size of all LVs on that node. Run the command to get the size for all Logical Volumes. `lvs -o lv_full_name,lv_size`
 - Total Used Capacity for all PVCs on a node is the aggregate used capacity of all LVs on that node. Run the command to get the used capacity for all LVs. `lvs -o lv_full_name,lv_size,data_percent,snap_percent,metadata_percent`
