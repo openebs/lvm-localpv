@@ -323,7 +323,7 @@ func buildLVMSnapCreateArgs(snap *apis.LVMSnapshot) []string {
 
 	volName := snap.Labels[LVMVolKey]
 	volPath := DevPath + snap.Spec.VolGroup + "/" + volName
-	size := snap.Spec.SnapshotSize + "b"
+	size := snap.Spec.SnapSize + "b"
 
 	LVMSnapArg = append(LVMSnapArg,
 		// snapshot argument

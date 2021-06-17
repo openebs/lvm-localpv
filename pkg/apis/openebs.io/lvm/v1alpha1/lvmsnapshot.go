@@ -42,13 +42,6 @@ type LVMSnapshotSpec struct {
 	// +kubebuilder:validation:Required
 	OwnerNodeID string `json:"ownerNodeID"`
 
-	// ThinProvision specifies whether logical snapshots can be thinly provisioned.
-	// If it is set to "yes", then the LVM LocalPV Driver will create
-	// thinProvision i.e. logical snapshots that are larger than the available extents.
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=yes;no
-	ThinProvision string `json:"thinProvision,omitempty"`
-
 	// VolGroup specifies the name of the snapshot group where the snapshot has been created.
 	// +kubebuilder:validation:Required
 	VolGroup string `json:"volGroup"`
@@ -56,7 +49,7 @@ type LVMSnapshotSpec struct {
 	// Size of the snapshot
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength=1
-	SnapshotSize string `json:"snapshotSize"`
+	SnapSize string `json:"snapSize"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

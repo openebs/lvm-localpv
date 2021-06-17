@@ -53,18 +53,9 @@ spec:
                   can not be edited after the snapshot has been provisioned.
                 minLength: 1
                 type: string
-              snapshotSize:
+              snapSize:
                 description: Size of the snapshot
                 minLength: 1
-                type: string
-              thinProvision:
-                description: ThinProvision specifies whether logical snapshots can
-                  be thinly provisioned. If it is set to "yes", then the LVM LocalPV
-                  Driver will create thinProvision i.e. logical snapshots that are
-                  larger than the available extents.
-                enum:
-                - "yes"
-                - "no"
                 type: string
               volGroup:
                 description: VolGroup specifies the name of the snapshot group where
@@ -72,7 +63,7 @@ spec:
                 type: string
             required:
             - ownerNodeID
-            - snapshotSize
+            - snapSize
             - volGroup
             type: object
           status:

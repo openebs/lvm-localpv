@@ -563,7 +563,7 @@ func (cs *controller) CreateSnapshot(
 	req *csi.CreateSnapshotRequest,
 ) (*csi.CreateSnapshotResponse, error) {
 
-	var snapSize int
+	var snapSize int64
 
 	klog.Infof("CreateSnapshot volume %s for %s", req.Name, req.SourceVolumeId)
 
@@ -594,7 +594,7 @@ func (cs *controller) CreateSnapshot(
 		)
 	}
 
-	capacity, _ := strconv.Atoi(vol.Spec.Capacity)
+	capacity, _ := strconv.ParseInt(vol.Spec.Capacity, 10, 64)
 
 	params, err := NewSnapshotParams(req.GetParameters(), capacity)
 	if err != nil {
@@ -602,10 +602,10 @@ func (cs *controller) CreateSnapshot(
 			"failed to parse csi volume params: %v", err)
 	}
 
-	if !params.Absolute {
-		snapSize = int(float64(capacity) * (params.SnapSize / 100))
+	if !params.AbsSnapSize {
+		snapSize = getRoundedCapacity(int64(float64(capacity) * (params.SnapSize / 100)))
 	} else {
-		snapSize = int(params.SnapSize)
+		snapSize = int64(params.SnapSize)
 	}
 
 	labels := map[string]string{
@@ -617,7 +617,7 @@ func (cs *controller) CreateSnapshot(
 		WithLabels(labels).
 		// the capacity of the snapshot will be set according to the params
 		// defined in the snapshot class
-		WithSnapshotSize(strconv.Itoa(snapSize)).
+		WithSnapSize(strconv.FormatInt(snapSize, 10)).
 		WithOwnerNode(vol.Spec.OwnerNodeID).
 		WithVolGroup(vol.Spec.VolGroup).
 		Build()

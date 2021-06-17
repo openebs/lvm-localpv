@@ -47,8 +47,8 @@ type VolumeParams struct {
 // SnapshotParams holds collection of supported settings that can
 // be configured in snapshot class.
 type SnapshotParams struct {
-	SnapSize float64
-	Absolute bool
+	SnapSize    float64
+	AbsSnapSize bool
 }
 
 // NewVolumeParams parses the input params and instantiates new VolumeParams.
@@ -100,11 +100,11 @@ func NewVolumeParams(m map[string]string) (*VolumeParams, error) {
 }
 
 // NewSnapshotParams parses the input params and instantiates new SnapshotParams.
-func NewSnapshotParams(m map[string]string, capacity int) (*SnapshotParams, error) {
+func NewSnapshotParams(m map[string]string, capacity int64) (*SnapshotParams, error) {
 	var err error
 	params := &SnapshotParams{ // set up defaults, if any.
-		SnapSize: 100,
-		Absolute: false,
+		SnapSize:    100,
+		AbsSnapSize: false,
 	}
 	// parameter keys may be mistyped from the CRD specification when declaring
 	// the storageclass, which kubectl validation will not catch. Because
@@ -129,12 +129,12 @@ func NewSnapshotParams(m map[string]string, capacity int) (*SnapshotParams, erro
 				return nil, err
 			}
 			snapSize, _ := qty.AsInt64()
-			if int(snapSize) > capacity {
+			if snapSize > capacity {
 				return nil, fmt.Errorf(
 					"snapshot size %s should not be greater than origin volume", size,
 				)
 			}
-			params.Absolute = true
+			params.AbsSnapSize = true
 			params.SnapSize = float64(getRoundedCapacity(snapSize))
 		}
 	}

@@ -108,8 +108,8 @@ func (b *Builder) WithFinalizer(finalizer []string) *Builder {
 	return b
 }
 
-// WithSnapshotSize sets the SnapshotSize of lvm snapshot
-func (b *Builder) WithSnapshotSize(capacity string) *Builder {
+// WithSnapshotSize sets the SnapSize of lvm snapshot
+func (b *Builder) WithSnapSize(capacity string) *Builder {
 	if capacity == "" {
 		b.errs = append(
 			b.errs,
@@ -119,7 +119,7 @@ func (b *Builder) WithSnapshotSize(capacity string) *Builder {
 		)
 		return b
 	}
-	b.snap.Object.Spec.SnapshotSize = capacity
+	b.snap.Object.Spec.SnapSize = capacity
 	return b
 }
 
