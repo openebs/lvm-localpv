@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/openebs/lib-csi/pkg/common/helpers"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 // VolumeParams holds collection of supported settings that can
@@ -46,7 +47,8 @@ type VolumeParams struct {
 // SnapshotParams holds collection of supported settings that can
 // be configured in snapshot class.
 type SnapshotParams struct {
-	Size float64
+	SnapSize float64
+	Absolute bool
 }
 
 // NewVolumeParams parses the input params and instantiates new VolumeParams.
@@ -98,10 +100,11 @@ func NewVolumeParams(m map[string]string) (*VolumeParams, error) {
 }
 
 // NewSnapshotParams parses the input params and instantiates new SnapshotParams.
-func NewSnapshotParams(m map[string]string) (*SnapshotParams, error) {
+func NewSnapshotParams(m map[string]string, capacity int) (*SnapshotParams, error) {
 	var err error
 	params := &SnapshotParams{ // set up defaults, if any.
-		Size: 50,
+		SnapSize: 100,
+		Absolute: false,
 	}
 	// parameter keys may be mistyped from the CRD specification when declaring
 	// the storageclass, which kubectl validation will not catch. Because
@@ -109,14 +112,30 @@ func NewSnapshotParams(m map[string]string) (*SnapshotParams, error) {
 	// to the lower case.
 	m = helpers.GetCaseInsensitiveMap(&m)
 
-	size, ok := m["size"]
+	size, ok := m["snapsize"]
 	if ok {
 		if strings.HasSuffix(size, "%") {
-			size = size[:len(size)-1]
-		}
-		params.Size, err = strconv.ParseFloat(size, 64)
-		if err != nil {
-			return nil, err
+			snapSize := size[:len(size)-1]
+			params.SnapSize, err = strconv.ParseFloat(snapSize, 64)
+			if err != nil {
+				return nil, err
+			}
+			if params.SnapSize < 1 || params.SnapSize > 100 {
+				return nil, fmt.Errorf("snapSize percentage should be between 1 and 100, found %s", size)
+			}
+		} else {
+			qty, err := resource.ParseQuantity(size)
+			if err != nil {
+				return nil, err
+			}
+			snapSize, _ := qty.AsInt64()
+			if int(snapSize) > capacity {
+				return nil, fmt.Errorf(
+					"snapshot size %s should not be greater than origin volume", size,
+				)
+			}
+			params.Absolute = true
+			params.SnapSize = float64(getRoundedCapacity(snapSize))
 		}
 	}
 
