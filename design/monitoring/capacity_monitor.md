@@ -22,6 +22,10 @@ status: In-progress
   - [Proposal](#proposal)
     - [User Stories](#user-stories)
     - [Concepts](#concepts)
+        - [Physical Volume](#physical-volume)
+        - [Volume Group](#volume-group)
+        - [Logical Volume](#logical-volume)
+        - [Thin Logical Volume](#thin-logical-volume)
     - [Implementation Details](#implementation-details)
         - [Controller Expansion](#controller-expansion)
         - [Filesystem Expansion](#filesystem-expansion)
@@ -87,7 +91,7 @@ A Volume Group (VG) is a named collection of physical and logical volumes. Physi
 ##### Logical Volume
 A Logical Volume (LV) is an allocatable storage space of the required capacity from the VG. LVs look like devices to applications and can be mounted as file-systems. An LV is like a partition, but it is named (not numbered like a partition), can span across multiple underlying physical volumes in the VG and need not be contiguous. An LV can be created using the `lvcreate` command.
 
-##### Thinly-provisioned Logical Volume
+##### Thin Logical Volume
 Logical Volumes can be thinly provisioned, which allows to create an LV, larger than the available physical extents. Using thin provisioning, a storage pool of free space known as a thin pool can be allocated to an arbitrary number of devices as thin LVs when needed by applications. The storage administrator can over-commit (over-provision) the physical storage by allocating LVs from the thin pool. As and when applications write the data and the thin pool fills up gradually, the underlying volume group (VG) can be expanded dynamically (using `vgextend`) by adding Physical Volumes on the fly. Once, VG is expanded, the thin pool can also be expanded (using `lvextend`).
 
 ### Implementation Details
