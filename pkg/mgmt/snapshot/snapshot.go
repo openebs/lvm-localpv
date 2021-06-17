@@ -34,11 +34,6 @@ func (c *SnapController) isDeletionCandidate(snap *apis.LVMSnapshot) bool {
 	return snap.ObjectMeta.DeletionTimestamp != nil
 }
 
-// isDeletionCandidate checks if a lvm snapshot is a deletion candidate.
-func (c *SnapController) isSnapshotSizeMissing(snap *apis.LVMSnapshot) bool {
-	return snap.Spec.SnapshotSize == ""
-}
-
 // syncHandler compares the actual state with the desired, and attempts to
 // converge the two.
 func (c *SnapController) syncHandler(key string) error {
@@ -87,15 +82,6 @@ func (c *SnapController) syncSnap(snap *apis.LVMSnapshot) error {
 			err = lvm.RemoveSnapFinalizer(snap)
 		}
 	} else {
-		// upgrade the older LVMSnapshot CRs which are
-		// missing the snapshotSize field
-		if c.isSnapshotSizeMissing(snap) {
-			snap.Spec.SnapshotSize = snap.Spec.Capacity
-			snap, err = lvm.UpdateSnapShot(snap)
-			if err != nil {
-				return err
-			}
-		}
 		// if the status of the snapshot resource is Pending, then
 		// we create the snapshot on the machine
 		if snap.Status.State == lvm.LVMStatusPending {

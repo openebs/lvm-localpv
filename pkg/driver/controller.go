@@ -602,6 +602,12 @@ func (cs *controller) CreateSnapshot(
 			"failed to parse csi volume params: %v", err)
 	}
 
+	if !params.Absolute {
+		snapSize = int(float64(capacity) * (params.SnapSize / 100))
+	} else {
+		snapSize = int(params.SnapSize)
+	}
+
 	labels := map[string]string{
 		lvm.LVMVolKey: vol.Name,
 	}
@@ -609,9 +615,11 @@ func (cs *controller) CreateSnapshot(
 	snapObj, err := snapbuilder.NewBuilder().
 		WithName(req.Name).
 		WithLabels(labels).
-		// the capacity of the snapshot will be set as same as the capacity of the
-		// origin volume so that overflow does not occur and snapshot is not dropped
-		WithCapacity(vol.Spec.Capacity).
+		// the capacity of the snapshot will be set according to the params
+		// defined in the snapshot class
+		WithSnapshotSize(strconv.Itoa(snapSize)).
+		WithOwnerNode(vol.Spec.OwnerNodeID).
+		WithVolGroup(vol.Spec.VolGroup).
 		Build()
 
 	if err != nil {
@@ -621,21 +629,6 @@ func (cs *controller) CreateSnapshot(
 			req.SourceVolumeId, req.Name,
 			err.Error(),
 		)
-	}
-
-	if !params.Absolute {
-		snapSize = int(float64(capacity) * (params.SnapSize / 100))
-	} else {
-		snapSize = int(params.SnapSize)
-	}
-
-	snapObj.Spec = lvmapi.LVMSnapshotSpec{
-		SnapshotSize: strconv.Itoa(snapSize),
-		VolumeInfo: lvmapi.VolumeInfo{
-			OwnerNodeID: vol.Spec.OwnerNodeID,
-			VolGroup:    vol.Spec.VolGroup,
-			Capacity:    vol.Spec.Capacity,
-		},
 	}
 
 	snapObj.Status.State = lvm.LVMStatusPending
