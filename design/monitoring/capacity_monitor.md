@@ -32,7 +32,6 @@ status: In-progress
   - [Alternatives](#alternatives)
 
 ## Summary
-
 This proposal charts out the design details to implement monitoring for doing effective capacity management on nodes having LVM-LocalPV Volumes.
 
 ## Motivation
