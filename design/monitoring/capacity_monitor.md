@@ -64,6 +64,8 @@ This document lists the relevant metrics for the above information and the steps
 ### Non-Goals
 
 - The visualization and alerting for the above metrics.
+- Clustered LVM.
+- Snapshot space management (currently a non-goal, will be a future goal).
 
 ## Proposal
 
@@ -103,6 +105,8 @@ This involves two phases - identifying the metrics and making them available for
 
 #### Metrics Identification
 ##### Capacity-based Metrics
+- Total Provisioned Capacity
+Total provisioned capacity on a node is the aggregate capacity of all Volume Groups on that node.
 ##### Usage-based Metrics
 #### Metrics Export
 ##### Node-Exporter
