@@ -64,7 +64,7 @@ This document lists the relevant metrics for the above information and the steps
 
 As a platform SRE, I should be able to efficiently manage the capacity-based provisioning of LVM LocalPV volumes on my cluster nodes.
 
-### LVM Concepts
+### Concepts
 
 LVM (Logical Volume Management) is a system for managing Logical Volumes and file-systems, in a manner more advanced and flexible than the traditional disk-partitioning method.
 Benefits of using LVM:
