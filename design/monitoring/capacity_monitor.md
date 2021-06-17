@@ -27,10 +27,13 @@ status: In-progress
         - [Logical Volume](#logical-volume)
         - [Thin Logical Volume](#thin-logical-volume)
     - [Implementation Details](#implementation-details)
-        - [Controller Expansion](#controller-expansion)
-        - [Filesystem Expansion](#filesystem-expansion)
-    - [Steps to perform volume expansion](#steps-to-perform-volume-expansion)
-    - [High level Sequence Diagram](#high-level-sequence-diagram)
+      - [Metrics Identification](#metrics-identification)
+        - [Capacity-based Metrics](#capacity-based-metrics)
+        - [Usage-based Metrics](#usage-metrics-metrics)
+      - [Metrics Export](#metrics-export)
+        - [Node Exporter](#node-exporter)
+        - [Custom Exporter](#custom-exporter)
+    - [Sample Dashboards](#sample-dashboards)
     - [Test Plan](#test-plan)
   - [Graduation Criteria](#graduation-criteria)
   - [Drawbacks](#drawbacks)
@@ -98,10 +101,10 @@ Logical Volumes can be thinly provisioned, which allows to create an LV, larger 
 
 This involves two phases - identifying the metrics and making them available for consumption.
 
-#### Phase-1: Metrics Identification
+#### Metrics Identification
 ##### Capacity-based Metrics
 ##### Usage-based Metrics
-#### Phase-2: Metrics Export
+#### Metrics Export
 ##### Node-Exporter
 ##### Custom-Exporter
 
