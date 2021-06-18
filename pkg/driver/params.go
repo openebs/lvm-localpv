@@ -129,11 +129,6 @@ func NewSnapshotParams(m map[string]string, capacity int64) (*SnapshotParams, er
 				return nil, err
 			}
 			snapSize, _ := qty.AsInt64()
-			if snapSize > capacity {
-				return nil, fmt.Errorf(
-					"snapshot size %s should not be greater than origin volume", size,
-				)
-			}
 			params.AbsSnapSize = true
 			params.SnapSize = float64(snapSize)
 		}
