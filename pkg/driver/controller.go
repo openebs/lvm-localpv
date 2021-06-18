@@ -592,6 +592,16 @@ func (cs *controller) CreateSnapshot(
 		)
 	}
 
+	capacity, _ := strconv.ParseInt(vol.Spec.Capacity, 10, 64)
+
+	params, err := NewSnapshotParams(req.GetParameters())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument,
+			"failed to parse csi volume params: %v", err)
+	}
+
+	snapSize := getSnapSize(params, capacity)
+
 	labels := map[string]string{
 		lvm.LVMVolKey: vol.Name,
 	}
@@ -599,9 +609,11 @@ func (cs *controller) CreateSnapshot(
 	snapObj, err := snapbuilder.NewBuilder().
 		WithName(req.Name).
 		WithLabels(labels).
-		// the capacity of the snapshot will be set as same as the capacity of the
-		// origin volume so that overflow does not occur and snapshot is not dropped
-		WithCapacity(vol.Spec.Capacity).
+		// the capacity of the snapshot will be set according to the params
+		// defined in the snapshot class
+		WithSnapSize(strconv.FormatInt(snapSize, 10)).
+		WithOwnerNode(vol.Spec.OwnerNodeID).
+		WithVolGroup(vol.Spec.VolGroup).
 		Build()
 
 	if err != nil {
@@ -613,7 +625,6 @@ func (cs *controller) CreateSnapshot(
 		)
 	}
 
-	snapObj.Spec = vol.Spec
 	snapObj.Status.State = lvm.LVMStatusPending
 
 	if err := lvm.ProvisionSnapshot(snapObj); err != nil {
@@ -633,6 +644,21 @@ func (cs *controller) CreateSnapshot(
 		WithCreationTime(snapTimeStamp, 0).
 		WithReadyToUse(state == lvm.LVMStatusReady).
 		Build(), nil
+}
+
+func getSnapSize(params *SnapshotParams, capacity int64) int64 {
+	var snapSize int64
+	if !params.AbsSnapSize {
+		snapSize = int64(float64(capacity) * (params.SnapSize / 100))
+	} else {
+		snapSize = int64(params.SnapSize)
+		// cap the snapSize to the origin volume if the
+		// size mentioned in the snapshotclass is more than it
+		if snapSize > capacity {
+			snapSize = capacity
+		}
+	}
+	return getRoundedCapacity(snapSize)
 }
 
 // DeleteSnapshot deletes given snapshot

@@ -108,18 +108,39 @@ func (b *Builder) WithFinalizer(finalizer []string) *Builder {
 	return b
 }
 
-// WithCapacity sets the Capacity of lvm snapshot
-func (b *Builder) WithCapacity(capacity string) *Builder {
+// WithSnapshotSize sets the SnapSize of lvm snapshot
+func (b *Builder) WithSnapSize(capacity string) *Builder {
 	if capacity == "" {
 		b.errs = append(
 			b.errs,
 			errors.New(
-				"failed to build lvm volume object: missing capacity",
+				"failed to build lvm snap object: missing snapshotSize",
 			),
 		)
 		return b
 	}
-	b.snap.Object.Spec.Capacity = capacity
+	b.snap.Object.Spec.SnapSize = capacity
+	return b
+}
+
+// WithOwnerNode sets owner node for the LVMVolume where the snapshot should be provisioned
+func (b *Builder) WithOwnerNode(host string) *Builder {
+	b.snap.Object.Spec.OwnerNodeID = host
+	return b
+}
+
+// WithVolGroup sets volume group name for creating snapshot
+func (b *Builder) WithVolGroup(vg string) *Builder {
+	if vg == "" {
+		b.errs = append(
+			b.errs,
+			errors.New(
+				"failed to build lvm snap object: missing vg name",
+			),
+		)
+		return b
+	}
+	b.snap.Object.Spec.VolGroup = vg
 	return b
 }
 

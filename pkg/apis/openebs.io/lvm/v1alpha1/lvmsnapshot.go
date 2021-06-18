@@ -29,8 +29,26 @@ type LVMSnapshot struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   VolumeInfo `json:"spec"`
-	Status SnapStatus `json:"status"`
+	Spec   LVMSnapshotSpec `json:"spec"`
+	Status SnapStatus      `json:"status"`
+}
+
+// LVMSnapshotSpec defines LVMSnapshot spec
+type LVMSnapshotSpec struct {
+	// OwnerNodeID is the Node ID where the volume group is present which is where
+	// the snapshot has been provisioned.
+	// OwnerNodeID can not be edited after the snapshot has been provisioned.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Required
+	OwnerNodeID string `json:"ownerNodeID"`
+
+	// VolGroup specifies the name of the volume group where the snapshot has been created.
+	// +kubebuilder:validation:Required
+	VolGroup string `json:"volGroup"`
+
+	// SnapSize specifies the space reserved for the snapshot
+	// +kubebuilder:validation:Required
+	SnapSize string `json:"snapSize,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

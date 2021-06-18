@@ -43,3 +43,56 @@ func TestRoundOff(t *testing.T) {
 		})
 	}
 }
+
+func Test_getSnapSize(t *testing.T) {
+	type args struct {
+		params   *SnapshotParams
+		capacity int64
+	}
+	tests := []struct {
+		name string
+		args args
+		want int64
+	}{
+		{
+			name: "snapSize percent",
+			args: args{
+				params: &SnapshotParams{
+					SnapSize:    50,
+					AbsSnapSize: false,
+				},
+				capacity: 4 * Gi,
+			},
+			want: 2 * Gi,
+		},
+		{
+			name: "snapSize absolute less than capacity",
+			args: args{
+				params: &SnapshotParams{
+					SnapSize:    3 * GB,
+					AbsSnapSize: true,
+				},
+				capacity: 4 * Gi,
+			},
+			want: 3 * Gi,
+		},
+		{
+			name: "snapSize absolute more than capacity",
+			args: args{
+				params: &SnapshotParams{
+					SnapSize:    5 * Gi,
+					AbsSnapSize: true,
+				},
+				capacity: 4 * Gi,
+			},
+			want: 4 * Gi,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getSnapSize(tt.args.params, tt.args.capacity); got != tt.want {
+				t.Errorf("getSnapSize() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
