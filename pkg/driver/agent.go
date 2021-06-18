@@ -22,8 +22,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/prometheus/common/log"
-
 	"github.com/openebs/lvm-localpv/pkg/collector"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
@@ -96,11 +94,9 @@ func NewNode(d *CSIDriver) csi.NodeServer {
 	}
 }
 
-/*
-Function to register collectors to collect LVM related metrics and exporter metrics.
-
-If disableExporterMetrics is set to false, exporter will include metrics about itself i.e (process_*, go_*).
-*/
+//Function to register collectors to collect LVM related metrics and exporter metrics.
+//
+//If disableExporterMetrics is set to false, exporter will include metrics about itself i.e (process_*, go_*).
 func registerCollectors(disableExporterMetrics bool) (*prometheus.Registry, error) {
 	registry := prometheus.NewRegistry()
 
@@ -128,17 +124,26 @@ func registerCollectors(disableExporterMetrics bool) (*prometheus.Registry, erro
 	return registry, nil
 }
 
-/*
-Function to start HTTP server to expose LVM metrics.
+type promLog struct{}
 
-Parameters:
+// Implementation of Println(...) method of Logger interface of prometheus client_go.
+func (p *promLog) Println(v ...interface{}) {
+	klog.Error(v...)
+}
 
-listenAddr: TCP network address where the prometheus metrics endpoint will listen.
+func promLogger() *promLog {
+	return &promLog{}
+}
 
-metricsPath: The HTTP path where prometheus metrics will be exposed.
-
-disableExporterMetrics: Exclude metrics about the exporter itself (process_*, go_*).
-*/
+//Function to start HTTP server to expose LVM metrics.
+//
+//Parameters:
+//
+//listenAddr: TCP network address where the prometheus metrics endpoint will listen.
+//
+//metricsPath: The HTTP path where prometheus metrics will be exposed.
+//
+//disableExporterMetrics: Exclude metrics about the exporter itself (process_*, go_*).
 func exposeMetrics(listenAddr string, metricsPath string, disableExporterMetrics bool) {
 
 	// Registry with all the collectors registered
@@ -148,7 +153,7 @@ func exposeMetrics(listenAddr string, metricsPath string, disableExporterMetrics
 	}
 
 	http.Handle(metricsPath, promhttp.InstrumentMetricHandler(registry, promhttp.HandlerFor(registry, promhttp.HandlerOpts{
-		ErrorLog: log.NewErrorLogger(),
+		ErrorLog: promLogger(),
 	})))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(`<html>

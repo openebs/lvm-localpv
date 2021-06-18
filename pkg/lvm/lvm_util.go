@@ -52,7 +52,7 @@ const (
 	LVCreate = "lvcreate"
 	LVRemove = "lvremove"
 	LVExtend = "lvextend"
-	LVSList  = "lvs"
+	LVList   = "lvs"
 
 	PVScan = "pvscan"
 
@@ -327,7 +327,7 @@ func getLVSize(vol *apis.LVMVolume) (uint64, error) {
 		"--nosuffix",
 	}
 
-	cmd := exec.Command(LVSList, args...)
+	cmd := exec.Command(LVList, args...)
 	raw, err := cmd.CombinedOutput()
 	if err != nil {
 		return 0, errors.Wrapf(
@@ -518,8 +518,8 @@ func ReloadLVMMetadataCache() error {
 // groups in the node.
 //
 //If we will call this function from collector.go for metrics collection, exporter will be set as true otherwise false.
-func ListLVMVolumeGroup(exporter bool) ([]apis.VolumeGroup, error) {
-	if !exporter {
+func ListLVMVolumeGroup(reloadCache bool) ([]apis.VolumeGroup, error) {
+	if !reloadCache {
 		if err := ReloadLVMMetadataCache(); err != nil {
 			return nil, err
 		}
@@ -539,13 +539,11 @@ func ListLVMVolumeGroup(exporter bool) ([]apis.VolumeGroup, error) {
 	return decodeVgsJSON(output)
 }
 
-/*
-Function to get LVM Logical volume device
-It returns LVM logical volume device(dm-*).
-This is used as a label in metrics(lvm_lv_total_size) which helps us to map lv_name to device.
-
-Example: pvc-f147582c-adbd-4015-8ca9-fe3e0a4c2452(lv_name) -> dm-0(device)
-*/
+//Function to get LVM Logical volume device
+//It returns LVM logical volume device(dm-*).
+//This is used as a label in metrics(lvm_lv_total_size) which helps us to map lv_name to device.
+//
+//Example: pvc-f147582c-adbd-4015-8ca9-fe3e0a4c2452(lv_name) -> dm-0(device)
 func getLvDeviceName(path string) (string, error) {
 	dmPath, err := filepath.EvalSymlinks(path)
 	if err != nil {
@@ -556,21 +554,18 @@ func getLvDeviceName(path string) (string, error) {
 	return deviceName[len(deviceName)-1], nil
 }
 
-/*
-To parse the output of lvs command and store it in LogicalVolume
-It returns LogicalVolume.
-
-Example: LogicalVolume{
-		Name:     "pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
-		FullName: "linuxlvmvg/pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
-		UUID:     "UJp2Dh-Knfo-E0fO-KjPB-RSHO-X7JO-AI2FZW",
-		Size:     3221225472,
-		Path:     "/dev/linuxlvmvg/pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
-		DMPath:   "/dev/mapper/linuxlvmvg-pvc--213ca1e6--e271--4ec8--875c--c7def3a4908d",
-		VGName:   "linuxlvmvg",
-	}
-
-*/
+//To parse the output of lvs command and store it in LogicalVolume
+//It returns LogicalVolume.
+//
+//Example: LogicalVolume{
+//		Name:     "pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
+//		FullName: "linuxlvmvg/pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
+//		UUID:     "UJp2Dh-Knfo-E0fO-KjPB-RSHO-X7JO-AI2FZW",
+//		Size:     3221225472,
+//		Path:     "/dev/linuxlvmvg/pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
+//		DMPath:   "/dev/mapper/linuxlvmvg-pvc--213ca1e6--e271--4ec8--875c--c7def3a4908d",
+//		VGName:   "linuxlvmvg",
+//	}
 func parseLogicalVolume(m map[string]string) (LogicalVolume, error) {
 	var lv LogicalVolume
 	var err error
@@ -590,40 +585,38 @@ func parseLogicalVolume(m map[string]string) (LogicalVolume, error) {
 	return lv, err
 }
 
-/*
-decodeLvsJSON([]bytes): Decode json format and pass the unmarshalled json to parseLogicalVolume to store logical volumes in LogicalVolume
-
-Output of lvs command will be in json format:
-
-{
-	"report": [
-		{
-			"lv": [
-					{
-						"lv_name":"pvc-ba7b648e-b08b-47bb-beef-60738a33fbd2",
-						...
-					}
-				]
-		}
-	]
-}
-
-This function is used to decode the output of lvs command.
-It returns []LogicalVolume.
-
-Example: []LogicalVolume{
-	{
-		Name:     "pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
-		FullName: "linuxlvmvg/pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
-		UUID:     "UJp2Dh-Knfo-E0fO-KjPB-RSHO-X7JO-AI2FZW",
-		Size:     3221225472,
-		Path:     "/dev/linuxlvmvg/pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
-		DMPath:   "/dev/mapper/linuxlvmvg-pvc--213ca1e6--e271--4ec8--875c--c7def3a4908d",
-		VGName:   "linuxlvmvg",
-		Device:	  "dm-0"
-	}
-}
-*/
+//decodeLvsJSON([]bytes): Decode json format and pass the unmarshalled json to parseLogicalVolume to store logical volumes in LogicalVolume
+//
+//Output of lvs command will be in json format:
+//
+//{
+//	"report": [
+//		{
+//			"lv": [
+//					{
+//						"lv_name":"pvc-ba7b648e-b08b-47bb-beef-60738a33fbd2",
+//						...
+//					}
+//				]
+//		}
+//	]
+//}
+//
+//This function is used to decode the output of lvs command.
+//It returns []LogicalVolume.
+//
+//Example: []LogicalVolume{
+//	{
+//		Name:     "pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
+//		FullName: "linuxlvmvg/pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
+//		UUID:     "UJp2Dh-Knfo-E0fO-KjPB-RSHO-X7JO-AI2FZW",
+//		Size:     3221225472,
+//		Path:     "/dev/linuxlvmvg/pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
+//		DMPath:   "/dev/mapper/linuxlvmvg-pvc--213ca1e6--e271--4ec8--875c--c7def3a4908d",
+//		VGName:   "linuxlvmvg",
+//		Device:	  "dm-0"
+//	}
+//}
 func decodeLvsJSON(raw []byte) ([]LogicalVolume, error) {
 	output := &struct {
 		Report []struct {
@@ -657,22 +650,20 @@ func decodeLvsJSON(raw []byte) ([]LogicalVolume, error) {
 	return lvs, nil
 }
 
-/*
-ListLVMLogicalVolume invokes `lvs` to list all the available logical volumes in the node.
-This function is used to run 'lvs' command.
-
-It returns the parsed []LogicalVolume.
-*/
+//ListLVMLogicalVolume invokes `lvs` to list all the available logical volumes in the node.
+//This function is used to run 'lvs' command.
+//
+//It returns the parsed []LogicalVolume.
 func ListLVMLogicalVolume() ([]LogicalVolume, error) {
 	args := []string{
 		"--options", "lv_all,vg_name",
 		"--reportformat", "json",
 		"--units", "b",
 	}
-	cmd := exec.Command(LVSList, args...)
+	cmd := exec.Command(LVList, args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		klog.Errorf("lvm: error while running command %s %v: %v", LVSList, args, err)
+		klog.Errorf("lvm: error while running command %s %v: %v", LVList, args, err)
 		return nil, err
 	}
 	return decodeLvsJSON(output)
