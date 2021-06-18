@@ -34,7 +34,7 @@ import (
 )
 
 func (c *NodeController) listLVMVolumeGroup() ([]apis.VolumeGroup, error) {
-	return lvm.ListLVMVolumeGroup(false)
+	return lvm.ListLVMVolumeGroup(true)
 }
 
 // syncHandler compares the actual state with the desired, and attempts to

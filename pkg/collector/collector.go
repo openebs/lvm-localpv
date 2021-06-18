@@ -55,7 +55,7 @@ func (c *lvmCollector) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (c *lvmCollector) Collect(ch chan<- prometheus.Metric) {
-	vgList, err := lvm.ListLVMVolumeGroup(true)
+	vgList, err := lvm.ListLVMVolumeGroup(false)
 	if err != nil {
 		klog.Errorf("error in getting the list of lvm volume groups: %v", err)
 	} else {

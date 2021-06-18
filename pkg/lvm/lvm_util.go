@@ -517,9 +517,9 @@ func ReloadLVMMetadataCache() error {
 // ListLVMVolumeGroup invokes `vgs` to list all the available volume
 // groups in the node.
 //
-//If we will call this function from collector.go for metrics collection, exporter will be set as true otherwise false.
+//In case reloadCache is false, we skip refreshing lvm metadata cache.
 func ListLVMVolumeGroup(reloadCache bool) ([]apis.VolumeGroup, error) {
-	if !reloadCache {
+	if reloadCache {
 		if err := ReloadLVMMetadataCache(); err != nil {
 			return nil, err
 		}
@@ -650,10 +650,6 @@ func decodeLvsJSON(raw []byte) ([]LogicalVolume, error) {
 	return lvs, nil
 }
 
-//ListLVMLogicalVolume invokes `lvs` to list all the available logical volumes in the node.
-//This function is used to run 'lvs' command.
-//
-//It returns the parsed []LogicalVolume.
 func ListLVMLogicalVolume() ([]LogicalVolume, error) {
 	args := []string{
 		"--options", "lv_all,vg_name",
