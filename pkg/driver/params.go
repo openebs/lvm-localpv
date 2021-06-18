@@ -129,6 +129,9 @@ func NewSnapshotParams(m map[string]string) (*SnapshotParams, error) {
 				return nil, err
 			}
 			snapSize, _ := qty.AsInt64()
+			if snapSize < 1 {
+				return nil, fmt.Errorf("absolute snapSize should greater than 0, found %s", size)
+			}
 			params.AbsSnapSize = true
 			params.SnapSize = float64(snapSize)
 		}

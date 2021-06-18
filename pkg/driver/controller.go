@@ -600,7 +600,7 @@ func (cs *controller) CreateSnapshot(
 			"failed to parse csi volume params: %v", err)
 	}
 
-	snapSize := calculateSnapSize(params, capacity)
+	snapSize := getSnapSize(params, capacity)
 
 	labels := map[string]string{
 		lvm.LVMVolKey: vol.Name,
@@ -646,7 +646,7 @@ func (cs *controller) CreateSnapshot(
 		Build(), nil
 }
 
-func calculateSnapSize(params *SnapshotParams, capacity int64) int64 {
+func getSnapSize(params *SnapshotParams, capacity int64) int64 {
 	var snapSize int64
 	if !params.AbsSnapSize {
 		snapSize = int64(float64(capacity) * (params.SnapSize / 100))
