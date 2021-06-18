@@ -222,7 +222,7 @@ spec:
             description: LVMSnapshotSpec defines LVMSnapshot spec
             properties:
               ownerNodeID:
-                description: OwnerNodeID is the Node ID where the snapshot group is
+                description: OwnerNodeID is the Node ID where the volume group is
                   present which is where the snapshot has been provisioned. OwnerNodeID
                   can not be edited after the snapshot has been provisioned.
                 minLength: 1

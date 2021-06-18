@@ -35,7 +35,7 @@ type LVMSnapshot struct {
 
 // LVMSnapshotSpec defines LVMSnapshot spec
 type LVMSnapshotSpec struct {
-	// OwnerNodeID is the Node ID where the snapshot group is present which is where
+	// OwnerNodeID is the Node ID where the volume group is present which is where
 	// the snapshot has been provisioned.
 	// OwnerNodeID can not be edited after the snapshot has been provisioned.
 	// +kubebuilder:validation:MinLength=1

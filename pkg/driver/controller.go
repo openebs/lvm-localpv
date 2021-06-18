@@ -563,8 +563,6 @@ func (cs *controller) CreateSnapshot(
 	req *csi.CreateSnapshotRequest,
 ) (*csi.CreateSnapshotResponse, error) {
 
-	var snapSize int64
-
 	klog.Infof("CreateSnapshot volume %s for %s", req.Name, req.SourceVolumeId)
 
 	err := validateSnapshotRequest(req)
@@ -602,17 +600,7 @@ func (cs *controller) CreateSnapshot(
 			"failed to parse csi volume params: %v", err)
 	}
 
-	if !params.AbsSnapSize {
-		snapSize = int64(float64(capacity) * (params.SnapSize / 100))
-	} else {
-		snapSize = int64(params.SnapSize)
-		// cap the snapSize to the origin volume if the
-		// size mentioned in the snapshotclass is more than it
-		if snapSize > capacity {
-			snapSize = capacity
-		}
-	}
-	snapSize = getRoundedCapacity(snapSize)
+	snapSize := calculateSnapSize(params, capacity)
 
 	labels := map[string]string{
 		lvm.LVMVolKey: vol.Name,
@@ -656,6 +644,21 @@ func (cs *controller) CreateSnapshot(
 		WithCreationTime(snapTimeStamp, 0).
 		WithReadyToUse(state == lvm.LVMStatusReady).
 		Build(), nil
+}
+
+func calculateSnapSize(params *SnapshotParams, capacity int64) int64 {
+	var snapSize int64
+	if !params.AbsSnapSize {
+		snapSize = int64(float64(capacity) * (params.SnapSize / 100))
+	} else {
+		snapSize = int64(params.SnapSize)
+		// cap the snapSize to the origin volume if the
+		// size mentioned in the snapshotclass is more than it
+		if snapSize > capacity {
+			snapSize = capacity
+		}
+	}
+	return getRoundedCapacity(snapSize)
 }
 
 // DeleteSnapshot deletes given snapshot
