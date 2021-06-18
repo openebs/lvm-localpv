@@ -135,7 +135,7 @@ func NewSnapshotParams(m map[string]string, capacity int64) (*SnapshotParams, er
 				)
 			}
 			params.AbsSnapSize = true
-			params.SnapSize = float64(getRoundedCapacity(snapSize))
+			params.SnapSize = float64(snapSize)
 		}
 	}
 

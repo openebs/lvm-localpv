@@ -42,14 +42,13 @@ type LVMSnapshotSpec struct {
 	// +kubebuilder:validation:Required
 	OwnerNodeID string `json:"ownerNodeID"`
 
-	// VolGroup specifies the name of the snapshot group where the snapshot has been created.
+	// VolGroup specifies the name of the volume group where the snapshot has been created.
 	// +kubebuilder:validation:Required
 	VolGroup string `json:"volGroup"`
 
-	// Size of the snapshot
+	// SnapSize specifies the space reserved for the snapshot
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:MinLength=1
-	SnapSize string `json:"snapSize"`
+	SnapSize string `json:"snapSize,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

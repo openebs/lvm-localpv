@@ -603,10 +603,11 @@ func (cs *controller) CreateSnapshot(
 	}
 
 	if !params.AbsSnapSize {
-		snapSize = getRoundedCapacity(int64(float64(capacity) * (params.SnapSize / 100)))
+		snapSize = int64(float64(capacity) * (params.SnapSize / 100))
 	} else {
 		snapSize = int64(params.SnapSize)
 	}
+	snapSize = getRoundedCapacity(snapSize)
 
 	labels := map[string]string{
 		lvm.LVMVolKey: vol.Name,
