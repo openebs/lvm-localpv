@@ -596,7 +596,7 @@ func (cs *controller) CreateSnapshot(
 
 	capacity, _ := strconv.ParseInt(vol.Spec.Capacity, 10, 64)
 
-	params, err := NewSnapshotParams(req.GetParameters(), capacity)
+	params, err := NewSnapshotParams(req.GetParameters())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument,
 			"failed to parse csi volume params: %v", err)
@@ -606,6 +606,11 @@ func (cs *controller) CreateSnapshot(
 		snapSize = int64(float64(capacity) * (params.SnapSize / 100))
 	} else {
 		snapSize = int64(params.SnapSize)
+		// cap the snapSize to the origin volume if the
+		// size mentioned in the snapshotclass is more than it
+		if snapSize > capacity {
+			snapSize = capacity
+		}
 	}
 	snapSize = getRoundedCapacity(snapSize)
 

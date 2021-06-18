@@ -100,7 +100,7 @@ func NewVolumeParams(m map[string]string) (*VolumeParams, error) {
 }
 
 // NewSnapshotParams parses the input params and instantiates new SnapshotParams.
-func NewSnapshotParams(m map[string]string, capacity int64) (*SnapshotParams, error) {
+func NewSnapshotParams(m map[string]string) (*SnapshotParams, error) {
 	var err error
 	params := &SnapshotParams{ // set up defaults, if any.
 		SnapSize:    100,
