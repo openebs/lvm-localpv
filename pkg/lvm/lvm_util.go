@@ -340,7 +340,7 @@ func buildLVMSnapCreateArgs(snap *apis.LVMSnapshot) []string {
 	// If you specify a size parameter, the snapshot that will be created will not
 	// be a thin snapshot volume and will not use the thin pool for storing data.
 	if len(snap.Spec.SnapSize) != 0 {
-		// size of the snapshot, will be same as source volume
+		// size of the snapshot, will be same or less than source volume
 		LVMSnapArg = append(LVMSnapArg, "--size", size)
 	}
 	return LVMSnapArg
