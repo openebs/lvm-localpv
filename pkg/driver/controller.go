@@ -609,12 +609,21 @@ func (cs *controller) CreateSnapshot(
 	snapObj, err := snapbuilder.NewBuilder().
 		WithName(req.Name).
 		WithLabels(labels).
-		// the capacity of the snapshot will be set according to the params
-		// defined in the snapshot class
-		WithSnapSize(strconv.FormatInt(snapSize, 10)).
 		WithOwnerNode(vol.Spec.OwnerNodeID).
 		WithVolGroup(vol.Spec.VolGroup).
 		Build()
+
+	// the capacity of the snapshot will be set according to the params
+	// defined in the snapshot class
+	if snapSize > 0 {
+		snapObj, err = snapbuilder.BuildFrom(snapObj).
+			WithSnapSize(strconv.FormatInt(snapSize, 10)).
+			Build()
+	} else if vol.Spec.ThinProvision != lvm.YES {
+		snapObj, err = snapbuilder.BuildFrom(snapObj).
+			WithSnapSize(vol.Spec.Capacity).
+			Build()
+	}
 
 	if err != nil {
 		return nil, status.Errorf(

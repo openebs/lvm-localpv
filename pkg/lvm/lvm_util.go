@@ -330,14 +330,19 @@ func buildLVMSnapCreateArgs(snap *apis.LVMSnapshot) []string {
 		"--snapshot",
 		// name of snapshot
 		"--name", getLVMSnapName(snap.Name),
-		// size of the snapshot, will be same as source volume
-		"--size", size,
 		// set the permission to make the snapshot read-only. By default LVM snapshots are RW
 		"--permission", "r",
 		// volume to snapshot
 		volPath,
 	)
 
+	// When creating a thin snapshot volume, you do not specify the size of the volume.
+	// If you specify a size parameter, the snapshot that will be created will not
+	// be a thin snapshot volume and will not use the thin pool for storing data.
+	if len(snap.Spec.SnapSize) != 0 {
+		// size of the snapshot, will be same or less than source volume
+		LVMSnapArg = append(LVMSnapArg, "--size", size)
+	}
 	return LVMSnapArg
 }
 
@@ -376,7 +381,7 @@ func CreateSnapshot(snap *apis.LVMSnapshot) error {
 func DestroySnapshot(snap *apis.LVMSnapshot) error {
 	snapVolume := snap.Spec.VolGroup + "/" + getLVMSnapName(snap.Name)
 
-	ok, err := snapshotExists(snapVolume)
+	ok, err := isSnapshotExists(snap.Spec.VolGroup, getLVMSnapName(snap.Name))
 	if !ok {
 		klog.Infof("lvm: snapshot %s does not exist, skipping deletion", snapVolume)
 		return nil
@@ -518,17 +523,15 @@ func lvThinExists(vg string, name string) bool {
 	return name == strings.TrimSpace(string(out))
 }
 
-// snapshotExists checks if a snapshot volume exists given the name of the volume.
-// The name should be <vg-name>/<snapshot-name>
-func snapshotExists(snapVolumeName string) (bool, error) {
-	snapPath := DevPath + snapVolumeName
-	if _, err := os.Stat(snapPath); err != nil {
-		if os.IsNotExist(err) {
-			return false, nil
-		}
+// snapshotExists checks if a snapshot volume exists for the given volumegroup
+// and snapshot name.
+func isSnapshotExists(vg, snapVolumeName string) (bool, error) {
+	cmd := exec.Command("lvs", vg+"/"+snapVolumeName, "--noheadings", "-o", "lv_name")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
 		return false, err
 	}
-	return true, nil
+	return snapVolumeName == strings.TrimSpace(string(out)), nil
 }
 
 // getVGSize get the size in bytes for given volumegroup name

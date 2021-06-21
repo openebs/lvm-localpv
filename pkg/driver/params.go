@@ -102,10 +102,8 @@ func NewVolumeParams(m map[string]string) (*VolumeParams, error) {
 // NewSnapshotParams parses the input params and instantiates new SnapshotParams.
 func NewSnapshotParams(m map[string]string) (*SnapshotParams, error) {
 	var err error
-	params := &SnapshotParams{ // set up defaults, if any.
-		SnapSize:    100,
-		AbsSnapSize: false,
-	}
+	params := &SnapshotParams{}
+
 	// parameter keys may be mistyped from the CRD specification when declaring
 	// the storageclass, which kubectl validation will not catch. Because
 	// parameter keys (not values!) are all lowercase, keys may safely be forced
