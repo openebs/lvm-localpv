@@ -87,6 +87,8 @@ Following are the basic concepts (components) that LVM manages:
 - Volume Group
 - Logical Volume
 
+![LVM-architecture](https://user-images.githubusercontent.com/7765078/122776107-6aadcf80-d2c8-11eb-814b-86ba9407c09f.png)
+
 ##### Physical Volume
 A Physical Volume is a disk or block device, it forms the underlying storage unit for a LVM Logical Volume. In order to use a block device or its partition for LVM, it should be first initialized as a Physical Volume using `pvcreate` command from the LVM2 utils package. This places an LVM label near the start of the device.
 
