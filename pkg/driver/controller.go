@@ -615,7 +615,7 @@ func (cs *controller) CreateSnapshot(
 
 	// the capacity of the snapshot will be set according to the params
 	// defined in the snapshot class
-	if snapSize != 0 {
+	if snapSize > 0 {
 		snapObj, err = snapbuilder.BuildFrom(snapObj).
 			WithSnapSize(strconv.FormatInt(snapSize, 10)).
 			Build()
@@ -657,7 +657,7 @@ func (cs *controller) CreateSnapshot(
 
 func getSnapSize(params *SnapshotParams, capacity int64) int64 {
 	var snapSize int64
-	if !params.AbsSnapSize && params.SnapSize != 0 {
+	if !params.AbsSnapSize {
 		snapSize = int64(float64(capacity) * (params.SnapSize / 100))
 	} else {
 		snapSize = int64(params.SnapSize)
