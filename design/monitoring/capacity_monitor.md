@@ -117,16 +117,16 @@ This involves two phases - identifying the metrics and making them available for
 - Total Used Capacity for all PVCs on a node is the aggregate used capacity of all LVs on that node. Run the command to get the used capacity (lv_used) of an LV. `lvs -o lv_size,data_percent,snap_percent,metadata_percent <lv_full_name>`. Run the command without <lv_full_name> to fetch for all LVs.
 
 ##### Usage-based Metrics
-- Read IOPs
-- Write IOPs
-- Read Throughput
-- Write Throughput
-- Read Latency
-- Write Latency
-- Outstanding IOs
-- Status  
+- Read IOPs: Number of read requests completed per second from the LV.
+- Write IOPs: Number of write requests completed per second to the LV.
+- Read Throughput: Number of Bytes read per second from the LV.
+- Write Throughput: Number of Bytes written per second to the LV.
+- Read Latency: Average time in milliseconds for read requests issued to the LV to be served.
+- Write Latency: Average time in milliseconds for write requests issued to the LV to be served.
+- Outstanding IOs: The number of read and write requests that were queued to the LV and not yet served.
+- Status: Status of LV indicates if it is 'Active' or 'Not available'.
   
-Since each LV corresponds to a device-mapper volume on the node, the performance statistics like IOPs, Throughput, Latency and Outstanding IOs can be obtained by running the standard `iostat -x` command on the node. The Status of each LV can be obtained from the `lvs -o lv_active <lv_full_name>` command output. When an LV is available, its status will show as 'Active', else it may show as 'Not Available'.
+Since each LV corresponds to a device-mapper volume on the node, the performance statistics like IOPs, Throughput, Latency and Outstanding IOs can be obtained by running the standard `iostat -x` command on the node. The Status of each LV can be obtained from the `lvs -o lv_active <lv_full_name>` command output. When an LV is available, its status will show as 'Active', else it may show as 'Not available'.
 
 #### Metrics Export
 
@@ -150,7 +150,7 @@ VG capacity alert (thick pool threshold) | Used capacity of a VG crosses 80% of 
 VG unhealthy alert | One or more missing PVs (vg_missing_pv_count > 0) in the VG. | Investigate the cause of the missing PV.
 Thin pool capacity alert (thin pool threshold) | Used capacity of a thin pool crosses 90% of its allocated size. | Extend (resize) thin pool or clean up space.
 LV capacity alert | Used capacity of a logical volume crosses 90% of its allocated size. | Extend (resize) LV or clean up space.
-LV unhealthy alert | Status of LV is 'Not Available'. | Check the status of underlying VG and PVs. Once confirmed, attempt to activate the LV by running the command `lvchange -ay <lv_full_name>`.
+LV unhealthy alert | Status of LV is 'Not available'. | Check the status of underlying VG and PVs. Once confirmed, attempt to activate the LV by running the command `lvchange -ay <lv_full_name>`.
 LV latency alert | Read / write latency crosses 100 ms consistently over 5 min interval. | Investigate the cause of slowness, maybe a disk is under-performing or IO load has increased.
 
 ### Test Plan
