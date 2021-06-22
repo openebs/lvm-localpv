@@ -144,11 +144,11 @@ Below are sample Grafana dashboards:
 ![Throughput](https://user-images.githubusercontent.com/32039199/121762853-2eef6900-cb56-11eb-8320-da299d4fb7f0.png)
 
 ### Sample Alerts
-Condition|Description|Resolution
----------------------------------
-VG capacity alert (thick pool threshold)|Used capacity of a VG crosses 80% of its total capacity.|Resize VG by adding more Physical Volumes (disks).
-Thin pool capacity alert (thin pool threshold)|Used capacity of a thin pool crosses 90% of its allocated size.|Extend (resize) thin pool.
-LV capacity alert|Used capacity of a logical volume crosses 90% of its allocated size.|Extend (resize) LV.
+Condition | Description | Resolution
+--------- | ----------- | ----------
+VG capacity alert (thick pool threshold) | Used capacity of a VG crosses 80% of its total capacity. | Resize VG by adding more Physical Volumes (disks).
+Thin pool capacity alert (thin pool threshold) | Used capacity of a thin pool crosses 90% of its allocated size. | Extend (resize) thin pool.
+LV capacity alert | Used capacity of a logical volume crosses 90% of its allocated size. | Extend (resize) LV.
 
 ### Test Plan
 
