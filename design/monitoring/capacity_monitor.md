@@ -34,6 +34,7 @@ status: In-progress
         - [Node Exporter](#node-exporter)
         - [Custom Exporter](#custom-exporter)
     - [Sample Dashboards](#sample-dashboards)
+    - [Sample Alerts](#sample-alerts)
     - [Test Plan](#test-plan)
   - [Graduation Criteria](#graduation-criteria)
   - [Drawbacks](#drawbacks)
@@ -154,6 +155,9 @@ LV unhealthy alert | Status of LV is 'Not available'. | Check the status of unde
 LV latency alert | Read / write latency crosses 100 ms consistently over 5 min interval. | Investigate the cause of slowness, maybe a disk is under-performing or IO load has increased.
 
 ### Test Plan
+##### Pre-requisites
+- Install OpenEBS LVM components (Follow [these](https://github.com/openebs/lvm-localpv/blob/master/README.md) steps).
+- Install OpenEBS monitoring stack (Follow [these](https://github.com/openebs/monitoring/blob/develop/README.md) steps).
 
 ## Graduation Criteria
 
