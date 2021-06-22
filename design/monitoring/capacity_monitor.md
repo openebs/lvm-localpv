@@ -135,7 +135,8 @@ Node Exporter is a Prometheus exporter for collecting hardware and OS kernel met
 
 ##### Custom Exporter
 Node exporter is able to fetch all metrics related to Logical Volumes. However, there is currently no in-built support for collecting metrics related to Volume Groups. We need a custom exporter to scrape VG metrics like vg_size, vg_used and vg_free.
-![LVM-LocalPV-CSI-Plugin](https://user-images.githubusercontent.com/7765078/122900863-a7ca9e00-d36a-11eb-91a6-0ed1deec847f.jpg)
+![LVM-LocalPV-CSI-Plugin](https://user-images.githubusercontent.com/7765078/122904191-bcf4fc00-d36d-11eb-8219-1e0a475728da.png)
+
 
 
 ### Sample Dashboards
