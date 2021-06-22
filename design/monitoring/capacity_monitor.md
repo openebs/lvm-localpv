@@ -13,7 +13,7 @@ status: In-progress
 
 ## Table of Contents
 
-- [LVM-LocalPV Node Capacity_Management_and_Monitoring](#lvm-localpv-node-capacity-management-and-monitoring)
+- [LVM-LocalPV Node Capacity Management and Monitoring](#lvm-localpv-node-capacity-management-and-monitoring)
   - [Table of Contents](#table-of-contents)
   - [Summary](#summary)
   - [Motivation](#motivation)
