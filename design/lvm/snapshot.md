@@ -39,6 +39,8 @@ LVM Snapshots are space efficient point in time copies of lvm volumes. It consum
 ### Non-Goals
 
 - Creating clones from Snapshots
+- restore of a snapshot
+- expanding the snapshot
 - making snapshot available to the source pod, there is a hack to make this possbile. Need to revisit this requirement for the community users.
 - internals of csi-snapshotter and snapshot-controller
 
@@ -158,6 +160,11 @@ If we want to reserve the space for the snapshot created for thin volumes, we ca
 - Verify the snapSize paramaeter with absolute value and check that correct size has been reserved for thin volumes
 - Verify the snapSize paramaeter with percentage value and check that correct size has been reserved for thick volumes
 - Verify the snapSize paramaeter with percentage value and check that correct size has been reserved for thin volumes
+- Verify the snapshot creation for non existing pvc and check that it fails
+- Check the LVM behavior when we are exceeding the snapsize space for snapshots
+- Check the perfromance of the volume after creating the snapshot
+- Create multiple snapshots and verify that any modification in origianl volume gets stored in all the snapshots
+- Verify original volume is working fine after creating the snapshot with and without snapsize parameter
 
 ## Graduation Criteria
 
