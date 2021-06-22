@@ -147,11 +147,11 @@ Below are sample Grafana dashboards:
 Type | Condition | Resolution
 --------- | ----------- | ----------
 VG capacity alert (thick pool threshold) | Used capacity of a VG crosses 80% of its total capacity. | Resize VG by adding more Physical Volumes (disks) or clean up space.
+VG unhealthy alert | One or more missing PVs (vg_missing_pv_count > 0) in the VG. | Investigate the cause of the missing PV.
 Thin pool capacity alert (thin pool threshold) | Used capacity of a thin pool crosses 90% of its allocated size. | Extend (resize) thin pool or clean up space.
 LV capacity alert | Used capacity of a logical volume crosses 90% of its allocated size. | Extend (resize) LV or clean up space.
-LV unhealthy alert | Status of LV is 'Not Available'. | Check the status of underlying VG and PVs. Once confirmed, attempt to activate the LV by running the command `lvchange -ay <lv_full_name>`
-VG unhealthy alert | One or more missing PVs (vg_missing_pv_count > 0) in the VG | Investigate the cause of the missing PV.
-LV latency alert | Read / write latency crosses 100 ms consistency over 5 min interval | Investigate the cause of slowness, maybe a disk is under-performing or IO load has increased.
+LV unhealthy alert | Status of LV is 'Not Available'. | Check the status of underlying VG and PVs. Once confirmed, attempt to activate the LV by running the command `lvchange -ay <lv_full_name>`.
+LV latency alert | Read / write latency crosses 100 ms consistently over 5 min interval. | Investigate the cause of slowness, maybe a disk is under-performing or IO load has increased.
 
 ### Test Plan
 
