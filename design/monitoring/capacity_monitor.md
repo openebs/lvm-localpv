@@ -137,14 +137,18 @@ Node Exporter is a Prometheus exporter for collecting hardware and OS kernel met
 Node exporter is able to fetch all metrics related to Logical Volumes. However, there is currently no in-built support for collecting metrics related to Volume Groups. We need a custom exporter to scrape VG metrics like vg_size, vg_used and vg_free.
 ![LVM-LocalPV-CSI-Plugin](https://user-images.githubusercontent.com/7765078/122904191-bcf4fc00-d36d-11eb-8219-1e0a475728da.png)
 
-
-
 ### Sample Dashboards
-
 Below are sample Grafana dashboards:
 ![Capacity](https://user-images.githubusercontent.com/32039199/121763305-80005c80-cb58-11eb-8bf8-99f62cac2e1d.png)
 ![IOPs and Latency](https://user-images.githubusercontent.com/32039199/121762850-2ac34b80-cb56-11eb-903d-50c63a60c50a.png)
 ![Throughput](https://user-images.githubusercontent.com/32039199/121762853-2eef6900-cb56-11eb-8320-da299d4fb7f0.png)
+
+### Sample Alerts
+Condition|Description|Resolution
+---------------------------------
+VG capacity alert (thick pool threshold)|Used capacity of a VG crosses 80% of its total capacity.|Resize VG by adding more Physical Volumes (disks).
+Thin pool capacity alert (thin pool threshold)|Used capacity of a thin pool crosses 90% of its allocated size.|Extend (resize) thin pool.
+LV capacity alert|Used capacity of a logical volume crosses 90% of its allocated size.|Extend (resize) LV.
 
 ### Test Plan
 
