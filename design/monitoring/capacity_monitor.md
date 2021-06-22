@@ -36,6 +36,8 @@ status: In-progress
     - [Sample Dashboards](#sample-dashboards)
     - [Sample Alerts](#sample-alerts)
     - [Test Plan](#test-plan)
+        - [Pre-requisites](#pre-requisites)
+        - [Test Cases](#test-cases)
   - [Graduation Criteria](#graduation-criteria)
   - [Drawbacks](#drawbacks)
   - [Alternatives](#alternatives)
@@ -156,12 +158,18 @@ LV latency alert | Read / write latency crosses 100 ms consistently over 5 min i
 
 ### Test Plan
 ##### Pre-requisites
-- Install OpenEBS LVM components (Follow [these](https://github.com/openebs/lvm-localpv/blob/master/README.md) steps).
-- Install OpenEBS monitoring stack (Follow [these](https://github.com/openebs/monitoring/blob/develop/README.md) steps).
+- Install OpenEBS LVM components (follow [these](https://github.com/openebs/lvm-localpv/blob/master/README.md) steps).
+- Install OpenEBS monitoring stack (follow [these](https://github.com/openebs/monitoring/blob/develop/README.md) steps).
+- Create a Volume Group using available node disks.
+
+##### Test Cases
+- T1: Provision an OpenEBS LVM local PV of 5 GB capacity from a thick pool (VG) and mount it on an application pod, dump 3 GB of data onto the volume. Check the usage of the volume from the backend and compare against the dashboard value.
+- T2: Perform T1, then check the usage of the VG from the backend and compare against the dashboard value.
+- T3: Provision an OpenEBS LVM Local PV of 1 GB from the VG and mount it on fio application pod. Run different fio workloads with combinations of read/write IOs on the volume. Observe the various performance metrics using `iostat -x` and compare the same against the dashboard values.
 
 ## Graduation Criteria
 
-All testcases mentioned in [Test Plan](#test-plan) section need to be automated
+All testcases mentioned in [Test Plan](#test-plan) section need to be automated.
 
 ## Drawbacks
 NA
