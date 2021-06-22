@@ -1,5 +1,5 @@
 ---
-title: LVM-LocalPV Node Capacity Management and Monitoring
+title: LVM LocalPV Node Capacity Management and Monitoring
 authors:
   - "@avishnu"
 owners:
@@ -9,11 +9,11 @@ last-updated: 2021-06-17
 status: In-progress
 ---
 
-# LVM-LocalPV Node Capacity Management and Monitoring
+# LVM LocalPV Node Capacity Management and Monitoring
 
 ## Table of Contents
 
-- [LVM-LocalPV Node Capacity Management and Monitoring](#lvm-localpv-node-capacity-management-and-monitoring)
+- [LVM LocalPV Node Capacity Management and Monitoring](#lvm-localpv-node-capacity-management-and-monitoring)
   - [Table of Contents](#table-of-contents)
   - [Summary](#summary)
   - [Motivation](#motivation)
