@@ -134,10 +134,12 @@ Since each LV corresponds to a device-mapper volume on the node, the performance
 #### Metrics Export
 
 ##### Node Exporter
-Node Exporter is a Prometheus exporter for collecting hardware and OS kernel metrics exposed by *NIX* kernels using pluggable metrics collectors. There are many built-in collectors which are enabled by default in the node exporter. Using collectors 'diskstats' and 'filesystem', the node exporter is able to collect and export all the capacity and performance metrics for LVM Logical Volumes. These metrics can be stored in a  time-series database like Prometheus and visualized in Grafana with promQL queries. Since a thin pool is also an LV, the node exporter is able to collect its usage metrics as well.
+Node Exporter is a Prometheus exporter for collecting hardware and OS kernel metrics exposed by *NIX* kernels using pluggable metrics collectors. There are many built-in collectors which are enabled by default in the node-exporter. Using collectors 'diskstats' and 'filesystem', the node exporter is able to collect and export all the capacity and performance metrics for LVM Logical Volumes. These metrics can be stored in a  time-series database like Prometheus and visualized in Grafana with promQL queries. Since a thin pool is also an LV, the node-exporter is able to collect its usage metrics as well.  
+This [document](https://docs.google.com/document/d/1Nm84UJsRKlOFtxY9eSGZGDwUSJWtzI2j5v74uyxxup4/edit?usp=sharing) captures the correlation of iostat metrics with the metrics from node exporter.
 
 ##### Custom Exporter
-Node exporter is able to fetch all metrics related to Logical Volumes. However, there is currently no in-built support for collecting metrics related to Volume Groups. We need a custom exporter to scrape VG metrics like vg_size, vg_used and vg_free.
+Node-exporter is able to fetch all metrics related to Logical Volumes. However, there is currently no in-built support for collecting metrics related to Volume Groups. We need a custom-exporter to scrape VG metrics like vg_size, vg_used and vg_free.  
+This [document](https://docs.google.com/document/d/1Lk__5J4MDa1fEgYFWFPCx1_Guo3Ai2EnnY1e39N7_gA/edit) describes the approach for custom-exporter deployment.
 ![LVM-LocalPV-CSI-Plugin](https://user-images.githubusercontent.com/7765078/122904191-bcf4fc00-d36d-11eb-8219-1e0a475728da.png)
 
 ### Sample Dashboards
@@ -166,6 +168,7 @@ LV latency alert | Read / write latency crosses 100 ms consistently over 5 min i
 - T1: Provision an OpenEBS LVM local PV of 5 GB capacity from a thick pool (VG) and mount it on an application pod, dump 3 GB of data onto the volume. Check the usage of the volume from the backend and compare against the dashboard value.
 - T2: Perform T1, then check the usage of the VG from the backend and compare against the dashboard value.
 - T3: Provision an OpenEBS LVM Local PV of 1 GB from the VG and mount it on fio application pod. Run different fio workloads with combinations of read/write IOs on the volume. Observe the various performance metrics using `iostat -x` and compare the same against the dashboard values.
+- T4: Remove (de-provision) one or more disks from the VG till the LV status changes from "Active" to "Not available". Check the status in the dashboard.
 
 ## Graduation Criteria
 
