@@ -111,23 +111,21 @@ This involves two phases - identifying the metrics and making them available for
 #### Metrics Identification
 
 ##### Capacity-based Metrics
-- Total Provisioned Capacity on a node is the aggregate capacity of all Volume Groups on that node. Run the command to get the total capacity (vg_size) of a VG.
-`vgs -o vg_size <vg_name>`. Run the command without <vg_name> to fetch for all VGs.
-- Total Free Capacity on a node is the aggregate free capacity of all Volume Groups on that node. Run the command to get the free capacity (vg_free) of a VG.
-`vgs -o vg_free <vg_name>`. Run the command without <vg_name> to fetch for all VGs.
-- Total Used Capacity on a node is the aggregate used capacity of all Volume Groups on that node. The difference between the vg_size and vg_free gives the used capacity (vg_used) for a VG.
-- Total Allocated Capacity on a node is the aggregate size of all LVs on that node. Run the command to get the size (lv_size) of an LV. `lvs -o lv_size <lv_full_name>`. Run the command without <lv_full_name> to fetch for all LVs.
-- Total Used Capacity for all PVCs on a node is the aggregate used capacity of all LVs on that node. Run the command to get the used capacity (lv_used) of an LV. `lvs -o lv_size,data_percent,snap_percent,metadata_percent <lv_full_name>`. Run the command without <lv_full_name> to fetch for all LVs.
+- **Total Provisioned Capacity** on a node is the aggregate capacity of all Volume Groups on that node. Run the command `vgs -o vg_size <vg_name>` to get the total capacity (vg_size) of a VG. Run the command without <vg_name> to fetch for all VGs.
+- **Total Free Capacity** on a node is the aggregate free capacity of all Volume Groups on that node. Run the command `vgs -o vg_free <vg_name>` to get the free capacity (vg_free) of a VG. Run the command without <vg_name> to fetch for all VGs.
+- **Total Used Capacity** on a node is the aggregate used capacity of all Volume Groups on that node. The difference between the vg_size and vg_free gives the used capacity (vg_used) for a VG.
+- **Total Allocated Capacity** on a node is the aggregate size of all LVs on that node. Run the command `lvs -o lv_size <lv_full_name>` to get the size (lv_size) of an LV. Run the command without <lv_full_name> to fetch for all LVs.
+- **Total Used Capacity** for all PVCs on a node is the aggregate used capacity of all LVs on that node. Run the command `lvs -o lv_size,data_percent,snap_percent,metadata_percent <lv_full_name>` to get the used capacity (lv_used) of an LV.  Run the command without <lv_full_name> to fetch for all LVs.
 
 ##### Usage-based Metrics
-- Read IOPs: Number of read requests completed per second from the LV.
-- Write IOPs: Number of write requests completed per second to the LV.
-- Read Throughput: Number of Bytes read per second from the LV.
-- Write Throughput: Number of Bytes written per second to the LV.
-- Read Latency: Average time in milliseconds for read requests issued to the LV to be served.
-- Write Latency: Average time in milliseconds for write requests issued to the LV to be served.
-- Outstanding IOs: The number of read and write requests that were queued to the LV and not yet served.
-- Status: Status of LV indicates if it is 'Active' or 'Not available'.
+- **Read IOPs**: Number of read requests completed per second from the LV.
+- **Write IOPs**: Number of write requests completed per second to the LV.
+- **Read Throughput**: Number of Bytes read per second from the LV.
+- **Write Throughput**: Number of Bytes written per second to the LV.
+- **Read Latency**: Average time in milliseconds for read requests issued to the LV to be served.
+- **Write Latency**: Average time in milliseconds for write requests issued to the LV to be served.
+- **Outstanding IOs**: The number of read and write requests that were queued to the LV and not yet served.
+- **Status**: Status of LV indicates if it is 'Active' or 'Not available'.
   
 Since each LV corresponds to a device-mapper volume on the node, the performance statistics like IOPs, Throughput, Latency and Outstanding IOs can be obtained by running the standard `iostat -x` command on the node. The Status of each LV can be obtained from the `lvs -o lv_active <lv_full_name>` command output. When an LV is available, its status will show as 'Active', else it may show as 'Not available'.
 
