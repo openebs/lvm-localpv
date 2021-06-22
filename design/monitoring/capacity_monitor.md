@@ -141,6 +141,9 @@ Node exporter is able to fetch all metrics related to Logical Volumes. However, 
 ### Sample Dashboards
 
 Below are sample Grafana dashboards:
+![Capacity](https://user-images.githubusercontent.com/32039199/121763305-80005c80-cb58-11eb-8bf8-99f62cac2e1d.png)
+![IOPs and Latency](https://user-images.githubusercontent.com/32039199/121762850-2ac34b80-cb56-11eb-903d-50c63a60c50a.png)
+![Throughput](https://user-images.githubusercontent.com/32039199/121762853-2eef6900-cb56-11eb-8320-da299d4fb7f0.png)
 
 ### Test Plan
 
