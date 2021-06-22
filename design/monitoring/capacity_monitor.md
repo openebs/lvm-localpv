@@ -125,6 +125,7 @@ This involves two phases - identifying the metrics and making them available for
 - Write Latency
 - Outstanding IOs
 - Status  
+  
 Since each LV corresponds to a device-mapper volume on the node, the performance statistics like IOPs, Throughput, Latency and Outstanding IOs can be obtained by running the standard `iostat -x` command on the node. The Status of each LV can be obtained from the `lvs -o lv_active <lv_full_name>` command output. When an LV is available, its status will show as 'Active', else it may show as 'Not Available'.
 
 #### Metrics Export
