@@ -25,6 +25,7 @@ on:
       - 'changelogs/**'
       - 'deploy/helm/**'
       - 'docs/**'
+      - 'design/**'
       - 'LICENSE'
       - 'MAINTAINERS'
 
