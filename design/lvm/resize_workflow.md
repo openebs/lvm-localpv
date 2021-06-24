@@ -131,17 +131,25 @@ Below is high level sequence diagram for volume expansion workflow
 
 ### Test Plan
 A test plan will include following test cases:
-- Test volume expansion operation on all supported filesystems(ext3, ext4, xfs, btrfs).
-- Test volume expansion while previous expansion of the volume is already in progress.
-- Restart of node LVM-Node-CSI-driver while filesystem expansion is in progress.
-- Test volume expansion while application is not consuming the volume(It should succeed only after application mounts the volume).
-- Shutdown the node while filesystem expansion is in progress and after recovering volume expansion should be succeeded.
-- Test volume expansion on statefulset application with multiple replicas.
-- Test volume expansion of thin provisioned volume.
-- Test volume expansion with snapshot(s).
-- Test volume expansion of thick provisioned volume group by increasing volume size greater than underlying vg size.
-- Simulate failures in volume expansion workflow and verify the accessibility of volume as well as data integrity checks.
-- Deletion of volume while volume expansion is in progress.
+- Test volume expansion operation on all supported filesystems(ext3, ext4, xfs, btrfs)
+  and verify expansion of volume from application.
+- Test volume expansion while previous expansion of the volume is already in progress
+  and verify expansion of volume to latest desired size.
+- Restart of node LVM-Node-CSI-driver while filesystem expansion is in progress and after
+  recovery filesystem should be expanded.
+- Test volume expansion while an application is not consuming the volume(It should succeed
+  only after application mounts the volume).
+- Shutdown the node while filesystem expansion is in progress and after recovering volume
+  expansion should be succeeded.
+- Test volume expansion on statefulset applications with multiple replicas and verify
+  expansion of volume from multiple replicas.
+- Test volume expansion of thin provisioned volume and verify expansion volume from application.
+- Test volume expansion with snapshot(s) and verify volume should remain in same size
+- Test volume expansion of thick provisioned volume group by increasing volume size greater than
+  underlying vg size and verify volume should remains in same size
+- Simulate failures in volume expansion workflow and verify the accessibility of volume as
+  well as data integrity checks.
+- Deletion of volume while volume expansion is in progress and verify volume should get deleted.
 
 
 ## Graduation Criteria
