@@ -65,9 +65,13 @@ type LogicalVolume struct {
 	// Name of the lvm logical volume(name: pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d)
 	Name string
 
+	// TODO
+	// FullName is not getting populated currently. We will have to populate it for using it as labels in lvm metrics.
 	// Full name of the lvm logical volume (fullName: linuxlvmvg/pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d)
 	FullName string
 
+	// TODO
+	// UUID is not getting populated currently. We will have to populate it for using it as labels in lvm metrics.
 	// UUID denotes a unique identity of a lvm logical volume.
 	UUID string
 
