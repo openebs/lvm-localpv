@@ -87,6 +87,8 @@ type LogicalVolume struct {
 	// LVM logical volume device
 	Device string
 
+	// TODO
+	// VGName is not getting populated currently. We will have to populate it for using it as a label in lvm metrics.
 	// Name of the VG in which LVM logical volume is created
 	VGName string
 }
@@ -563,12 +565,10 @@ func getLvDeviceName(path string) (string, error) {
 //
 //Example: LogicalVolume{
 //		Name:     "pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
-//		FullName: "linuxlvmvg/pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
-//		UUID:     "UJp2Dh-Knfo-E0fO-KjPB-RSHO-X7JO-AI2FZW",
 //		Size:     3221225472,
 //		Path:     "/dev/linuxlvmvg/pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
 //		DMPath:   "/dev/mapper/linuxlvmvg-pvc--213ca1e6--e271--4ec8--875c--c7def3a4908d",
-//		VGName:   "linuxlvmvg",
+//      Device:	  "dm-0"
 //	}
 func parseLogicalVolume(m map[string]string) (LogicalVolume, error) {
 	var lv LogicalVolume
@@ -577,7 +577,6 @@ func parseLogicalVolume(m map[string]string) (LogicalVolume, error) {
 	lv.Name = m["lv_name"]
 	lv.Path = m["lv_path"]
 	lv.DMPath = m["lv_dm_path"]
-	lv.VGName = m["vg_name"]
 	sizeBytes, err := strconv.ParseInt(strings.TrimSuffix(strings.ToLower(m["lv_size"]), "b"), 10, 64)
 
 	if err != nil {
@@ -612,12 +611,9 @@ func parseLogicalVolume(m map[string]string) (LogicalVolume, error) {
 //Example: []LogicalVolume{
 //	{
 //		Name:     "pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
-//		FullName: "linuxlvmvg/pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
-//		UUID:     "UJp2Dh-Knfo-E0fO-KjPB-RSHO-X7JO-AI2FZW",
 //		Size:     3221225472,
 //		Path:     "/dev/linuxlvmvg/pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
 //		DMPath:   "/dev/mapper/linuxlvmvg-pvc--213ca1e6--e271--4ec8--875c--c7def3a4908d",
-//		VGName:   "linuxlvmvg",
 //		Device:	  "dm-0"
 //	}
 //}

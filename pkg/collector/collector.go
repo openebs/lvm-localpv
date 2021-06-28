@@ -41,9 +41,10 @@ func NewLvmCollector() prometheus.Collector {
 			"LVM VG total size in bytes",
 			[]string{"name"}, nil,
 		),
-		lvSizeMetric: prometheus.NewDesc(prometheus.BuildFQName("lvm", "lv", "total_size_bytes"),
+		// Metric name is openebs_size_of_volume which stores the size of lv
+		lvSizeMetric: prometheus.NewDesc(prometheus.BuildFQName("openebs", "size_of", "volume"),
 			"LVM LV total size in bytes",
-			[]string{"name", "path", "dm_path", "vg", "device"}, nil,
+			[]string{"volumename", "dm_path", "device"}, nil,
 		),
 	}
 }
@@ -70,7 +71,7 @@ func (c *lvmCollector) Collect(ch chan<- prometheus.Metric) {
 		klog.Errorf("error in getting the list of lvm logical volumes: %v", err)
 	} else {
 		for _, lv := range lvList {
-			ch <- prometheus.MustNewConstMetric(c.lvSizeMetric, prometheus.GaugeValue, float64(lv.Size), lv.Name, lv.Path, lv.DMPath, lv.VGName, lv.Device)
+			ch <- prometheus.MustNewConstMetric(c.lvSizeMetric, prometheus.GaugeValue, float64(lv.Size), lv.Name, lv.DMPath, lv.Device)
 
 		}
 	}
