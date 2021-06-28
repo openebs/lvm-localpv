@@ -75,7 +75,7 @@ spec:
             - "--riops-per-gb=$(RIOPS_PER_GB)"
             - "--wiops-per-gb=$(WIOPS_PER_GB)"
             {{- end }}
-            {{- if .Values.lvmNode.metricsListenAddress }}
+            {{- if .Values.lvmPlugin.metricsListenAddress }}
             - "--listenAddress=$(METRICS_LISTEN_ADDRESS)"
             {{- end }}
           env:
@@ -99,9 +99,9 @@ spec:
             - name: WIOPS_PER_GB
               value: {{ .Values.lvmPlugin.ioLimits.writeIopsPerGB }}
             {{- end }}
-            {{- if .Values.lvmNode.metricsListenAddress }}
+            {{- if .Values.lvmPlugin.metricsListenAddress }}
             - name: METRICS_LISTEN_ADDRESS
-              value: {{ .Values.lvmNode.metricsListenAddress }}
+              value: :{{ .Values.lvmPlugin.metricsListenAddress }}
             {{- end }}
           volumeMounts:
             - name: plugin-dir

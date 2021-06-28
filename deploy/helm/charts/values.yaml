@@ -36,7 +36,6 @@ lvmNode:
   # This can be configured to run on various different k8s distributions like
   # microk8s where kubelet dir is different
   kubeletDir: "/var/lib/kubelet/"
-  metricsListenAddress: :9080
   resources: {}
 #    limits:
 #      cpu: 10m
@@ -133,6 +132,10 @@ lvmPlugin:
     containerRuntime: containerd
     readIopsPerGB: ""
     writeIopsPerGB: ""
+  # The TCP network address where the prometheus metrics endpoint will listen.
+  # The default is empty string, which means metrics endpoint is disabled.
+  # If not set, service will not be created to expose this endpoint to serviceMonitor.
+  metricsListenAddress: 9080
 
 role: openebs-lvm
 
