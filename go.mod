@@ -2,6 +2,8 @@ module github.com/openebs/lvm-localpv
 
 go 1.14
 
+replace google.golang.org/protobuf => google.golang.org/protobuf v1.25.0
+
 replace k8s.io/api => k8s.io/api v0.20.2
 
 replace k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.20.2
