@@ -36,6 +36,7 @@ lvmNode:
   # This can be configured to run on various different k8s distributions like
   # microk8s where kubelet dir is different
   kubeletDir: "/var/lib/kubelet/"
+  metricsListenAddress: :9080
   resources: {}
 #    limits:
 #      cpu: 10m

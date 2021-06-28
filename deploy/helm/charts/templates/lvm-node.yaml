@@ -75,6 +75,9 @@ spec:
             - "--riops-per-gb=$(RIOPS_PER_GB)"
             - "--wiops-per-gb=$(WIOPS_PER_GB)"
             {{- end }}
+            {{- if .Values.lvmNode.metricsListenAddress }}
+            - "--listenAddress=$(METRICS_LISTEN_ADDRESS)"
+            {{- end }}
           env:
             - name: OPENEBS_NODE_ID
               valueFrom:
@@ -95,6 +98,10 @@ spec:
               value: {{ .Values.lvmPlugin.ioLimits.readIopsPerGB }}
             - name: WIOPS_PER_GB
               value: {{ .Values.lvmPlugin.ioLimits.writeIopsPerGB }}
+            {{- end }}
+            {{- if .Values.lvmNode.metricsListenAddress }}
+            - name: METRICS_LISTEN_ADDRESS
+              value: {{ .Values.lvmNode.metricsListenAddress }}
             {{- end }}
           volumeMounts:
             - name: plugin-dir
