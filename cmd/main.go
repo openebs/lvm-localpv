@@ -19,14 +19,15 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
+	"os"
+
 	config "github.com/openebs/lvm-localpv/pkg/config"
 	"github.com/openebs/lvm-localpv/pkg/driver"
 	"github.com/openebs/lvm-localpv/pkg/lvm"
 	"github.com/openebs/lvm-localpv/pkg/version"
 	"github.com/spf13/cobra"
 	"k8s.io/klog"
-	"log"
-	"os"
 )
 
 /*
@@ -37,6 +38,7 @@ import (
  * --plugin=controller and to start it as agent, we have
  * to pass --plugin=agent.
  */
+
 func main() {
 	_ = flag.CommandLine.Parse([]string{})
 	var config = config.Default()
@@ -81,6 +83,18 @@ func main() {
 	cmd.PersistentFlags().StringVar(
 		&config.ContainerRuntime, "container-runtime", "containerd",
 		"Whether to set iops, bps rate limit for pods accessing volumes",
+	)
+
+	cmd.PersistentFlags().StringVar(
+		&config.ListenAddress, "listen-address", "", "The TCP network address where the prometheus metrics endpoint will listen (example: `:9080`). The default is empty string, which means metrics endpoint is disabled.",
+	)
+
+	cmd.PersistentFlags().StringVar(
+		&config.MetricsPath, "metrics-path", "/metrics", "The HTTP path where prometheus metrics will be exposed. Default is `/metrics`.",
+	)
+
+	cmd.PersistentFlags().BoolVar(
+		&config.DisableExporterMetrics, "disable-exporter-metrics", true, "Exclude metrics about the exporter itself (process_*, go_*).",
 	)
 
 	config.RIopsLimitPerGB = cmd.PersistentFlags().StringSlice(

@@ -152,7 +152,7 @@ func (c *VolController) getVgPriorityList(vol *apis.LVMVolume) ([]apis.VolumeGro
 			vol.Spec.Capacity, vol.Name, err)
 	}
 
-	vgs, err := lvm.ListLVMVolumeGroup()
+	vgs, err := lvm.ListLVMVolumeGroup(true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list vgs available on node: %v", err)
 	}

@@ -52,12 +52,48 @@ const (
 	LVCreate = "lvcreate"
 	LVRemove = "lvremove"
 	LVExtend = "lvextend"
-	LVS      = "lvs"
+	LVList   = "lvs"
 
 	PVScan = "pvscan"
 
 	YES = "yes"
 )
+
+// LogicalVolume specifies attributes of a given lv that exists on the node.
+type LogicalVolume struct {
+
+	// Name of the lvm logical volume(name: pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d)
+	Name string
+
+	// TODO
+	// FullName is not getting populated currently. We will have to populate it for using it as a label in lvm metrics.
+	// Full name of the lvm logical volume (fullName: linuxlvmvg/pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d)
+	FullName string
+
+	// TODO
+	// UUID is not getting populated currently. We will have to populate it for using it as a label in lvm metrics.
+	// UUID denotes a unique identity of a lvm logical volume.
+	UUID string
+
+	// Size specifies the total size of logical volume in Bytes
+	Size int64
+
+	// Path specifies LVM logical volume path
+	Path string
+
+	// TODO
+	// DMPath is not getting populated currently. We will have to populate it for using it as a label in lvm metrics.
+	// DMPath specifies device mapper path
+	DMPath string
+
+	// LVM logical volume device
+	Device string
+
+	// TODO
+	// VGName is not getting populated currently. We will have to populate it for using it as a label in lvm metrics.
+	// Name of the VG in which LVM logical volume is created
+	VGName string
+}
 
 // ExecError holds the process output along with underlying
 // error returned by exec.CombinedOutput function.
@@ -299,7 +335,7 @@ func getLVSize(vol *apis.LVMVolume) (uint64, error) {
 		"--nosuffix",
 	}
 
-	cmd := exec.Command(LVS, args...)
+	cmd := exec.Command(LVList, args...)
 	raw, err := cmd.CombinedOutput()
 	if err != nil {
 		return 0, errors.Wrapf(
@@ -493,9 +529,13 @@ func ReloadLVMMetadataCache() error {
 
 // ListLVMVolumeGroup invokes `vgs` to list all the available volume
 // groups in the node.
-func ListLVMVolumeGroup() ([]apis.VolumeGroup, error) {
-	if err := ReloadLVMMetadataCache(); err != nil {
-		return nil, err
+//
+//In case reloadCache is false, we skip refreshing lvm metadata cache.
+func ListLVMVolumeGroup(reloadCache bool) ([]apis.VolumeGroup, error) {
+	if reloadCache {
+		if err := ReloadLVMMetadataCache(); err != nil {
+			return nil, err
+		}
 	}
 
 	args := []string{
@@ -510,6 +550,122 @@ func ListLVMVolumeGroup() ([]apis.VolumeGroup, error) {
 		return nil, err
 	}
 	return decodeVgsJSON(output)
+}
+
+//Function to get LVM Logical volume device
+//It returns LVM logical volume device(dm-*).
+//This is used as a label in metrics(lvm_lv_total_size) which helps us to map lv_name to device.
+//
+//Example: pvc-f147582c-adbd-4015-8ca9-fe3e0a4c2452(lv_name) -> dm-0(device)
+func getLvDeviceName(path string) (string, error) {
+	dmPath, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		klog.Errorf("failed to resolve device mapper from lv path %v: %v", path, err)
+		return "", err
+	}
+	deviceName := strings.Split(dmPath, "/")
+	return deviceName[len(deviceName)-1], nil
+}
+
+//To parse the output of lvs command and store it in LogicalVolume
+//It returns LogicalVolume.
+//
+//Example: LogicalVolume{
+//		Name:     "pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
+//		Size:     3221225472,
+//		Path:     "/dev/linuxlvmvg/pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
+//	}
+func parseLogicalVolume(m map[string]string) (LogicalVolume, error) {
+	var lv LogicalVolume
+	var err error
+
+	lv.Name = m["lv_name"]
+	lv.Path = m["lv_path"]
+	sizeBytes, err := strconv.ParseInt(strings.TrimSuffix(strings.ToLower(m["lv_size"]), "b"), 10, 64)
+
+	if err != nil {
+		err = fmt.Errorf("invalid format of lv_size=%v for lv %v: %v", m["lv_size"], lv.Name, err)
+		return LogicalVolume{}, err
+	}
+
+	lv.Size = sizeBytes
+	return lv, err
+}
+
+//decodeLvsJSON([]bytes): Decode json format and pass the unmarshalled json to parseLogicalVolume to store logical volumes in LogicalVolume
+//
+//Output of lvs command will be in json format:
+//
+//{
+//	"report": [
+//		{
+//			"lv": [
+//					{
+//						"lv_name":"pvc-ba7b648e-b08b-47bb-beef-60738a33fbd2",
+//						...
+//					}
+//				]
+//		}
+//	]
+//}
+//
+//This function is used to decode the output of lvs command.
+//It returns []LogicalVolume.
+//
+//Example: []LogicalVolume{
+//	{
+//		Name:     "pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
+//		Size:     3221225472,
+//		Path:     "/dev/linuxlvmvg/pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
+//		Device:	  "dm-0"
+//	}
+//}
+func decodeLvsJSON(raw []byte) ([]LogicalVolume, error) {
+	output := &struct {
+		Report []struct {
+			LogicalVolumes []map[string]string `json:"lv"`
+		} `json:"report"`
+	}{}
+	var err error
+	if err = json.Unmarshal(raw, output); err != nil {
+		return nil, err
+	}
+
+	if len(output.Report) != 1 {
+		return nil, fmt.Errorf("expected exactly one lvm report")
+	}
+
+	items := output.Report[0].LogicalVolumes
+	lvs := make([]LogicalVolume, 0, len(items))
+	for _, item := range items {
+		var lv LogicalVolume
+		if lv, err = parseLogicalVolume(item); err != nil {
+			return lvs, err
+		}
+		deviceName, err := getLvDeviceName(lv.Path)
+		if err != nil {
+			klog.Error(err)
+			return nil, err
+		}
+		lv.Device = deviceName
+		lvs = append(lvs, lv)
+	}
+	return lvs, nil
+}
+
+func ListLVMLogicalVolume() ([]LogicalVolume, error) {
+	args := []string{
+		"--options", "lv_all,vg_name",
+		"--reportformat", "json",
+		"--units", "b",
+	}
+	cmd := exec.Command(LVList, args...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		klog.Errorf("lvm: error while running command %s %v: %v", LVList, args, err)
+		return nil, err
+	}
+	return decodeLvsJSON(output)
 }
 
 // lvThinExists verifies if thin pool/volume already exists for given volumegroup

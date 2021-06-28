@@ -18,8 +18,14 @@ package driver
 
 import (
 	"errors"
+	"net/http"
 	"strings"
 	"sync"
+
+	"github.com/openebs/lvm-localpv/pkg/collector"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/openebs/lib-csi/pkg/btrfs"
@@ -79,9 +85,91 @@ func NewNode(d *CSIDriver) csi.NodeServer {
 		}
 	}()
 
+	if d.config.ListenAddress != "" {
+		exposeMetrics(d.config.ListenAddress, d.config.MetricsPath, d.config.DisableExporterMetrics)
+	}
+
 	return &node{
 		driver: d,
 	}
+}
+
+//Function to register collectors to collect LVM related metrics and exporter metrics.
+//
+//If disableExporterMetrics is set to false, exporter will include metrics about itself i.e (process_*, go_*).
+func registerCollectors(disableExporterMetrics bool) (*prometheus.Registry, error) {
+	registry := prometheus.NewRegistry()
+
+	if !disableExporterMetrics {
+		processCollector := collectors.NewProcessCollector(collectors.ProcessCollectorOpts{})
+		err := registry.Register(processCollector)
+		if err != nil {
+			klog.Errorf("failed to register process collector for exporter metrics collection: %s", err.Error())
+			return nil, err
+		}
+		goProcessCollector := collectors.NewGoCollector()
+		err = registry.Register(goProcessCollector)
+		if err != nil {
+			klog.Errorf("failed to register go process collector for exporter metrics collection: %s", err.Error())
+			return nil, err
+		}
+	}
+	lvmCollector := collector.NewLvmCollector()
+
+	err := registry.Register(lvmCollector)
+	if err != nil {
+		klog.Errorf("failed to register LVM collector for LVM metrics collection: %s", err.Error())
+		return nil, err
+	}
+	return registry, nil
+}
+
+type promLog struct{}
+
+// Implementation of Println(...) method of Logger interface of prometheus client_go.
+func (p *promLog) Println(v ...interface{}) {
+	klog.Error(v...)
+}
+
+func promLogger() *promLog {
+	return &promLog{}
+}
+
+//Function to start HTTP server to expose LVM metrics.
+//
+//Parameters:
+//
+//listenAddr: TCP network address where the prometheus metrics endpoint will listen.
+//
+//metricsPath: The HTTP path where prometheus metrics will be exposed.
+//
+//disableExporterMetrics: Exclude metrics about the exporter itself (process_*, go_*).
+func exposeMetrics(listenAddr string, metricsPath string, disableExporterMetrics bool) {
+
+	// Registry with all the collectors registered
+	registry, err := registerCollectors(disableExporterMetrics)
+	if err != nil {
+		klog.Fatalf("Failed to register collectors for LVM metrics collection: %s", err.Error())
+	}
+
+	http.Handle(metricsPath, promhttp.InstrumentMetricHandler(registry, promhttp.HandlerFor(registry, promhttp.HandlerOpts{
+		ErrorLog: promLogger(),
+	})))
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`<html>
+			<head><title>LVM Exporter</title></head>
+			<body>
+			<h1>LVM Exporter</h1>
+			<p><a href="` + metricsPath + `">Metrics</a></p>
+			</body>
+			</html>`))
+	})
+
+	go func() {
+		if err := http.ListenAndServe(listenAddr, nil); err != nil {
+			klog.Fatalf("Failed to start HTTP server at specified address (%q) and metrics path (%q) to expose LVM metrics: %s", listenAddr, metricsPath, err.Error())
+		}
+	}()
 }
 
 // GetVolAndMountInfo get volume and mount info from node csi volume request

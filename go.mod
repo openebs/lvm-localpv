@@ -2,6 +2,8 @@ module github.com/openebs/lvm-localpv
 
 go 1.14
 
+replace google.golang.org/protobuf => google.golang.org/protobuf v1.25.0
+
 replace k8s.io/api => k8s.io/api v0.20.2
 
 replace k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.20.2
@@ -61,10 +63,12 @@ require (
 	github.com/onsi/gomega v1.7.0
 	github.com/openebs/lib-csi v0.6.0
 	github.com/pkg/errors v0.9.1
+	github.com/prometheus/client_golang v1.11.0
+	github.com/prometheus/common v0.26.0 // indirect
 	github.com/spf13/cobra v1.1.1
 	github.com/stretchr/testify v1.6.1
 	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
-	golang.org/x/sys v0.0.0-20201112073958-5cba982894dd
+	golang.org/x/sys v0.0.0-20210603081109-ebe580a85c40
 	google.golang.org/grpc v1.34.2
 	k8s.io/api v0.20.2
 	k8s.io/apimachinery v0.20.2

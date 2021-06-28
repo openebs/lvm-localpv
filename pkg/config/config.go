@@ -69,6 +69,16 @@ type Config struct {
 	// WBpsLimitPerGB provides read bps rate limits per volume group type
 	// as a string slice, in the form ["vg1-prefix=100", "vg2-prefix=200"]
 	WBpsLimitPerGB *[]string
+
+	// The TCP network address where the prometheus metrics endpoint will listen (example: `:9080`).
+	// The default is empty string, which means metrics endpoint is disabled.
+	ListenAddress string
+
+	// The HTTP path where prometheus metrics will be exposed. Default is `/metrics`.
+	MetricsPath string
+
+	// Exclude metrics about the exporter itself (process_*, go_*).
+	DisableExporterMetrics bool
 }
 
 // Default returns a new instance of config
