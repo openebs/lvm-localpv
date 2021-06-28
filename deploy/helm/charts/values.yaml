@@ -134,7 +134,7 @@ lvmPlugin:
     writeIopsPerGB: ""
   # The TCP network address where the prometheus metrics endpoint will listen.
   # The default is empty string, which means metrics endpoint is disabled.
-  # If not set, service will not be created to expose this endpoint to serviceMonitor.
+  # If not set, service will not be created to expose this endpoint to serviceMonitor and listen-address flag will not be set.
   metricsListenAddress: 9080
 
 role: openebs-lvm
