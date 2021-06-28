@@ -23,10 +23,9 @@ import (
 
 var (
 	fakeLogicalVolume = LogicalVolume{
-		Name:   "pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
-		Size:   3221225472,
-		Path:   "/dev/linuxlvmvg/pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
-		DMPath: "/dev/mapper/linuxlvmvg-pvc--213ca1e6--e271--4ec8--875c--c7def3a4908d",
+		Name: "pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
+		Size: 3221225472,
+		Path: "/dev/linuxlvmvg/pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
 	}
 )
 
