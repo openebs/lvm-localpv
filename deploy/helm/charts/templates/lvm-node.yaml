@@ -76,7 +76,7 @@ spec:
             - "--wiops-per-gb=$(WIOPS_PER_GB)"
             {{- end }}
             {{- if .Values.lvmPlugin.metricsListenAddress }}
-            - "--listenAddress=$(METRICS_LISTEN_ADDRESS)"
+            - "--listen-address=$(METRICS_LISTEN_ADDRESS)"
             {{- end }}
           env:
             - name: OPENEBS_NODE_ID
