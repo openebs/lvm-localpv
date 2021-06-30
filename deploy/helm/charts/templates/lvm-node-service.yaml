@@ -6,6 +6,7 @@ metadata:
   labels:
     {{- include "lvmlocalpv.lvmNode.labels" . | nindent 4 }}
 spec:
+  clusterIP: None
   ports:
     - name: metrics
       port: {{ .Values.lvmPlugin.metricsListenAddress }}
@@ -14,5 +15,4 @@ spec:
     {{- with .Values.lvmNode.podLabels }}
     {{ toYaml . }}
     {{- end }}
-  type: ClusterIP
 {{- end }}
