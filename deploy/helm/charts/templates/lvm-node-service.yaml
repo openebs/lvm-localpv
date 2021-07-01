@@ -1,4 +1,4 @@
-{{- if .Values.lvmPlugin.metricsListenAddress }}
+{{- if .Values.lvmPlugin.metricsPort }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -9,8 +9,8 @@ spec:
   clusterIP: None
   ports:
     - name: metrics
-      port: {{ .Values.lvmPlugin.metricsListenAddress }}
-      targetPort: {{ .Values.lvmPlugin.metricsListenAddress }}
+      port: {{ .Values.lvmPlugin.metricsPort }}
+      targetPort: {{ .Values.lvmPlugin.metricsPort }}
   selector:
     {{- with .Values.lvmNode.podLabels }}
     {{ toYaml . }}

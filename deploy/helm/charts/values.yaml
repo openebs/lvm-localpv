@@ -132,10 +132,9 @@ lvmPlugin:
     containerRuntime: containerd
     readIopsPerGB: ""
     writeIopsPerGB: ""
-  # The TCP network address where the prometheus metrics endpoint will listen.
-  # The default is empty string, which means metrics endpoint is disabled.
-  # If not set, service will not be created to expose this endpoint to serviceMonitor and listen-address flag will not be set.
-  metricsListenAddress: 9500
+  # Port number used for exposing lvm-metrics.
+  # If not set, service will not be created to expose metrics endpoint to serviceMonitor and listen-address flag will not be set.
+  metricsPort: 9500
 
 role: openebs-lvm
 
