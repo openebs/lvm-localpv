@@ -49,14 +49,27 @@ const (
 	VGCreate = "vgcreate"
 	VGList   = "vgs"
 
-	LVCreate = "lvcreate"
-	LVRemove = "lvremove"
-	LVExtend = "lvextend"
-	LVList   = "lvs"
+	LVCreate   = "lvcreate"
+	LVRemove   = "lvremove"
+	LVExtend   = "lvextend"
+	LVList     = "lvs"
+	LVThinPool = "thin-pool"
 
+	PVList = "pvs"
 	PVScan = "pvscan"
 
 	YES = "yes"
+)
+
+var (
+	Enums = map[string][]string{
+		"lv_permissions":       {"unknown", "writeable", "read-only", "read-only-override"},
+		"lv_when_full":         {"error", "queue"},
+		"raid_sync_action":     {"idle", "frozen", "resync", "recover", "check", "repair"},
+		"lv_health_status":     {"", "partial", "refresh needed", "mismatches exist"},
+		"vg_allocation_policy": {"normal", "contiguous", "cling", "anywhere", "inherited"},
+		"vg_permissions":       {"writeable", "read-only"},
+	}
 )
 
 // LogicalVolume specifies attributes of a given lv that exists on the node.
@@ -65,13 +78,9 @@ type LogicalVolume struct {
 	// Name of the lvm logical volume(name: pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d)
 	Name string
 
-	// TODO
-	// FullName is not getting populated currently. We will have to populate it for using it as a label in lvm metrics.
 	// Full name of the lvm logical volume (fullName: linuxlvmvg/pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d)
 	FullName string
 
-	// TODO
-	// UUID is not getting populated currently. We will have to populate it for using it as a label in lvm metrics.
 	// UUID denotes a unique identity of a lvm logical volume.
 	UUID string
 
@@ -81,17 +90,95 @@ type LogicalVolume struct {
 	// Path specifies LVM logical volume path
 	Path string
 
-	// TODO
-	// DMPath is not getting populated currently. We will have to populate it for using it as a label in lvm metrics.
 	// DMPath specifies device mapper path
 	DMPath string
 
 	// LVM logical volume device
 	Device string
 
-	// TODO
-	// VGName is not getting populated currently. We will have to populate it for using it as a label in lvm metrics.
 	// Name of the VG in which LVM logical volume is created
+	VGName string
+
+	// SegType specifies the type of Logical volume segment
+	SegType string
+
+	// Permission indicates the logical volume permission
+	// which can be either one of these- (unknown/writeable/read-only/read-only-override)
+	Permission int
+
+	// BehaviourWhenFull indicates the behaviour of thin pools when it is full
+	BehaviourWhenFull int
+
+	// HealthStatus indicates the health status of logical volumes.
+	// This can be any one among these - (""/partial/refresh needed/mismatches exist)
+	HealthStatus int
+
+	// RaidSyncAction indicates the current synchronization action being performed for RAID
+	// action can be any one of these - (idle/frozen/resync/recover/check/repair)
+	RaidSyncAction int
+
+	// ActiveStatus indicates the active state of logical volume
+	ActiveStatus string
+
+	// Host specifies the creation host of the logical volume, if known
+	Host string
+
+	// For thin volumes, the thin pool Logical volume for that volume
+	PoolName string
+
+	// UsedSizePercent specifies the percentage full for snapshot, cache
+	// and thin pools and volumes if logical volume is active.
+	UsedSizePercent float64
+
+	// MetadataSize specifies the size of the logical volume that holds
+	// the metadata for thin and cache pools.
+	MetadataSize int64
+
+	// MetadataUsedPercent specifies the percentage of metadata full if logical volume
+	// is active for cache and thin pools.
+	MetadataUsedPercent float64
+
+	// SnapshotUsedPercent specifies the percentage full for snapshots  if
+	// logical volume is active.
+	SnapshotUsedPercent float64
+}
+
+// PhysicalVolume specifies attributes of a given pv that exists on the node.
+type PhysicalVolume struct {
+	// Name of the lvm physical volume.
+	Name string
+
+	// UUID denotes a unique identity of a lvm physical volume.
+	UUID string
+
+	// Size specifies the total size of physical volume in bytes
+	Size resource.Quantity
+
+	// DeviceSize specifies the size of underlying device in bytes
+	DeviceSize resource.Quantity
+
+	// MetadataSize specifies the size of smallest metadata area on this device in bytes
+	MetadataSize resource.Quantity
+
+	// MetadataFree specifies the free metadata area space on the device in bytes
+	MetadataFree resource.Quantity
+
+	// Free specifies the physical volume unallocated space in bytes
+	Free resource.Quantity
+
+	// Used specifies the physical volume allocated space in bytes
+	Used resource.Quantity
+
+	// Allocatable indicates whether the device can be used for allocation
+	Allocatable string
+
+	// Missing indicates whether the device is missing in the system
+	Missing string
+
+	// InUse indicates whether or not the physical volume is in use
+	InUse string
+
+	// Name of the volume group which uses this physical volume
 	VGName string
 }
 
@@ -485,8 +572,14 @@ func parseVolumeGroup(m map[string]string) (apis.VolumeGroup, error) {
 	vg.UUID = m["vg_uuid"]
 
 	int32Map := map[string]*int32{
-		"pv_count": &vg.PVCount,
-		"lv_count": &vg.LVCount,
+		"pv_count":            &vg.PVCount,
+		"lv_count":            &vg.LVCount,
+		"max_lv":              &vg.MaxLV,
+		"max_pv":              &vg.MaxPV,
+		"snap_count":          &vg.SnapCount,
+		"vg_missing_pv_count": &vg.MissingPVCount,
+		"vg_mda_count":        &vg.MetadataCount,
+		"vg_mda_used_count":   &vg.MetadataUsedCount,
 	}
 	for key, value := range int32Map {
 		count, err = strconv.Atoi(m[key])
@@ -497,8 +590,10 @@ func parseVolumeGroup(m map[string]string) (apis.VolumeGroup, error) {
 	}
 
 	resQuantityMap := map[string]*resource.Quantity{
-		"vg_size": &vg.Size,
-		"vg_free": &vg.Free,
+		"vg_size":     &vg.Size,
+		"vg_free":     &vg.Free,
+		"vg_mda_size": &vg.MetadataSize,
+		"vg_mda_free": &vg.MetadataFree,
 	}
 
 	for key, value := range resQuantityMap {
@@ -511,7 +606,23 @@ func parseVolumeGroup(m map[string]string) (apis.VolumeGroup, error) {
 		quantity := resource.NewQuantity(sizeBytes, resource.BinarySI)
 		*value = *quantity //
 	}
+
+	vg.Permission = getIntFieldValue("vg_permissions", m["vg_permissions"])
+	vg.AllocationPolicy = getIntFieldValue("vg_allocation_policy", m["vg_allocation_policy"])
+
 	return vg, err
+}
+
+// This function returns the integer equivalent for different string values for the LVM component(vg,lv) field.
+// -1 represents undefined.
+func getIntFieldValue(fieldName, fieldValue string) int {
+	mv := -1
+	for i, v := range Enums[fieldName] {
+		if v == fieldValue {
+			mv = i
+		}
+	}
+	return mv
 }
 
 // ReloadLVMMetadataCache refreshes lvmetad daemon cache used for
@@ -571,24 +682,87 @@ func getLvDeviceName(path string) (string, error) {
 //It returns LogicalVolume.
 //
 //Example: LogicalVolume{
-//		Name:     "pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
-//		Size:     3221225472,
-//		Path:     "/dev/linuxlvmvg/pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
+//		Name:               "pvc-082c7975-9af2-4a50-9d24-762612b35f94",
+//		FullName:           "vg_thin/pvc-082c7975-9af2-4a50-9d24-762612b35f94"
+//		UUID:               "FBqcEe-Ln72-SmWO-fR4j-t4Ga-1Y90-0vieKW"
+//		Size:                4294967296,
+//		Path:                "/dev/vg_thin/pvc-082c7975-9af2-4a50-9d24-762612b35f94",
+//		DMPath:              "/dev/mapper/vg_thin-pvc--082c7975--9af2--4a50--9d24--762612b35f94"
+//		Device:              "dm-5"
+//		VGName:              "vg_thin"
+//		SegType:             "thin"
+//		Permission:          1
+//		BehaviourWhenFull:   -1
+//		HealthStatus:        0
+//		RaidSyncAction:      -1
+//		ActiveStatus:        "active"
+//		Host:                "node1-virtual-machine"
+//		PoolName:            "vg_thin_thinpool"
+//		UsedSizePercent:     0
+//		MetadataSize:        0
+//		MetadataUsedPercent: 0
+//		SnapshotUsedPercent: 0
 //	}
 func parseLogicalVolume(m map[string]string) (LogicalVolume, error) {
 	var lv LogicalVolume
 	var err error
+	var sizeBytes int64
+	var count float64
 
 	lv.Name = m["lv_name"]
+	lv.FullName = m["lv_full_name"]
+	lv.UUID = m["lv_uuid"]
 	lv.Path = m["lv_path"]
-	sizeBytes, err := strconv.ParseInt(strings.TrimSuffix(strings.ToLower(m["lv_size"]), "b"), 10, 64)
+	lv.DMPath = m["lv_dm_path"]
+	lv.VGName = m["vg_name"]
+	lv.ActiveStatus = m["lv_active"]
 
-	if err != nil {
-		err = fmt.Errorf("invalid format of lv_size=%v for lv %v: %v", m["lv_size"], lv.Name, err)
-		return LogicalVolume{}, err
+	int64Map := map[string]*int64{
+		"lv_size":          &lv.Size,
+		"lv_metadata_size": &lv.MetadataSize,
+	}
+	for key, value := range int64Map {
+		// Check if the current LV is not a thin pool. If not then
+		// metadata size will not be present as metadata is only
+		// stored for thin pools.
+		if m["segtype"] != LVThinPool && key == "lv_metadata_size" {
+			sizeBytes = 0
+		} else {
+			sizeBytes, err = strconv.ParseInt(strings.TrimSuffix(strings.ToLower(m[key]), "b"), 10, 64)
+			if err != nil {
+				err = fmt.Errorf("invalid format of %v=%v for vg %v: %v", key, m[key], lv.Name, err)
+				return lv, err
+			}
+		}
+		*value = sizeBytes
 	}
 
-	lv.Size = sizeBytes
+	lv.SegType = m["segtype"]
+	lv.Host = m["lv_host"]
+	lv.PoolName = m["pool_lv"]
+	lv.Permission = getIntFieldValue("lv_permissions", m["lv_permissions"])
+	lv.BehaviourWhenFull = getIntFieldValue("lv_when_full", m["lv_when_full"])
+	lv.HealthStatus = getIntFieldValue("lv_health_status", m["lv_health_status"])
+	lv.RaidSyncAction = getIntFieldValue("raid_sync_action", m["raid_sync_action"])
+
+	float64Map := map[string]*float64{
+		"data_percent":     &lv.UsedSizePercent,
+		"metadata_percent": &lv.MetadataUsedPercent,
+		"snap_percent":     &lv.SnapshotUsedPercent,
+	}
+	for key, value := range float64Map {
+		if m[key] == "" {
+			count = 0
+		} else {
+			count, err = strconv.ParseFloat(m[key], 64)
+			if err != nil {
+				err = fmt.Errorf("invalid format of %v=%v for lv %v: %v", key, m[key], lv.Name, err)
+				return lv, err
+			}
+		}
+		*value = count
+	}
+
 	return lv, err
 }
 
@@ -601,7 +775,7 @@ func parseLogicalVolume(m map[string]string) (LogicalVolume, error) {
 //		{
 //			"lv": [
 //					{
-//						"lv_name":"pvc-ba7b648e-b08b-47bb-beef-60738a33fbd2",
+//						"lv_name":"pvc-082c7975-9af2-4a50-9d24-762612b35f94",
 //						...
 //					}
 //				]
@@ -614,10 +788,26 @@ func parseLogicalVolume(m map[string]string) (LogicalVolume, error) {
 //
 //Example: []LogicalVolume{
 //	{
-//		Name:     "pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
-//		Size:     3221225472,
-//		Path:     "/dev/linuxlvmvg/pvc-213ca1e6-e271-4ec8-875c-c7def3a4908d",
-//		Device:	  "dm-0"
+//		Name:               "pvc-082c7975-9af2-4a50-9d24-762612b35f94",
+//		FullName:           "vg_thin/pvc-082c7975-9af2-4a50-9d24-762612b35f94"
+//		UUID:               "FBqcEe-Ln72-SmWO-fR4j-t4Ga-1Y90-0vieKW"
+//		Size:                4294967296,
+//		Path:                "/dev/vg_thin/pvc-082c7975-9af2-4a50-9d24-762612b35f94",
+//		DMPath:              "/dev/mapper/vg_thin-pvc--082c7975--9af2--4a50--9d24--762612b35f94"
+//		Device:              "dm-5"
+//		VGName:              "vg_thin"
+//		SegType:             "thin"
+//		Permission:          1
+//		BehaviourWhenFull:   -1
+//		HealthStatus:        0
+//		RaidSyncAction:      -1
+//		ActiveStatus:        "active"
+//		Host:                "node1-virtual-machine"
+//		PoolName:            "vg_thin_thinpool"
+//		UsedSizePercent:     0
+//		MetadataSize:        0
+//		MetadataUsedPercent: 0
+//		SnapshotUsedPercent: 0
 //	}
 //}
 func decodeLvsJSON(raw []byte) ([]LogicalVolume, error) {
@@ -655,7 +845,7 @@ func decodeLvsJSON(raw []byte) ([]LogicalVolume, error) {
 
 func ListLVMLogicalVolume() ([]LogicalVolume, error) {
 	args := []string{
-		"--options", "lv_all,vg_name",
+		"--options", "lv_all,vg_name,segtype",
 		"--reportformat", "json",
 		"--units", "b",
 	}
@@ -666,6 +856,144 @@ func ListLVMLogicalVolume() ([]LogicalVolume, error) {
 		return nil, err
 	}
 	return decodeLvsJSON(output)
+}
+
+/*
+ListLVMPhysicalVolume invokes `pvs` to list all the available LVM physical volumes in the node.
+*/
+func ListLVMPhysicalVolume() ([]PhysicalVolume, error) {
+	if err := ReloadLVMMetadataCache(); err != nil {
+		return nil, err
+	}
+
+	args := []string{
+		"--options", "pv_all,vg_name",
+		"--reportformat", "json",
+		"--units", "b",
+	}
+	cmd := exec.Command(PVList, args...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		klog.Errorf("lvm: error while running command %s %v: %v", PVList, args, err)
+		return nil, err
+	}
+	return decodePvsJSON(output)
+}
+
+//To parse the output of pvs command and store it in PhysicalVolume
+//It returns PhysicalVolume.
+//
+//Example: PhysicalVolume{
+//		Name:         "/dev/sdc",
+//      UUID:         "UAdQl0-dK00-gM1V-6Vda-zYeu-XUdQ-izs8KW"
+//		Size:         21441282048
+//		Used:         8657043456
+//		Free:         12784238592
+//		MetadataSize: 1044480
+//		MetadataFree: 518656
+//		DeviceSize:   21474836480
+//		Allocatable:  "allocatable"
+//		InUse:        "used"
+//		Missing:      ""
+//		VGName:       "vg_thin"
+//	}
+func parsePhysicalVolume(m map[string]string) (PhysicalVolume, error) {
+	var pv PhysicalVolume
+	var err error
+	var sizeBytes int64
+
+	pv.Name = m["pv_name"]
+	pv.UUID = m["pv_uuid"]
+	pv.InUse = m["pv_in_use"]
+	pv.Allocatable = m["pv_allocatable"]
+	pv.Missing = m["pv_missing"]
+	pv.VGName = m["vg_name"]
+
+	resQuantityMap := map[string]*resource.Quantity{
+		"pv_size":     &pv.Size,
+		"pv_free":     &pv.Free,
+		"pv_used":     &pv.Used,
+		"pv_mda_size": &pv.MetadataSize,
+		"pv_mda_free": &pv.MetadataFree,
+		"dev_size":    &pv.DeviceSize,
+	}
+
+	for key, value := range resQuantityMap {
+		sizeBytes, err = strconv.ParseInt(
+			strings.TrimSuffix(strings.ToLower(m[key]), "b"),
+			10, 64)
+		if err != nil {
+			err = fmt.Errorf("invalid format of %v=%v for pv %v: %v", key, m[key], pv.Name, err)
+			return pv, err
+		}
+		quantity := resource.NewQuantity(sizeBytes, resource.BinarySI)
+		*value = *quantity
+	}
+
+	return pv, err
+}
+
+//decodeLvsJSON([]bytes): Decode json format and pass the unmarshalled json to parsePhysicalVolume to store physical volumes in PhysicalVolume
+//
+//Output of pvs command will be in json format:
+//
+//{
+//	"report": [
+//		{
+//			"pv": [
+//					{
+//						"pv_name":"/dev/sdc",
+//						...
+//					}
+//				]
+//		}
+//	]
+//}
+//
+//This function is used to decode the output of pvs command.
+//It returns []PhysicalVolume.
+//
+//Example: []PhysicalVolume{
+//	{
+//		Name:         "/dev/sdc",
+//      UUID:         "UAdQl0-dK00-gM1V-6Vda-zYeu-XUdQ-izs8KW"
+//		Size:         21441282048
+//		Used:         8657043456
+//		Free:         12784238592
+//		MetadataSize: 1044480
+//		MetadataFree: 518656
+//		DeviceSize:   21474836480
+//		Allocatable:  "allocatable"
+//		InUse:        "used"
+//		Missing:      ""
+//		VGName:       "vg_thin"
+//	}
+//}
+func decodePvsJSON(raw []byte) ([]PhysicalVolume, error) {
+	output := &struct {
+		Report []struct {
+			PhysicalVolume []map[string]string `json:"pv"`
+		} `json:"report"`
+	}{}
+	var err error
+	if err = json.Unmarshal(raw, output); err != nil {
+		return nil, err
+	}
+
+	if len(output.Report) != 1 {
+		return nil, fmt.Errorf("expected exactly one lvm report")
+	}
+
+	items := output.Report[0].PhysicalVolume
+	pvs := make([]PhysicalVolume, 0, len(items))
+	for _, item := range items {
+		var pv PhysicalVolume
+		if pv, err = parsePhysicalVolume(item); err != nil {
+			return pvs, err
+		}
+		pvs = append(pvs, pv)
+	}
+	return pvs, nil
 }
 
 // lvThinExists verifies if thin pool/volume already exists for given volumegroup
