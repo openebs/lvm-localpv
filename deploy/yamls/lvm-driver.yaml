@@ -988,6 +988,7 @@ spec:
             - "--nodeid=$(OPENEBS_NODE_ID)"
             - "--endpoint=$(OPENEBS_CSI_ENDPOINT)"
             - "--plugin=$(OPENEBS_NODE_DRIVER)"
+            - "--listen-address=$(METRICS_LISTEN_ADDRESS)"
           env:
             - name: OPENEBS_NODE_ID
               valueFrom:
@@ -999,6 +1000,8 @@ spec:
               value: agent
             - name: LVM_NAMESPACE
               value: openebs
+            - name: METRICS_LISTEN_ADDRESS
+              value: :9500
           volumeMounts:
             - name: plugin-dir
               mountPath: /plugin
@@ -1027,3 +1030,18 @@ spec:
             path: /var/lib/kubelet/
             type: Directory
 ---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: openebs-lvm-node-service
+  labels:
+    name: openebs-lvm-node
+spec:
+  clusterIP: None
+  ports:
+    - name: metrics
+      port: 9500
+      targetPort: 9500
+  selector:
+    app: openebs-lvm-node
