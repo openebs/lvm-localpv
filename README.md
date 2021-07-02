@@ -69,6 +69,8 @@ $ kubectl apply -f https://openebs.github.io/charts/lvm-operator.yaml
 
 - For `k0s`, the default directory (`/var/lib/kubelet`) should be changed to `/var/lib/k0s/kubelet`.
 
+- For `RancherOS`, the default directory (`/var/lib/kubelet`) should be changed to `/opt/rke/var/lib/kubelet`.
+
 Verify that the LVM driver Components are installed and running using below command :
 
 ```
