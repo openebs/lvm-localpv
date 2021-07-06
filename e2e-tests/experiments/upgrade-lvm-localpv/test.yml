@@ -1,0 +1,171 @@
+- hosts: localhost
+  connection: local
+  gather_facts: False
+
+  vars_files:
+  - test_vars.yml
+    
+  tasks:
+
+    - block:
+    
+          ## Generating the testname for lvm localpv upgrade test
+        - include_tasks: /e2e-tests/hack/create_testname.yml
+
+          ## Record SOT (start of test) in e2e result e2e-cr (e2e-custom-resource)
+        - include_tasks: /e2e-tests/hack/update_e2e_result_resource.yml
+          vars:
+            status: 'SOT'
+
+        - name: Get the list of pods of lvm-localpv components (lvm-controller and lvm-node agent deamonset)
+          shell: >
+            kubectl get pods -n kube-system -l role=openebs-lvm 
+            --no-headers -o custom-columns=:.metadata.name
+          args:
+            executable: /bin/bash
+          register: lvm_localpv_components
+
+        - name: Verify that the lvm-localpv components are in running state
+          shell: >
+            kubectl get pods {{ item }} -n kube-system --no-headers -o custom-columns=:status.phase
+          args: 
+            executable: /bin/bash
+          register: lvm_driver_components
+          failed_when: "lvm_driver_components.stdout != 'Running'"
+          with_items: "{{ lvm_localpv_components.stdout_lines }}"
+          ignore_errors: true
+
+        - name: Get the version tag for lvm-driver
+          shell: >
+            kubectl get sts openebs-lvm-controller -n kube-system 
+            -o jsonpath='{.spec.template.spec.containers[?(@.name=="openebs-lvm-plugin")].image}' | cut -d ":" -f2
+          args:
+            executable: /bin/bash
+          register: lvm_driver_tag
+
+        - name: Get the replica count for lvm-controller statefulset
+          shell: >
+            kubectl get sts openebs-lvm-controller -n kube-system -o jsonpath='{.status.replicas}'
+          args: 
+            executable: /bin/bash
+          register: no_of_lvm_ctrl_replicas
+
+        - name: Record the number of lvm-controller replicas
+          set_fact:
+            lvm_ctrl_replicas: "{{ no_of_lvm_ctrl_replicas.stdout }}"
+
+        - name: Get the list of node-agent pods in openebs-lvm-node daemonset
+          shell: >
+            kubectl get po -n kube-system -l app=openebs-lvm-node --no-headers -o custom-columns=:.metadata.name
+          args:
+            executable: /bin/bash
+          register: ds_pods
+
+        - name: Download the lvm-operator file
+          get_url:
+            url: https://raw.githubusercontent.com/openebs/lvm-localpv/{{ to_version_lvm_branch }}/deploy/lvm-operator.yaml
+            dest: ./new_lvm_operator.yml
+            force: yes
+          register: result
+          until: "'OK' in result.msg"
+          delay: 5
+          retries: 3
+                
+        - name: Update the openebs lvm-driver image 
+          replace:
+            path: ./new_lvm_operator.yml
+            regexp: openebs/lvm-driver:ci
+            replace: "{{ lookup('env','TO_VERSION_LVM_DRIVER_IMAGE') }}"
+          when: lookup('env','TO_VERSION_LVM_DRIVER_IMAGE') | length > 0
+
+          # In case where we have installed lvm-localpv CR's in custom namespace other than
+          # openebs namespace which is by-default, then this task will update the namespace
+          # in operator yaml file.
+        - name: Update the namespace where lvm-localpv custom-resources are present
+          shell: >
+            sed -i -e "/name: LVM_NAMESPACE/{n;s/value: openebs/value: {{ lvm_operator_ns }}/g}" new_lvm_operator.yml &&
+            sed -z "s/kind: Namespace\nmetadata:\n  name: openebs/kind: Namespace\nmetadata:\n  name: {{ lvm_operator_ns }}/" -i new_lvm_operator.yml 
+          args:
+            executable: /bin/bash
+          register: update_status
+          failed_when: "update_status.rc != 0"
+          when: "lvm_operator_ns != 'openebs'"
+
+        - name: Update the number of lvm-controller statefulset replicas
+          replace:
+            path: ./new_lvm_operator.yml
+            regexp: "replicas: 1"
+            replace: "replicas: {{ lvm_ctrl_replicas }}"
+
+        - name: Apply the lvm_operator file to deploy lvm-driver components to the newer version
+          shell: 
+            kubectl apply -f ./new_lvm_operator.yml
+          args:
+              executable: /bin/bash
+
+        - name: Wait for some time to old lvm-driver components to go into Terminating state.
+          shell: >
+            sleep 30
+
+        - name: Verify lvm-node agent previous pods are not present in kube-system namespace
+          shell: >
+            kubectl get pods -n kube-system -l app=openebs-lvm-node --no-headers
+          args: 
+            executable: /bin/bash
+          register: new_ds_pods
+          until: "'{{ item }}' not in new_ds_pods.stdout"
+          delay: 5
+          retries: 40
+          with_items: "{{ ds_pods.stdout_lines }}"
+
+        - name: Verify lvm-node agent newer pods are in running status
+          shell: >
+            kubectl get pods -n kube-system -l app=openebs-lvm-node
+            --no-headers -o custom-columns=:status.phase | sort | uniq
+          args: 
+            executable: /bin/bash
+          register: new_ds_pods
+          until: "new_ds_pods.stdout == 'Running'"
+          delay: 5
+          retries: 30
+
+        - name: Verify that lvm-node agent daemonset image is upgraded
+          shell: >
+            kubectl get ds openebs-lvm-node -n kube-system 
+            -o jsonpath='{.spec.template.spec.containers[?(@.name=="openebs-lvm-plugin")].image}'
+          args: 
+            executable: /bin/bash
+          register: ds_image
+          failed_when: ds_image.stdout != to_version_lvm_driver_image
+
+        - name: Check for the count of lvm-controller ready replicas
+          shell: >
+            kubectl get sts openebs-lvm-controller -n kube-system -o jsonpath='{.status.readyReplicas}'
+          args:
+            executable: /bin/bash
+          register: ready_replicas
+          until: "ready_replicas.stdout|int == lvm_ctrl_replicas|int"
+          delay: 5
+          retries: 20
+
+        - name: Verify that lvm-driver version from the lvm-controller statefulset image is upgraded
+          shell: >
+            kubectl get sts openebs-lvm-controller -n kube-system
+            -o jsonpath='{.spec.template.spec.containers[?(@.name=="openebs-lvm-plugin")].image}'
+          args:
+            executable: /bin/bash
+          register: lvm_ctrl_image
+          failed_when: lvm_ctrl_image.stdout != to_version_lvm_driver_image
+
+        - set_fact:
+            flag: "Pass"
+
+      rescue:
+      - set_fact:
+          flag: "Fail"
+
+      always:
+        ## Record SOT (start of test) in e2e result e2e-cr (e2e-custom-resource)
+        - include_tasks: /e2e-tests/hack/update_e2e_result_resource.yml
+          vars:
+            status: 'EOT' 
