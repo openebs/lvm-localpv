@@ -1371,6 +1371,8 @@ spec:
               value: openebs
             - name: METRICS_LISTEN_ADDRESS
               value: :9500
+            - name: ALLOWED_TOPOLOGIES
+              value: "kubernetes.io/hostname,"
           volumeMounts:
             - name: plugin-dir
               mountPath: /plugin
