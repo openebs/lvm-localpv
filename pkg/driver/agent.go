@@ -19,6 +19,7 @@ package driver
 import (
 	"errors"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 
@@ -324,11 +325,22 @@ func (ns *node) NodeGetInfo(
 	 * }
 	 */
 
-	// support all the keys that node has
-	topology := node.Labels
-
 	// add driver's topology key
-	topology[lvm.LVMTopologyKey] = ns.driver.config.NodeID
+	topology := map[string]string{
+		lvm.LVMTopologyKey: ns.driver.config.NodeID,
+	}
+
+	// support topologykeys from env ALLOWED_TOPOLOGIES
+	allowedTopologies := os.Getenv("ALLOWED_TOPOLOGIES")
+	allowedKeys := strings.Split(allowedTopologies, ",")
+	for _, key := range allowedKeys {
+		if key != "" {
+			v, ok := node.Labels[key]
+			if ok {
+				topology[key] = v
+			}
+		}
+	}
 
 	return &csi.NodeGetInfoResponse{
 		NodeId: ns.driver.config.NodeID,
