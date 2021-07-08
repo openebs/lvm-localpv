@@ -163,7 +163,8 @@
           register: status
           failed_when: "status.rc != 0"
 
-        ## Restart of node-agent pods is required to get aware of node_labels
+        ## We have to edit the node-daemonset with the required keys, so that csinode
+        ## can take that key under ALLOWED_TOPOLOGIES.
         ## Meanwhile PVC will be remain in pending state.
 
         - name: Check all the pvc is in pending state.
@@ -173,10 +174,12 @@
           register: pvc_status
           failed_when: "pvc_status.stdout != 'Pending'"
 
-        - name: Restart the lvm csi node-agent daemonset pods in kube-system namespace
-          shell: kubectl delete pods -n kube-system -l app=openebs-lvm-node
+        - name: Set the ALLOWED_TOPOLOGIES env in lvm node-daemonset with test-specific topology key
+          shell: kubectl set env daemonset/openebs-lvm-node -n kube-system ALLOWED_TOPOLOGIES=kubernetes.io/hostname,{{ lkey }}
           args: 
             executable: /bin/bash
+          register: topology_status
+          failed_when: "topology_status.rc != 0"
 
         - name: Wait for 10 sec
           shell:
