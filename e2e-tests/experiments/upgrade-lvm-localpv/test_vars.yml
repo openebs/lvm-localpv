@@ -1,0 +1,7 @@
+test_name: upgrade-lvm-localpv
+
+to_version_lvm_branch: "{{ lookup('env','TO_VERSION_LVM_BRANCH') }}"
+
+to_version_lvm_driver_image: "{{ lookup('env','TO_VERSION_LVM_DRIVER_IMAGE') }}"
+
+lvm_operator_ns: "{{ lookup('env','LVM_OPERATOR_NAMESPACE') }}"
