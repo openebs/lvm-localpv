@@ -22,6 +22,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/openebs/lib-csi/pkg/common/kubernetes/client"
 	"github.com/openebs/lvm-localpv/pkg/builder/volbuilder"
 	"github.com/openebs/lvm-localpv/tests/deploy"
 	"github.com/openebs/lvm-localpv/tests/pod"
@@ -31,6 +32,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 
 	// auth plugins
@@ -49,12 +51,18 @@ var (
 	PVClient         *pv.Kubeclient
 	DeployClient     *deploy.Kubeclient
 	PodClient        *pod.KubeClient
+
+	K8sClient *kubernetes.Clientset
+
 	nsName           = "lvm"
 	scName           = "lvmpv-sc"
 	LocalProvisioner = "local.csi.openebs.io"
 	pvcName          = "lvmpv-pvc"
 	snapName         = "lvmpv-snap"
 	appName          = "busybox-lvmpv"
+
+	nodeDaemonSet = "openebs-lvm-node"
+	controllerStatefulSet = "openebs-lvm-controller"
 
 	nsObj            *corev1.Namespace
 	scObj            *storagev1.StorageClass
@@ -74,6 +82,12 @@ func init() {
 	if OpenEBSNamespace == "" {
 		klog.Fatalf("LVM_NAMESPACE environment variable not set")
 	}
+
+	var err error
+	if K8sClient, err = client.Instance(client.WithKubeConfigPath(KubeConfigPath)).Clientset(); err != nil {
+		klog.Fatalf("failed to init kubernetes client: %v", err)
+	}
+
 	SCClient = sc.NewKubeClient(sc.WithKubeConfigPath(KubeConfigPath))
 	PVCClient = pvc.NewKubeClient(pvc.WithKubeConfigPath(KubeConfigPath))
 	PVClient = pv.NewKubeClient(pv.WithKubeConfigPath(KubeConfigPath))

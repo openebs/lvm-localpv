@@ -17,7 +17,10 @@ limitations under the License.
 package tests
 
 import (
+	"time"
+
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/gomega"
 )
 
 var _ = Describe("[lvmpv] TEST VOLUME PROVISIONING", func() {
@@ -91,8 +94,30 @@ func thinVolCreationTest() {
 	By("Deleting thinProvision storage class", deleteStorageClass)
 }
 
+func leakProtectionTest() {
+	By("Creating default storage class", createStorageClass)
+	ds := deleteNodeDaemonSet() // ensure that provisioning remains in pending state.
+
+	By("Creating PVC", createPVC)
+	time.Sleep(30 * time.Second) // wait for external provisioner to pick up new pvc
+	By("Verify pending lvm volume resource")
+	verifyPendingLVMVolume(getGeneratedVolName(pvcObj))
+
+	existingSize := scaleControllerPlugin(0) // remove the external provisioner
+	createNodeDaemonSet(ds) // provision the volume now by restoring node plugin
+	By("Wait for lvm volume resource to become ready", WaitForLVMVolumeReady)
+
+	deleteAndVerifyLeakedPVC(pvcName)
+	scaleControllerPlugin(existingSize)
+
+	gomega.Expect(IsPVCDeletedEventually(pvcName)).To(gomega.Equal(true),
+		"failed to garbage collect leaked pvc")
+	By("Deleting storage class", deleteStorageClass)
+}
+
 func volumeCreationTest() {
 	By("Running volume creation test", fsVolCreationTest)
 	By("Running block volume creation test", blockVolCreationTest)
 	By("Running thin volume creation test", thinVolCreationTest)
+	By("Running leak protection test", leakProtectionTest)
 }

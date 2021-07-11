@@ -17,10 +17,13 @@ limitations under the License.
 package tests
 
 import (
+	"context"
+	"fmt"
 	"time"
 
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
+	"github.com/openebs/lib-csi/pkg/csipv"
 
 	"github.com/openebs/lvm-localpv/pkg/lvm"
 	"github.com/openebs/lvm-localpv/tests/container"
@@ -30,6 +33,7 @@ import (
 	"github.com/openebs/lvm-localpv/tests/pts"
 	"github.com/openebs/lvm-localpv/tests/pvc"
 	"github.com/openebs/lvm-localpv/tests/sc"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -525,4 +529,179 @@ func IsPVDeletedEventually(shouldExist bool, pvName string) bool {
 	},
 		120, 10).
 		Should(shouldPVExist)
+}
+
+func getGeneratedVolName(pvc *corev1.PersistentVolumeClaim) string {
+	return fmt.Sprintf("pvc-%v", pvcObj.GetUID())
+}
+
+func createPVC() {
+	var (
+		err     error
+		pvcName = "lvmpv-pvc"
+	)
+	ginkgo.By("building a pvc")
+	pvcObj, err = pvc.NewBuilder().
+		WithName(pvcName).
+		WithNamespace(OpenEBSNamespace).
+		WithStorageClass(scObj.Name).
+		WithAccessModes(accessModes).
+		WithCapacity(capacity).Build()
+	gomega.Expect(err).ShouldNot(
+		gomega.HaveOccurred(),
+		"while building pvc {%s} in namespace {%s}",
+		pvcName,
+		OpenEBSNamespace,
+	)
+
+	ginkgo.By("creating above pvc")
+	pvcObj, err = PVCClient.WithNamespace(OpenEBSNamespace).Create(pvcObj)
+	gomega.Expect(err).To(
+		gomega.BeNil(),
+		"while creating pvc {%s} in namespace {%s}",
+		pvcName,
+		OpenEBSNamespace,
+	)
+}
+
+func deleteAndVerifyLeakedPVC(pvcName string) {
+	ginkgo.By("Deleting pending PVC")
+	err := PVCClient.WithNamespace(OpenEBSNamespace).Delete(pvcName, &metav1.DeleteOptions{})
+	gomega.Expect(err).To(
+		gomega.BeNil(),
+		"while deleting pvc {%s} in namespace {%s}",
+		pvcName,
+		OpenEBSNamespace,
+	)
+	ginkgo.By("Verify leaked pvc finalizer")
+
+	status := gomega.Eventually(func() bool {
+		pvcRes, err := PVCClient.
+			Get(pvcName, metav1.GetOptions{})
+		gomega.Expect(err).To(
+			gomega.BeNil(),
+			"fetch pvc %v", pvcName)
+		return len(pvcRes.GetFinalizers()) == 1 &&
+			pvcRes.GetFinalizers()[0] == LocalProvisioner + "/" + csipv.LeakProtectionFinalizer
+	}, 120, 10).Should(gomega.BeTrue())
+	gomega.Expect(status).To(gomega.Equal(true), "expecting a leak protection finalizer")
+}
+
+func verifyPendingLVMVolume(volName string) {
+	ginkgo.By("fetching lvm volume")
+	vol, err := LVMClient.WithNamespace(OpenEBSNamespace).
+		Get(volName, metav1.GetOptions{})
+	gomega.Expect(err).To(gomega.BeNil(), "while fetching the lvm volume {%s}", volName)
+
+	ginkgo.By("verifying lvm volume")
+	gomega.Expect(scObj.Parameters["volgroup"]).To(gomega.MatchRegexp(vol.Spec.VgPattern),
+		"while checking volume group of lvm volume", volName)
+}
+
+// WaitForLVMVolumeReady verify the if lvm-volume is ready
+func WaitForLVMVolumeReady() {
+	volName := getGeneratedVolName(pvcObj)
+	status := gomega.Eventually(func() bool {
+		vol, err := LVMClient.WithNamespace(OpenEBSNamespace).
+			Get(volName, metav1.GetOptions{})
+		gomega.Expect(err).To(gomega.BeNil(), "while fetching the lvm volume {%s}", volName)
+		return vol.Status.State == "Ready"
+	}, 120, 10).
+		Should(gomega.BeTrue())
+	gomega.Expect(status).To(gomega.Equal(true), "expecting a lvmvol resource to be ready")
+}
+
+func scaleControllerPlugin(num int32) int32 {
+	ginkgo.By(fmt.Sprintf( "scaling controller plugin statefulset %v to size %v", controllerStatefulSet, num))
+
+	scale, err := K8sClient.AppsV1().StatefulSets(metav1.NamespaceSystem).
+		GetScale(context.Background(), controllerStatefulSet,metav1.GetOptions{})
+	gomega.Expect(err).To(
+		gomega.BeNil(),
+		"fetch current replica of stateful set %v", controllerStatefulSet)
+	existingReplicas := scale.Spec.Replicas
+
+	if scale.Spec.Replicas == num {
+		return existingReplicas
+	}
+	scale.Spec.Replicas = num
+	scale, err = K8sClient.AppsV1().StatefulSets(metav1.NamespaceSystem).
+		UpdateScale(context.Background(), controllerStatefulSet, scale, metav1.UpdateOptions{})
+	gomega.Expect(err).To(
+		gomega.BeNil(),
+		"update replicas of stateful set %v to %v", controllerStatefulSet, num)
+
+	scaled := gomega.Eventually(func() bool {
+		scale, err = K8sClient.AppsV1().StatefulSets(metav1.NamespaceSystem).
+			GetScale(context.Background(), controllerStatefulSet,metav1.GetOptions{})
+		gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
+		return scale.Spec.Replicas == num
+	}, 120, 10).
+		Should(gomega.BeTrue())
+	gomega.Expect(scaled).To(gomega.BeTrue(),
+		"failed to scale up stateful set %v to size %v", controllerStatefulSet, num)
+	return existingReplicas
+}
+
+func deleteNodeDaemonSet() *appsv1.DaemonSet {
+	csiNodes, err := K8sClient.StorageV1().CSINodes().List(context.Background(), metav1.ListOptions{})
+	gomega.Expect(err).To(
+		gomega.BeNil(), "fetching csi node")
+	if len(csiNodes.Items) == 0 {
+		err = fmt.Errorf("expecting non-zero csi nodes in the cluster")
+		gomega.Expect(err).To(gomega.BeNil())
+	}
+	csiNode := csiNodes.Items[0]
+
+	ginkgo.By("deleting node plugin daemonset " + nodeDaemonSet)
+	ds, err := K8sClient.AppsV1().
+		DaemonSets(metav1.NamespaceSystem).
+		Get(context.Background(), nodeDaemonSet, metav1.GetOptions{})
+	gomega.Expect(err).To(
+		gomega.BeNil(),
+		"fetching node plugin daemonset %v", nodeDaemonSet)
+	policy := metav1.DeletePropagationForeground
+	err = K8sClient.AppsV1().
+		DaemonSets(metav1.NamespaceSystem).
+		Delete(context.Background(), nodeDaemonSet, metav1.DeleteOptions{
+			PropagationPolicy: &policy,
+		})
+	gomega.Expect(err).To(
+		gomega.BeNil(),
+		"deleting node plugin daemonset %v", nodeDaemonSet)
+
+	ginkgo.By("waiting for deletion of node plugin pods")
+	status := gomega.Eventually(func() bool {
+		_, err = K8sClient.AppsV1().
+			DaemonSets(metav1.NamespaceSystem).
+			Get(context.Background(), nodeDaemonSet, metav1.GetOptions{})
+		return k8serrors.IsNotFound(err)
+	}, 120, 10).Should(gomega.BeTrue())
+	gomega.Expect(status).To(gomega.Equal(true),
+		"waiting for deletion of node plugin daemonset")
+
+
+	// update the underlying csi node resource to ensure pvc gets scheduled
+	// by external provisioner.
+	ginkgo.By("patching csinode resource")
+	newCSINode, err := K8sClient.StorageV1().CSINodes().Get(context.Background(), csiNode.GetName(), metav1.GetOptions{})
+	gomega.Expect(err).To(
+		gomega.BeNil(), "fetching updated csi node")
+	newCSINode.Spec.Drivers = csiNode.Spec.Drivers
+	_, err = K8sClient.StorageV1().CSINodes().Update(context.Background(), newCSINode, metav1.UpdateOptions{})
+	gomega.Expect(err).To(
+		gomega.BeNil(), "updating csi node %v", csiNode.GetName())
+
+	return ds
+}
+
+func createNodeDaemonSet(ds *appsv1.DaemonSet) {
+	ds.SetResourceVersion("") // reset the resource version for creation.
+	ginkgo.By("creating node plugin daemonset " + nodeDaemonSet)
+	_, err := K8sClient.AppsV1().
+		DaemonSets(metav1.NamespaceSystem).
+		Create(context.Background(), ds, metav1.CreateOptions{})
+	gomega.Expect(err).To(
+		gomega.BeNil(),
+		"creating node plugin daemonset %v", nodeDaemonSet)
 }
