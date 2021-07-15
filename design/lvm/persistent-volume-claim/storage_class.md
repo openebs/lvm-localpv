@@ -56,8 +56,11 @@ spec:
 
 ### Test Plan
 
-- Provision a volume with a valid StorageClass name.
-- Provision a volume with an invalid StorageClass name.
+- Provision a volume with a valid StorageClass name and verify that
+  volume should get provisioned.
+- Provision a volume with an invalid StorageClass name and verify that
+  volume should never get provisioned(PVC will remain in a pending state).
+- Provision a volume without StorageClass and verify that creation call should get errored out.
 
 ## Graduation Criteria
 

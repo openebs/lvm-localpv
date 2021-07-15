@@ -59,8 +59,10 @@ spec:
 ```
 
 ### Test Plan
-- Provision volume with filesystem volume mode.
-- Provision volume with raw block volume and verify volume behavior inside the application pod.
+- Provision and application on volume with filesystem volume mode
+  and verify that volume should get formated with user specified filesystem.
+- Provision volume with raw block volume and verify block volume accessibility
+  from inside the application pod.
 
 ## Graduation Criteria
 

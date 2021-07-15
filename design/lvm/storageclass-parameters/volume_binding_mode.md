@@ -71,8 +71,10 @@ volumeBindingMode: WaitForFirstConsumer     ## It can also replaced by Immediate
 
 ### Test Plan
 
-- Provision volume with immediate binding mode.
-- Provision volume with delayed binding mode(Volume should be bound only when an application is deployed).
+- Provision volume with immediate binding mode and verify that
+  volume should get provisioned.
+- Provision volume with delayed binding mode and verify that volume
+  should remain in pending state till application deployed on volume.
 - Provision application with delayed volume binding mode and verify whether
   pod is scheduled on a node where maximum capacity is available.
 

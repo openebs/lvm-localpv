@@ -70,9 +70,13 @@ reclaimPolicy: Delete          ## Reclaim policy can be specified here. It also 
 
 ### Test Plan
 
-- Provision and de-provision volume with `Delete` reclaim policy.
-- Provision volume with `Retain` reclaim policy and trigger deletion of volume(Underlying volume should retain).
-- Provision & de-provision volume with `Retain` reclaim policy and then try to claim volume by creating new PVC referencing to retained PV.
+- Provision and de-provision volume with `Delete` reclaim policy and
+  verify that PV & LVMVolume resources should get deleted.
+- Provision volume with `Retain` reclaim policy and trigger deletion
+  of volume and verify that underlying volume should retain.
+- Provision & de-provision volume with `Retain` reclaim policy then
+  try to claim retained volume by creating PVC referencing to retained
+  volume and verify that volume should get provisioned.
 
 ## Graduation Criteria
 

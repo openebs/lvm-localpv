@@ -120,10 +120,12 @@ In above structure, Shared value controls shared property of volume.
           can't be shared among multiple instances.
 
 ### Test Plan
-- Provision multiple application instances by setting a shared property to `yes`.
+- Provision multiple application instances by setting a shared property to `yes` and
+  verify that all application instances should get into a running state.
 - Provision multiple application instances by setting a shared property to `No`
-  among multiple instances, only one should be in running state.
-- Provision single application instance without specifying any shared property.
+  and verify that among multiple instances, only one should be in running state.
+- Provision single application instance without specifying any shared property and
+  verify that application should be able to access the volume.
 
 ## Graduation Criteria
 

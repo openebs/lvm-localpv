@@ -40,11 +40,14 @@ claim to the volume only if volume satisfies all of the following criteria:
 
 ### Test Plan
 
-- Provision a volume by specifying available/pre-provisioned volume name.
-- Provision a volume by specifying unavailable volume name.
-- Provision a volume with capacity more than available volume capacity.
-- Provision a volume with volume name by specifying storageclass different
-  from available volumes storageclass name.
+- Provision a volume by specifying available/pre-provisioned volume name and
+  verify that PVC should get bound to volume.
+- Provision a volume by specifying unavailable volume name and verify that
+  PVC should remains in pending state.
+- Provision a volume with capacity more than available volume capacity and verify
+  that PVC should remains in pending state.
+- Provision a volume with volume name by specifying different storageclass name
+  from available volumes and verify that PVC should remains in pending state.
 
   
 ## Graduation Criteria

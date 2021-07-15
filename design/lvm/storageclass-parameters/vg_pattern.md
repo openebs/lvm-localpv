@@ -117,11 +117,15 @@ parameters:
 ```
 
 ### Test Plan
-- Provision volume by specifying unavailable volume group name.
-- Provision volume by specifying valid volume group name.
-- Provision volume and trigger deletion of a volume group.
-- Provision volume with capacity more than available capacity on volume group.
-  Once it remains in pending state expanding volume group should mark PVC as bound.
+- Provision volume by specifying unavailable volume group pattern and
+  verify that volume should not get provisioned.
+- Provision volume by specifying valid volume group name pattern and verify
+  that volume should get provisioned.
+- Provision volume and trigger deletion of a corresponding volume group and verify
+  that volume should remain in pending state.
+- Provision volume with capacity more than available capacity of volume group.
+  Once PVC remains in pending state expanding volume group and verify that
+  volume should get provisioned.
 
 ## Graduation Criteria
 

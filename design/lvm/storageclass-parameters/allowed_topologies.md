@@ -74,9 +74,18 @@ allowedTopologies:
 
 ### Test Plan
 
-- Provision a volume without specifying any topology information.
-- Provision a volume with valid topology and immediate binding mode.
-- Provision a volume with invalid topology information.
-- Provision a volume with topology information that is not available currently but it will available in near future.
-- Provision an application with valid topology and delayed binding mode.
-- Provision a volume by specifying the topology of node where required storage is not available.
+- Provision a volume without specifying any topology information and
+  verify that volume should get provisioned.
+- Provision a volume with valid topology and immediate binding mode and
+  verify that volume should get provisioned.
+- Provision a volume with invalid topology information and verify that
+  volume should not get provisioned(PVC will remain pending state).
+- Provision a volume with topology information that is not available
+  currently but it will available in near future and verify that volume should
+  get provisioned after making topology available.
+- Provision a volume with valid topology and delayed binding mode and verify
+  that volume should get provisioned only after deploying application on delayed
+  binding volume.
+- Provision a volume by specifying the topology of node where required storage
+  is not available and verify that volume should not get provisioned(PVC will
+  remains pending state).

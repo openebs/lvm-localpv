@@ -82,9 +82,13 @@ parameters:
 ```
 
 ## Test Plan
-- Provision applications with all supported filesystem types.
-- Provision an application without specifying any filesystem type under parameters.
-- Provision an application and restart the CSI node driver during application mounting time.
+- Provision applications with all supported filesystem types and verify
+  that volume should formatted with user specified filesystem.
+- Provision an application without specifying any filesystem type under
+  parameters and verify that application should be able to consume the volume.
+- Provision an application and restart the CSI node driver during application
+  mounting time and verify that application should get into running state after
+  ejecting the chaos.
 
 
 ## Graduation Criteria

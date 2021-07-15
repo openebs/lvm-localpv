@@ -60,8 +60,13 @@ spec:
 ```
 
 ### Test Plan
-- Provision volume with valid capacity i.e less than available capacity of corresponding VolumeGroup.
-- Provision volume with a capacity larger than available VolumeGroup capacity and later make capacity to be available to volume group.
+- Provision volume with valid capacity i.e less than available capacity of
+  corresponding VolumeGroup and verify that volume should get provisioned.
+- Provision volume with a capacity larger than available VolumeGroup capacity,
+  later make capacity to be available to the volume group(via vgextend) and verify that
+  volume should get provisioned after increasing capacity.
+- Deprovision bounded volume and verify that space should be reclaimed from
+  underlying VolumeGroup.
 
 ## Graduation Criteria
 

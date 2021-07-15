@@ -96,11 +96,13 @@ mountOptions:
 
 ### Test Plan
 A test plan will include following test cases:
-- Provision application without specifying mount options in StoragClass.
-- Provision application with various mount options according to choosen
-  filesystem(ext[3|4], xfs, btrfs) and verify whether mount options behaviour
-  from application.
-- Provision application with invalid mount options.
+- Provision application without specifying mount options and verify that
+  application should be able to consume a volume.
+- Provision application with various mount options according to user chosen
+  filesystem(ext[3|4], xfs, btrfs) and verify whether mount options behavior
+  from the application.
+- Provision application with invalid mount options and verify that application
+  should remain in the containerCreating state.
 
 ## Graduation Criteria
 

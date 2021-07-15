@@ -58,11 +58,14 @@ spec:
 
 ### Test Plan
 
-- Provision a volume by specifying labels matching to available/pre-provisioned volumes.
-- Provision a volume by specifying labels that don't exist on any of the available volumes.
-- Provision a volume with a capacity greater than available volumes.
-- Provision a volume with selectors by specifying storageclass name different from
-  available volumes storageclass name.
+- Provision a volume by specifying match labels matching to available/pre-provisioned
+  volumes and verify that PVC should get bound.
+- Provision a volume by specifying labels that don't exist on any of the available
+  volumes and verify that PVC should not get bound to volume.
+- Provision a volume with a capacity greater than available volumes and verify that
+  PVC should not get bound to volume.
+- Provision a volume with selectors by specifying different storageclass name from
+  available volumes and verify that PVC should not get bound to volume.
 
 ## Graduation Criteria
 
