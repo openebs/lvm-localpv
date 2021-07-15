@@ -34,8 +34,17 @@ Please visit the [link](https://openebs.github.io/lvm-localpv/) for install inst
 
 ```console
 # Helm
-$ helm install [RELEASE_NAME] openebs-lvmlocalpv/lvm-localpv
+$ helm install [RELEASE_NAME] openebs-lvmlocalpv/lvm-localpv --namespace [NAMESPACE]
 ```
+
+<details>
+  <summary>Click here if you're using MicroK8s.</summary>
+
+  ```console
+  microk8s helm3 install [RELEASE_NAME] openebs-lvmlocalpv/lvm-localpv --namespace [NAMESPACE] --set-string lvmNode.kubeletDir="/var/snap/microk8s/common/var/lib/kubelet/"
+  ```
+</details>
+
 
 **Note:** If moving from the operator to helm
 - Make sure the namespace provided in the helm install command is same as `LVM_NAMESPACE` (by default it is `openebs`) env in the controller statefulset.
@@ -65,12 +74,25 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 
 ```console
 # Helm
-$ helm upgrade [RELEASE_NAME] [CHART] --install
+$ helm upgrade [RELEASE_NAME] [CHART] --install --namespace [NAMESPACE]
 ```
 
 ## Configuration
 
 The following table lists the configurable parameters of the OpenEBS LVM Localpv chart and their default values.
+
+```console
+helm install openebs-lvmlocalpv openebs-lvmlocalpv/lvm-localpv --namespace openebs --create-namespace
+```
+<details>
+  <summary>Click here if you're using MicroK8s.</summary>
+
+  If you are using MicroK8s, it is necessary to add the following flag:
+
+  ```console
+  --set-string lvmNode.kubeletDir="/var/snap/microk8s/common/var/lib/kubelet/"
+  ```
+</details>
 
 | Parameter| Description| Default|
 | -| -| -|
@@ -78,7 +100,7 @@ The following table lists the configurable parameters of the OpenEBS LVM Localpv
 | `lvmPlugin.image.registry`| Registry for openebs-lvm-plugin image| `""`|
 | `lvmPlugin.image.repository`| Image repository for openebs-lvm-plugin| `openebs/lvm-driver`|
 | `lvmPlugin.image.pullPolicy`| Image pull policy for openebs-lvm-plugin| `IfNotPresent`|
-| `lvmPlugin.image.tag`| Image tag for openebs-lvm-plugin| `0.6.0`|
+| `lvmPlugin.image.tag`| Image tag for openebs-lvm-plugin| `0.7.0`|
 | `lvmPlugin.metricsPort`| The TCP port number used for exposing lvm-metrics | `9500`|
 | `lvmNode.driverRegistrar.image.registry`| Registry for csi-node-driver-registrar image| `k8s.gcr.io/`|
 | `lvmNode.driverRegistrar.image.repository`| Image repository for csi-node-driver-registrar| `sig-storage/csi-node-driver-registrar`|
