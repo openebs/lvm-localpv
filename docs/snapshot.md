@@ -5,8 +5,13 @@ The LVM driver supports creating snapshots of the LVM volumes. Certain settings 
 - Snapshots created by LVM driver are ReadOnly by default as opposed to the ReadWrite snapshots created by default by `lvcreate` command
 - The size of snapshot will be set to the size of the origin volume
 
-### Steps to create a snapshot
-1. A SnapshotClass needs to be created. A sample SnapshotClass can be found [here](https://github.com/openebs/lvm-localpv/blob/master/deploy/sample/lvmsnapclass.yaml).
+
+### Default SnapshotClass Without SnapSize Parameter
+
+In default snapshotclass case, for thin volumes a thin snapshot will be created. Similarly for thick volume a thick snapshot will be created.
+
+While creating the thick snapshot for thick volumes, since snapsize parameter is not provided, driver will reserve size equal to the volume for snapshots.
+
 ```yaml
 kind: VolumeSnapshotClass
 apiVersion: snapshot.storage.k8s.io/v1
@@ -18,7 +23,48 @@ driver: local.csi.openebs.io
 deletionPolicy: Delete
 ```
 
-Apply the SnapshotClass YAML:
+
+### SnapshotClass With Snapsize Parameter
+
+Using SnapshotClass `snapSize` parameter we can configure the snapshot size for persistent volumes where `snapSize` can be configure as a percentage or a absolute value.
+
+In this case whether volume is thin provisioned or thick provisioned, driver will create a thick snapshot with size as `snapSize` mentioned in the `SnapshotClass`.
+
+- SnapshotClass with `snapSize` parameter as a percentage(%) value:
+
+```yaml
+kind: VolumeSnapshotClass
+apiVersion: snapshot.storage.k8s.io/v1
+metadata:
+  name: lvmpv-snapclass
+  annotations:
+    snapshot.storage.kubernetes.io/is-default-class: "true"
+driver: local.csi.openebs.io
+deletionPolicy: Delete
+parameters:
+  snapSize: 50%
+```
+
+- SnapshotClass with `snapSize` parameter as a absolute value:
+
+```yaml
+kind: VolumeSnapshotClass
+apiVersion: snapshot.storage.k8s.io/v1
+metadata:
+  name: lvmpv-snapclass
+  annotations:
+    snapshot.storage.kubernetes.io/is-default-class: "true"
+driver: local.csi.openebs.io
+deletionPolicy: Delete
+parameters:
+  snapSize: 10G
+```
+
+### Steps to create a snapshot
+
+A SnapshotClass needs to be created. A sample SnapshotClass can be found [here](https://github.com/openebs/lvm-localpv/blob/master/deploy/sample/lvmsnapclass.yaml).
+
+1. Apply the SnapshotClass YAML:
 ```bash
 $ kubectl apply -f snapshotclass.yaml
 volumesnapshotclass.snapshot.storage.k8s.io/lvmpv-snapclass created
