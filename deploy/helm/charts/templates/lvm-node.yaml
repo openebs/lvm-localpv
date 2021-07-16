@@ -103,6 +103,10 @@ spec:
             - name: METRICS_LISTEN_ADDRESS
               value: :{{ .Values.lvmPlugin.metricsPort }}
             {{- end }}
+            {{- if .Values.lvmPlugin.allowedTopologies }}
+            - name: ALLOWED_TOPOLOGIES
+              value: {{ .Values.lvmPlugin.allowedTopologies }}
+            {{- end }}
           volumeMounts:
             - name: plugin-dir
               mountPath: /plugin
