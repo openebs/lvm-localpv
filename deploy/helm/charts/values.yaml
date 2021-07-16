@@ -135,6 +135,8 @@ lvmPlugin:
   # The TCP port number used for exposing lvm-metrics.
   # If not set, service will not be created to expose metrics endpoint to serviceMonitor and listen-address flag will not be set.
   metricsPort: 9500
+  # Comma seperated list of k8s worker node topologies
+  allowedTopologies: "kubernetes.io/hostname,"
 
 role: openebs-lvm
 
