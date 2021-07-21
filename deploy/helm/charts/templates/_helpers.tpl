@@ -114,3 +114,25 @@ Create labels for openebs lvm-localpv node daemon
 {{ include "lvmlocalpv.lvmNode.matchLabels" . }}
 {{ include "lvmlocalpv.lvmNode.componentLabels" . }}
 {{- end -}}
+
+{{/*
+Create the name of the priority class for csi node plugin
+*/}}
+{{- define "lvmlocalpv.lvmNode.priorityClassName" -}}
+{{- if .Values.lvmNode.priorityClass.create }}
+{{- printf "%s-%s" .Release.Name .Values.lvmNode.priorityClass.name | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- printf "%s" .Values.lvmNode.priorityClass.name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end }}
+
+{{/*
+Create the name of the priority class for csi controller plugin
+*/}}
+{{- define "lvmlocalpv.lvmController.priorityClassName" -}}
+{{- if .Values.lvmController.priorityClass.create }}
+{{- printf "%s-%s" .Release.Name .Values.lvmController.priorityClass.name | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- printf "%s" .Values.lvmController.priorityClass.name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end }}
