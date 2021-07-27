@@ -17,9 +17,10 @@ limitations under the License.
 package collector
 
 import (
-	"github.com/openebs/lvm-localpv/pkg/lvm"
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/klog"
+
+	"github.com/openebs/lvm-localpv/pkg/lvm"
 )
 
 /*

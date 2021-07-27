@@ -23,13 +23,13 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
-
 	"strings"
 
-	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/klog"
+
+	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 )
 
 // lvm related constants
@@ -57,7 +57,7 @@ const (
 	PVList = "pvs"
 	PVScan = "pvscan"
 
-	YES = "yes"
+	YES        = "yes"
 	LVThinPool = "thin-pool"
 )
 
