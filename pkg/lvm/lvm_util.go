@@ -54,12 +54,11 @@ const (
 	LVExtend = "lvextend"
 	LVList   = "lvs"
 
-	LVThinPool = "thin-pool"
-
 	PVList = "pvs"
 	PVScan = "pvscan"
 
 	YES = "yes"
+	LVThinPool = "thin-pool"
 )
 
 var (
