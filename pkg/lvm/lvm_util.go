@@ -49,10 +49,11 @@ const (
 	VGCreate = "vgcreate"
 	VGList   = "vgs"
 
-	LVCreate   = "lvcreate"
-	LVRemove   = "lvremove"
-	LVExtend   = "lvextend"
-	LVList     = "lvs"
+	LVCreate = "lvcreate"
+	LVRemove = "lvremove"
+	LVExtend = "lvextend"
+	LVList   = "lvs"
+
 	LVThinPool = "thin-pool"
 
 	PVList = "pvs"
@@ -102,19 +103,26 @@ type LogicalVolume struct {
 	// SegType specifies the type of Logical volume segment
 	SegType string
 
-	// Permission indicates the logical volume permission
-	// which can be either one of these- (unknown/writeable/read-only/read-only-override)
+	// Permission indicates the logical volume permission.
+	// Permission has the following mapping between
+	// int and string for its value:
+	// [-1: "", 0: "unknown", 1: "writeable", 2: "read-only", 3: "read-only-override"]
 	Permission int
 
-	// BehaviourWhenFull indicates the behaviour of thin pools when it is full
+	// BehaviourWhenFull indicates the behaviour of thin pools when it is full.
+	// BehaviourWhenFull has the following mapping between int and string for its value:
+	// [-1: "", 0: "error", 1: "queue"]
 	BehaviourWhenFull int
 
 	// HealthStatus indicates the health status of logical volumes.
-	// This can be any one among these - (""/partial/refresh needed/mismatches exist)
+	// HealthStatus has the following mapping between int and string for its value:
+	// [0: "", 1: "partial", 2: "refresh needed", 3: "mismatches exist"]
 	HealthStatus int
 
 	// RaidSyncAction indicates the current synchronization action being performed for RAID
-	// action can be any one of these - (idle/frozen/resync/recover/check/repair)
+	// action.
+	// RaidSyncAction has the following mapping between int and string for its value:
+	// [-1: "", 0: "idle", 1: "frozen", 2: "resync", 3: "recover", 4: "check", 5: "repair"]
 	RaidSyncAction int
 
 	// ActiveStatus indicates the active state of logical volume
@@ -620,6 +628,7 @@ func getIntFieldValue(fieldName, fieldValue string) int {
 	for i, v := range Enums[fieldName] {
 		if v == fieldValue {
 			mv = i
+			break
 		}
 	}
 	return mv

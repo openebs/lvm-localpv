@@ -115,8 +115,8 @@ func registerCollectors(disableExporterMetrics bool) (*prometheus.Registry, erro
 		}
 	}
 
-	LvmVgCollector := collector.NewVgCollector()
-	err := registry.Register(LvmVgCollector)
+	lvmVgCollector := collector.NewVgCollector()
+	err := registry.Register(lvmVgCollector)
 	if err != nil {
 		klog.Errorf("failed to register LVM VG collector for LVM metrics collection: %s", err.Error())
 		return nil, err
@@ -129,8 +129,8 @@ func registerCollectors(disableExporterMetrics bool) (*prometheus.Registry, erro
 		return nil, err
 	}
 
-	LvmPvCollector := collector.NewPvCollector()
-	err = registry.Register(LvmPvCollector)
+	lvmPvCollector := collector.NewPvCollector()
+	err = registry.Register(lvmPvCollector)
 	if err != nil {
 		klog.Errorf("failed to register LVM PV collector for LVM metrics collection: %s", err.Error())
 		return nil, err

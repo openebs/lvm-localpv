@@ -55,8 +55,10 @@ spec:
                 node.
               properties:
                 allocationPolicy:
-                  description: AllocationPolicy indicates the volume group allocation
-                    policy(normal/contiguous/cling/anywhere/inherited)
+                  description: 'AllocationPolicy indicates the volume group allocation
+                    policy. AllocationPolicy has the following mapping between int
+                    and string for its value: [-1: "", 0: "normal", 1: "contiguous",
+                    2: "cling", 3: "anywhere", 4: "inherited"]'
                   type: integer
                 free:
                   anyOf:
@@ -72,12 +74,12 @@ spec:
                   minimum: 0
                   type: integer
                 maxLv:
-                  description: MaxLV denotes maximum number of Logical volumes allowed
+                  description: MaxLV denotes maximum number of logical volumes allowed
                     in volume group or 0 if unlimited.
                   format: int32
                   type: integer
                 maxPv:
-                  description: MaxPV denotes Maximum number of physical volumes allowed
+                  description: MaxPV denotes maximum number of physical volumes allowed
                     in volume group or 0 if unlimited.
                   format: int32
                   type: integer
@@ -103,7 +105,7 @@ spec:
                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                   x-kubernetes-int-or-string: true
                 metadataUsedCount:
-                  description: MetadataUsedCount denotes number of metadata areas
+                  description: MetadataUsedCount denotes number of used metadata areas
                     in volume group
                   format: int32
                   type: integer
@@ -117,8 +119,10 @@ spec:
                   minLength: 1
                   type: string
                 permissions:
-                  description: Permission indicates the volume group permission which
-                    can be writable or read-only
+                  description: 'Permission indicates the volume group permission which
+                    can be writable or read-only. Permission has the following mapping
+                    between int and string for its value: [-1: "", 0: "writeable",
+                    1: "read-only"]'
                   type: integer
                 pvCount:
                   description: PVCount denotes total number of physical volumes constituting

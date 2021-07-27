@@ -68,11 +68,11 @@ type VolumeGroup struct {
 	// +kubebuilder:validation:Minimum=0
 	PVCount int32 `json:"pvCount"`
 
-	// MaxLV denotes maximum number of Logical volumes allowed
+	// MaxLV denotes maximum number of logical volumes allowed
 	// in volume group or 0 if unlimited.
 	MaxLV int32 `json:"maxLv"`
 
-	// MaxPV denotes Maximum number of physical volumes allowed
+	// MaxPV denotes maximum number of physical volumes allowed
 	// in volume group or 0 if unlimited.
 	MaxPV int32 `json:"maxPv"`
 
@@ -87,7 +87,7 @@ type VolumeGroup struct {
 	// volume group.
 	MetadataCount int32 `json:"metadataCount"`
 
-	// MetadataUsedCount denotes number of metadata areas in
+	// MetadataUsedCount denotes number of used metadata areas in
 	// volume group
 	MetadataUsedCount int32 `json:"metadataUsedCount"`
 
@@ -100,11 +100,17 @@ type VolumeGroup struct {
 	MetadataSize resource.Quantity `json:"metadataSize"`
 
 	// Permission indicates the volume group permission
-	// which can be writable or read-only
+	// which can be writable or read-only.
+	// Permission has the following mapping between
+	// int and string for its value:
+	// [-1: "", 0: "writeable", 1: "read-only"]
 	Permission int `json:"permissions"`
 
 	// AllocationPolicy indicates the volume group allocation
-	// policy(normal/contiguous/cling/anywhere/inherited)
+	// policy.
+	// AllocationPolicy has the following mapping between
+	// int and string for its value:
+	// [-1: "", 0: "normal", 1: "contiguous", 2: "cling", 3: "anywhere", 4: "inherited"]
 	AllocationPolicy int `json:"allocationPolicy"`
 }
 
