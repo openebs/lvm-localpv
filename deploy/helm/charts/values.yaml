@@ -50,6 +50,10 @@ lvmNode:
   tolerations: []
   securityContext: {}
   labels: {}
+  priorityClass:
+    create: true
+    name: lvm-localpv-csi-node-critical
+
 
 # lvmController contains the configurables for
 # the lvm controller statefulset
@@ -114,6 +118,9 @@ lvmController:
   nodeSelector: {}
   tolerations: []
   securityContext: {}
+  priorityClass:
+    create: true
+    name: lvm-localpv-csi-controller-critical
 
 # lvmPlugin is the common csi container used by the
 # controller statefulset and node daemonset
