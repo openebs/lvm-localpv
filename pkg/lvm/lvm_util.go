@@ -575,18 +575,18 @@ func parseVolumeGroup(m map[string]string) (apis.VolumeGroup, error) {
 	var sizeBytes int64
 	var err error
 
-	vg.Name = m["vg_name"]
-	vg.UUID = m["vg_uuid"]
+	vg.Name = m[VGName]
+	vg.UUID = m[VGUUID]
 
 	int32Map := map[string]*int32{
-		"pv_count":            &vg.PVCount,
-		"lv_count":            &vg.LVCount,
-		"max_lv":              &vg.MaxLV,
-		"max_pv":              &vg.MaxPV,
-		"snap_count":          &vg.SnapCount,
-		"vg_missing_pv_count": &vg.MissingPVCount,
-		"vg_mda_count":        &vg.MetadataCount,
-		"vg_mda_used_count":   &vg.MetadataUsedCount,
+		VGPVvount:           &vg.PVCount,
+		VGLvCount:           &vg.LVCount,
+		VGMaxLv:             &vg.MaxLV,
+		VGMaxPv:             &vg.MaxPV,
+		VGSnapCount:         &vg.SnapCount,
+		VGMissingPvCount:    &vg.MissingPVCount,
+		VGMetadataCount:     &vg.MetadataCount,
+		VGMetadataUsedCount: &vg.MetadataUsedCount,
 	}
 	for key, value := range int32Map {
 		count, err = strconv.Atoi(m[key])
@@ -597,10 +597,10 @@ func parseVolumeGroup(m map[string]string) (apis.VolumeGroup, error) {
 	}
 
 	resQuantityMap := map[string]*resource.Quantity{
-		"vg_size":     &vg.Size,
-		"vg_free":     &vg.Free,
-		"vg_mda_size": &vg.MetadataSize,
-		"vg_mda_free": &vg.MetadataFree,
+		VGSize:             &vg.Size,
+		VGFreeSize:         &vg.Free,
+		VGMetadataSize:     &vg.MetadataSize,
+		VGMetadataFreeSize: &vg.MetadataFree,
 	}
 
 	for key, value := range resQuantityMap {
@@ -614,8 +614,8 @@ func parseVolumeGroup(m map[string]string) (apis.VolumeGroup, error) {
 		*value = *quantity //
 	}
 
-	vg.Permission = getIntFieldValue("vg_permissions", m["vg_permissions"])
-	vg.AllocationPolicy = getIntFieldValue("vg_allocation_policy", m["vg_allocation_policy"])
+	vg.Permission = getIntFieldValue(VGPermissions, m[VGPermissions])
+	vg.AllocationPolicy = getIntFieldValue(VGAllocationPolicy, m[VGAllocationPolicy])
 
 	return vg, err
 }
@@ -717,23 +717,23 @@ func parseLogicalVolume(m map[string]string) (LogicalVolume, error) {
 	var sizeBytes int64
 	var count float64
 
-	lv.Name = m["lv_name"]
-	lv.FullName = m["lv_full_name"]
-	lv.UUID = m["lv_uuid"]
-	lv.Path = m["lv_path"]
-	lv.DMPath = m["lv_dm_path"]
-	lv.VGName = m["vg_name"]
-	lv.ActiveStatus = m["lv_active"]
+	lv.Name = m[LVName]
+	lv.FullName = m[LVFullName]
+	lv.UUID = m[LVUUID]
+	lv.Path = m[LVPath]
+	lv.DMPath = m[LVDmPath]
+	lv.VGName = m[VGName]
+	lv.ActiveStatus = m[LVActive]
 
 	int64Map := map[string]*int64{
-		"lv_size":          &lv.Size,
-		"lv_metadata_size": &lv.MetadataSize,
+		LVSize:         &lv.Size,
+		LVMetadataSize: &lv.MetadataSize,
 	}
 	for key, value := range int64Map {
 		// Check if the current LV is not a thin pool. If not then
 		// metadata size will not be present as metadata is only
 		// stored for thin pools.
-		if m["segtype"] != LVThinPool && key == "lv_metadata_size" {
+		if m[LVSegtype] != LVThinPool && key == LVMetadataSize {
 			sizeBytes = 0
 		} else {
 			sizeBytes, err = strconv.ParseInt(strings.TrimSuffix(strings.ToLower(m[key]), "b"), 10, 64)
@@ -745,18 +745,18 @@ func parseLogicalVolume(m map[string]string) (LogicalVolume, error) {
 		*value = sizeBytes
 	}
 
-	lv.SegType = m["segtype"]
-	lv.Host = m["lv_host"]
-	lv.PoolName = m["pool_lv"]
-	lv.Permission = getIntFieldValue("lv_permissions", m["lv_permissions"])
-	lv.BehaviourWhenFull = getIntFieldValue("lv_when_full", m["lv_when_full"])
-	lv.HealthStatus = getIntFieldValue("lv_health_status", m["lv_health_status"])
-	lv.RaidSyncAction = getIntFieldValue("raid_sync_action", m["raid_sync_action"])
+	lv.SegType = m[LVSegtype]
+	lv.Host = m[LVHost]
+	lv.PoolName = m[LVPool]
+	lv.Permission = getIntFieldValue(LVPermissions, m[LVPermissions])
+	lv.BehaviourWhenFull = getIntFieldValue(LVWhenFull, m[LVWhenFull])
+	lv.HealthStatus = getIntFieldValue(LVHealthStatus, m[LVHealthStatus])
+	lv.RaidSyncAction = getIntFieldValue(RaidSyncAction, m[RaidSyncAction])
 
 	float64Map := map[string]*float64{
-		"data_percent":     &lv.UsedSizePercent,
-		"metadata_percent": &lv.MetadataUsedPercent,
-		"snap_percent":     &lv.SnapshotUsedPercent,
+		LVDataPercent:     &lv.UsedSizePercent,
+		LVMetadataPercent: &lv.MetadataUsedPercent,
+		LVSnapPercent:     &lv.SnapshotUsedPercent,
 	}
 	for key, value := range float64Map {
 		if m[key] == "" {
@@ -910,20 +910,20 @@ func parsePhysicalVolume(m map[string]string) (PhysicalVolume, error) {
 	var err error
 	var sizeBytes int64
 
-	pv.Name = m["pv_name"]
-	pv.UUID = m["pv_uuid"]
-	pv.InUse = m["pv_in_use"]
-	pv.Allocatable = m["pv_allocatable"]
-	pv.Missing = m["pv_missing"]
-	pv.VGName = m["vg_name"]
+	pv.Name = m[PVName]
+	pv.UUID = m[PVUUID]
+	pv.InUse = m[PVInUse]
+	pv.Allocatable = m[PVAllocatable]
+	pv.Missing = m[PVMissing]
+	pv.VGName = m[VGName]
 
 	resQuantityMap := map[string]*resource.Quantity{
-		"pv_size":     &pv.Size,
-		"pv_free":     &pv.Free,
-		"pv_used":     &pv.Used,
-		"pv_mda_size": &pv.MetadataSize,
-		"pv_mda_free": &pv.MetadataFree,
-		"dev_size":    &pv.DeviceSize,
+		PVSize:             &pv.Size,
+		PVFreeSize:         &pv.Free,
+		PVUsedSize:         &pv.Used,
+		PVMetadataSize:     &pv.MetadataSize,
+		PVMetadataFreeSize: &pv.MetadataFree,
+		PVDeviceSize:       &pv.DeviceSize,
 	}
 
 	for key, value := range resQuantityMap {
