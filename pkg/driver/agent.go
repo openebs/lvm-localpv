@@ -115,13 +115,28 @@ func registerCollectors(disableExporterMetrics bool) (*prometheus.Registry, erro
 			return nil, err
 		}
 	}
-	lvmCollector := collector.NewLvmCollector()
 
-	err := registry.Register(lvmCollector)
+	lvmVgCollector := collector.NewVgCollector()
+	err := registry.Register(lvmVgCollector)
 	if err != nil {
-		klog.Errorf("failed to register LVM collector for LVM metrics collection: %s", err.Error())
+		klog.Errorf("failed to register LVM VG collector for LVM metrics collection: %s", err.Error())
 		return nil, err
 	}
+
+	lvmLvCollector := collector.NewLvCollector()
+	err = registry.Register(lvmLvCollector)
+	if err != nil {
+		klog.Errorf("failed to register LVM LV collector for LVM metrics collection: %s", err.Error())
+		return nil, err
+	}
+
+	lvmPvCollector := collector.NewPvCollector()
+	err = registry.Register(lvmPvCollector)
+	if err != nil {
+		klog.Errorf("failed to register LVM PV collector for LVM metrics collection: %s", err.Error())
+		return nil, err
+	}
+
 	return registry, nil
 }
 

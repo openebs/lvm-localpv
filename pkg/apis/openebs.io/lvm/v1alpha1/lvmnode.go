@@ -67,6 +67,51 @@ type VolumeGroup struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Minimum=0
 	PVCount int32 `json:"pvCount"`
+
+	// MaxLV denotes maximum number of logical volumes allowed
+	// in volume group or 0 if unlimited.
+	MaxLV int32 `json:"maxLv"`
+
+	// MaxPV denotes maximum number of physical volumes allowed
+	// in volume group or 0 if unlimited.
+	MaxPV int32 `json:"maxPv"`
+
+	// SnapCount denotes number of snapshots in volume group.
+	SnapCount int32 `json:"snapCount"`
+
+	// MissingPVCount denotes number of physical volumes in
+	// volume group which are missing.
+	MissingPVCount int32 `json:"missingPvCount"`
+
+	// MetadataCount denotes number of metadata areas on the
+	// volume group.
+	MetadataCount int32 `json:"metadataCount"`
+
+	// MetadataUsedCount denotes number of used metadata areas in
+	// volume group
+	MetadataUsedCount int32 `json:"metadataUsedCount"`
+
+	// MetadataFree specifies the available metadata area space
+	// for the volume group
+	MetadataFree resource.Quantity `json:"metadataFree"`
+
+	// MetadataSize specifies size of smallest metadata area
+	// for the volume group
+	MetadataSize resource.Quantity `json:"metadataSize"`
+
+	// Permission indicates the volume group permission
+	// which can be writable or read-only.
+	// Permission has the following mapping between
+	// int and string for its value:
+	// [-1: "", 0: "writeable", 1: "read-only"]
+	Permission int `json:"permissions"`
+
+	// AllocationPolicy indicates the volume group allocation
+	// policy.
+	// AllocationPolicy has the following mapping between
+	// int and string for its value:
+	// [-1: "", 0: "normal", 1: "contiguous", 2: "cling", 3: "anywhere", 4: "inherited"]
+	AllocationPolicy int `json:"allocationPolicy"`
 }
 
 // LVMNodeList is a collection of LVMNode resources
