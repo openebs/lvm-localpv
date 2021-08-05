@@ -42,7 +42,7 @@ Following matrix shows supported PersistentVolumeClaim parameters for lvm-localp
       <td rowspan=2> <a href="#volumemode-optional"> VolumeMode </a> </td>
       <td> Block </td>
       <td> Supported </td>
-      <td rowspan=2> <a href="https://github.com/openebs/lvm-localpv/blob/master/e2e-tests/apps/percon  a/deployers/run_e2e_test.yml"> Yes </a> <br> <i> Test cases available for Filesystem mode </i> </br> </td>
+      <td rowspan=2> <a href="https://github.com/openebs/lvm-localpv/blob/master/e2e-tests/apps/percona/deployers/run_e2e_test.yml"> Yes </a> <br> <i> Test cases available for Filesystem mode </i> </br> </td>
     </tr>
     <tr>
       <td> Filesystem </td>

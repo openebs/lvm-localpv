@@ -131,7 +131,6 @@ Below is high level sequence diagram for volume expansion workflow
 
 ### Test Plan
 A test plan will include following test cases:
-<<<<<<< HEAD
 - Test volume expansion operation on all supported filesystems(ext3, ext4, xfs, btrfs)
   and verify expansion of volume from application.
 - Test volume expansion while previous expansion of the volume is already in progress
