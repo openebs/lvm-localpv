@@ -149,8 +149,10 @@ A test plan will include following test cases:
   underlying vg size and verify volume should remains in same size
 - Simulate failures in volume expansion workflow and verify the accessibility of volume as
   well as data integrity checks.
+- Test volume expansion of raw block volume and verify modified capacity of raw block volume from application.
 - Deletion of volume while volume expansion is in progress and verify volume should get deleted.
-
+- Provision multiple application instances by enabling shared volume property then perform volume expansion
+  on shared volume and change should be visible from all the pods.
 
 ## Graduation Criteria
 

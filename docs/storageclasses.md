@@ -132,7 +132,7 @@ Following matrix shows standard storageclass parameters for lvm-localpv
 
 ### AllowVolumeExpansion (Optional)
 
-Users can expand the volumes only when `allowVolumeExpansion` field is set to true in storageclass. If a field is unspecified, then volume expansion is not supported.
+Users can expand the volumes only when `allowVolumeExpansion` field is set to true in storageclass. If a field is unspecified, then volume expansion is not supported. For more information about expansion workflow click [here](https://github.com/openebs/lvm-localpv/blob/master/design/lvm/resize_workflow.md#lvm-localpv-volume-expansion).
 ```yaml
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -147,7 +147,8 @@ parameters:
 
 ### MountOptions (Optional)
 
-Volumes that are provisioned via LVM-LocalPV will use the mount options specified in storageclass during volume mounting time inside an application. If a field is unspecified, `-o default` option will be added to mount the volume.
+Volumes that are provisioned via LVM-LocalPV will use the mount options specified in storageclass during volume mounting time inside an application. If a field is unspecified/specified, `-o default` option will be added to mount the volume. For more information about mount options workflow click [here](../design/lvm/storageclass-parameters/mount_options.md).
+
 **Note**: Mount options are not validated. If mount options are invalid, then volume mount fails.
 ```yaml
 apiVersion: storage.k8s.io/v1
@@ -168,7 +169,7 @@ LVM-LocalPV storageclass supports various parameters for different use cases. Fo
 
 - #### FsType (Optional)
 
-  Admin can specify filesystem in storageclass. LVM-LocalPV CSI-Driver will format block device with specified filesystem and mount in application pod. If fsType is not specified defaults to `ext4` filesystem.
+  Admin can specify filesystem in storageclass. LVM-LocalPV CSI-Driver will format block device with specified filesystem and mount in application pod. If fsType is not specified defaults to `ext4` filesystem. For more information about filesystem type workflow click [here](../design/lvm/storageclass-parameters/fs_type.md).
   ```yaml
   apiVersion: storage.k8s.io/v1
   kind: StorageClass
@@ -184,7 +185,7 @@ LVM-LocalPV storageclass supports various parameters for different use cases. Fo
 
 - #### Shared (Optional)
 
-  lvm-localpv volume mount point can be shared among the multiple pods on the same node. Applications that can share the volume can set value of `shared` parameter to yes defaults to no.
+  lvm-localpv volume mount point can be shared among the multiple pods on the same node. Applications that can share the volume can set value of `shared` parameter to yes defaults to no. For more information about workflow of share volume click [here](../design/lvm/storageclass-parameters/shared.md).
   ```yaml
   apiVersion: storage.k8s.io/v1
   kind: StorageClass
@@ -199,7 +200,8 @@ LVM-LocalPV storageclass supports various parameters for different use cases. Fo
 
 - #### vgpattern (*must* parameter if volgroup is not provided, otherwise optional)
 
-  vgpattern specifies the regular expression for the volume groups on node from which the volumes can be created. The *vgpattern* is the must argument if `volgroup` parameter is not provided in the storageclass. Here, in this case the driver will pick the volume groups matching the vgpattern with enough free capacity to accomodate the volume and will use the one which has largest capacity available for provisioning the volume.
+  vgpattern specifies the regular expression for the volume groups on node from which the volumes can be created. The *vgpattern* is the must argument if `volgroup` parameter is not provided in the storageclass. Here, in this case the driver will pick the volume groups matching the vgpattern with enough free capacity to accomodate the volume and will use the one which has largest capacity available for provisioning the volume. More information about vgpattern workflow
+  is available [here](../design/lvm/storageclass-parameters/vg_pattern.md). 
 
   ```yaml
   apiVersion: storage.k8s.io/v1
@@ -220,6 +222,8 @@ LVM-LocalPV storageclass supports various parameters for different use cases. Fo
 
   volgroup specifies the name of the volume group on nodes from which the volumes will be created. The *volgroup* is the must argument if `vgpattern` is not provided in the storageclass.
 
+  **Note**: Recommended to use vgpattern since volumegroup will be depricated in future.
+
   ```yaml
   apiVersion: storage.k8s.io/v1
   kind: StorageClass
@@ -233,7 +237,7 @@ LVM-LocalPV storageclass supports various parameters for different use cases. Fo
 
 - #### thinProvision (Optional)
 
-  For creating thin-provisioned volume, use thinProvision parameter in storage class. It's allowed values are: "yes" and "no". If we don't set thinProvision parameter by default it's value will be `no` and it will work as thick provisioned volumes.
+  For creating thin-provisioned volume, use thinProvision parameter in storage class. It's allowed values are: "yes" and "no". If we don't set thinProvision parameter by default it's value will be `no` and it will work as thick provisioned volumes. More details about thinProvisioned workflow is available [here](../design/lvm/storageclass-parameters/thin_provision.md).
 
   ```yaml
   apiVersion: storage.k8s.io/v1
@@ -274,6 +278,7 @@ parameters:
   vgpattern: "lvmvg.*"
 volumeBindingMode: WaitForFirstConsumer     ## It can also replaced by Immediate volume binding mode depends on use case.
 ```
+**Note**: More details about VolumeBindingMode is available [here](../design/lvm/storageclass-parameters/volume_binding_mode.md).
 
 ### Reclaim Policy (Optional)
 
@@ -291,6 +296,8 @@ parameters:
   vgpattern: "lvmvg.*"
 reclaimPolicy: Delete          ## Reclaim policy can be specified here. It also accepts Retain
 ```
+
+**Note**: More details about recalim policy is available [here](../design/lvm/storageclass-parameters/reclaim_policy.md).
 
 
 ### StorageClass With Custom Node Labels
@@ -397,3 +404,5 @@ allowedTopologies:
 ```
 
 Here, the volumes will be provisioned on the nodes which has label “openebs.io/lvmvg” set as “nvme”.
+
+**Note**: More details about topology is available [here](../design/lvm/storageclass-parameters/allowed_topologies.md).

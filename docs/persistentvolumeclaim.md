@@ -74,7 +74,7 @@ Following matrix shows supported PersistentVolumeClaim parameters for lvm-localp
 
 ### AccessMode
 
-LVM-LocalPV supports only `ReadWriteOnce` access mode i.e volume can be mounted as read-write by a single node. AccessMode is a required field, if the field is unspecified then it will lead to a creation error.
+LVM-LocalPV supports only `ReadWriteOnce` access mode i.e volume can be mounted as read-write by a single node. AccessMode is a required field, if the field is unspecified then it will lead to a creation error. For more information about access modes workflow click [here](../design/lvm/persistent-volume-claim/access_mode.md).
 ```yaml
 kind: PersistentVolumeClaim
 apiVersion: v1
@@ -91,7 +91,7 @@ spec:
 
 ### StorageClassName
 
-LVM CSI-Driver supports dynamic provision of volume for the PVCs referred to lvm storageclass. StorageClassName is a required field, if field is unspecified then it will lead to a provision errors.
+LVM CSI-Driver supports dynamic provision of volume for the PVCs referred to lvm storageclass. StorageClassName is a required field, if field is unspecified then it will lead to a provision errors. For more information about dynamic provisioning workflow click [here](../design/lvm/persistent-volume-claim/storage_class.md).
 
 ```yaml
 kind: PersistentVolumeClaim
@@ -109,7 +109,7 @@ spec:
 
 ### Capacity Resource
 
-Admin/User can specify the desired capacity for lvm volume. CSI-Driver will provision a volume if the underlying volume group has requested capacity available else provisioning volume will be errored. StorageClassName is a required field, if field is unspecified then it will lead to a provision errors.
+Admin/User can specify the desired capacity for lvm volume. CSI-Driver will provision a volume if the underlying volume group has requested capacity available else provisioning volume will be errored. StorageClassName is a required field, if field is unspecified then it will lead to a provision errors. For more information about workflow click [here](../design/lvm/persistent-volume-claim/capacity_resource.md)
 
 ```yaml
 kind: PersistentVolumeClaim
@@ -127,10 +127,11 @@ spec:
 
 ### VolumeMode (Optional)
 
-LVM-LocalPV supports two kind of volume modes(Defaults to Filesystem):
+LVM-LocalPV supports two kind of volume modes(Defaults to Filesystem mode):
 - Block  (Block mode can be used in a case where application itself maintains filesystem)
 - Filesystem (Application which requires filesystem as a prerequisite)
-Note: By default K8s will take volume mode as **Filesystem**.
+Note: If unspecified defaults to **Filesystem** mode. More information about workflow
+      is available [here](../design/lvm/persistent-volume-claim/volume_mode.md).
 
 ```yaml
 kind: PersistentVolumeClaim
@@ -150,7 +151,8 @@ spec:
 
 ### Selectors (Optional)
 
-Users can bind any of retained lvm volumes to new PersistentVolumeClaim object via selector field. If selector and [volumeName](#volumename-optional) fields are unspecified then LVM CSI driver will provision new volume.
+Users can bind any of retained lvm volumes to new PersistentVolumeClaim object via selector field. If selector and [volumeName](#volumename-optional) fields are unspecified then LVM CSI driver will provision new volume. If volume selector is specified then request will not reach to localpv driver this is a use case of pre-provisioned volume, for more information about workflow click [here](../design/lvm/persistent-volume-claim/selector.md)
+
 Follow below steps to specify selector on PersistentVolumeClaim:
 
 - List the persistentvolumes(PVs) which has status Released.
@@ -197,8 +199,10 @@ pvc-8376b776-75f9-4786-8311-f8780adfabdb   6Gi        RWO            Retain     
 
 ### VolumeName (Optional)
 
-VolumeName can be used to bind PersistentVolumeClaim(PVC) to retained PersistentVolume(PV). When VolumeName is specified K8s will ignore [selector field](#selectors-optional). If volumeName is unspecified then CSI driver will try to provision new volume.
-Note: Before creating PVC make PersistentVolume `Available` by removing claimRef on PersistentVolume.
+VolumeName can be used to bind PersistentVolumeClaim(PVC) to retained PersistentVolume(PV). When VolumeName is specified K8s will ignore [selector field](#selectors-optional). If volumeName field is specified Kubernetes will try to bind to specified volume(It will help to create claims for pre provisioned volume). If volumeName is unspecified then CSI driver will try to provision new volume. For more detailed information workflow click [here](../design/lvm/persistent-volume-claim/volume_name.md).
+
+Note: Before creating PVC make retained/preprovisioned PersistentVolume `Available` by removing claimRef on PersistentVolume.
+
 ```yaml
 kind: PersistentVolumeClaim
 apiVersion: v1
