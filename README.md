@@ -104,7 +104,7 @@ metadata:
   name: openebs-lvmpv
 parameters:
   storage: "lvm"
-  volgroup: "lvmpv-vg"
+  volgroup: "lvmvg"
 provisioner: local.csi.openebs.io
 ```
 
@@ -123,7 +123,7 @@ metadata:
 allowVolumeExpansion: true
 parameters:
   storage: "lvm"
-  volgroup: "lvmpv-vg"
+  volgroup: "lvmvg"
 provisioner: local.csi.openebs.io
 allowedTopologies:
 - matchLabelExpressions:
@@ -133,7 +133,7 @@ allowedTopologies:
       - lvmpv-node2
 ```
 
-The above storage class tells that volume group "lvmpv-vg" is available on nodes lvmpv-node1 and lvmpv-node2 only. The LVM driver will create volumes on those nodes only.
+The above storage class tells that volume group "lvmvg" is available on nodes lvmpv-node1 and lvmpv-node2 only. The LVM driver will create volumes on those nodes only.
 
 Please note that the provisioner name for LVM driver is "local.csi.openebs.io", we have to use this while creating the storage class so that the volume provisioning/deprovisioning request can come to LVM driver.
 
