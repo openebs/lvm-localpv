@@ -12,7 +12,7 @@ CSI driver for provisioning Local PVs backed by LVM and more.
 
 ## Project Status
 
-LVM-LocalPV CSI Driver is declared GA in August 2021.
+LVM-LocalPV CSI Driver is declared GA in August 2021 with the release version as 0.8.0.
 
 ## Project Tracker
 
