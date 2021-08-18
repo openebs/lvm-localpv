@@ -2,7 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 release:
-  version: "0.7.0"
+  version: "0.8.0"
 
 imagePullSecrets:
 # - name: "image-pull-secret"
@@ -44,8 +44,7 @@ lvmNode:
 #      cpu: 10m
 #      memory: 32Mi
   ## Labels to be added to openebs-lvm node pods
-  podLabels:
-    name: openebs-lvm-node
+  podLabels: {}
   nodeSelector: {}
   tolerations: []
   securityContext: {}
@@ -133,7 +132,7 @@ lvmPlugin:
     repository: openebs/lvm-driver
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: 0.7.0
+    tag: 0.8.0
   ioLimits:
     enabled: false
     containerRuntime: containerd
