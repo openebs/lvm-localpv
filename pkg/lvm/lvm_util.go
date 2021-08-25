@@ -286,6 +286,11 @@ func CreateVolume(vol *apis.LVMVolume) error {
 	}
 	klog.Infof("lvm: created volume %s", volume)
 
+	err = removeVolumeFilesystem(vol)
+	if err != nil {
+		klog.Infof("lvm: volume %s filesystem cleanup failed", volume)
+	}
+
 	return nil
 }
 
