@@ -269,6 +269,12 @@ func CreateVolume(vol *apis.LVMVolume) error {
 		return err
 	}
 	if volExists {
+		err = removeVolumeFilesystem(vol)
+		if err != nil {
+			klog.Errorf("lvm: volume %s already present, filesystem cleanup failed, err: %s", volume, err.Error())
+			return err
+		}
+
 		klog.Infof("lvm: volume (%s) already exists, skipping its creation", volume)
 		return nil
 	}
@@ -288,7 +294,8 @@ func CreateVolume(vol *apis.LVMVolume) error {
 
 	err = removeVolumeFilesystem(vol)
 	if err != nil {
-		klog.Infof("lvm: volume %s filesystem cleanup failed", volume)
+		klog.Errorf("lvm: volume %s filesystem cleanup failed, err: %s", volume, err.Error())
+		return err
 	}
 
 	return nil
