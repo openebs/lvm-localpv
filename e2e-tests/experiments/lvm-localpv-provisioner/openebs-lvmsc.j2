@@ -40,3 +40,13 @@ parameters:
   fsType: "btrfs"
   volgroup: "{{ vg_name }}"
 provisioner: local.csi.openebs.io
+
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: openebs-lvmsc-raw-block
+allowVolumeExpansion: true
+parameters:
+  volgroup: "{{ vg_name }}"
+provisioner: local.csi.openebs.io
