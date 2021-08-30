@@ -34,7 +34,9 @@ spec:
                 values:
                 - openebs-lvm-controller
             topologyKey: "kubernetes.io/hostname"
-      priorityClassName: system-cluster-critical
+{{- if .Values.lvmController.priorityClass.create }}
+      priorityClassName: {{ template "lvmlocalpv.lvmController.priorityClassName" . }}
+{{- end }}
       serviceAccount: {{ .Values.serviceAccount.lvmController.name }}
       containers:
         - name: {{ .Values.lvmController.resizer.name }}
