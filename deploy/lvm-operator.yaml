@@ -1497,6 +1497,7 @@ metadata:
   name: openebs-lvm-node-service
   labels:
     name: openebs-lvm-node
+  namespace: kube-system
 spec:
   clusterIP: None
   ports:
