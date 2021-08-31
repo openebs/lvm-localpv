@@ -1075,6 +1075,7 @@ metadata:
   namespace: kube-system
   labels:
     name: openebs-lvm-node
+  namespace: kube-system
 spec:
   clusterIP: None
   ports:
