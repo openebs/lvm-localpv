@@ -52,6 +52,7 @@ lvmNode:
   priorityClass:
     create: true
     name: lvm-localpv-csi-node-critical
+  logLevel: 5
 
 
 # lvmController contains the configurables for
@@ -60,6 +61,7 @@ lvmController:
   componentName: openebs-lvm-controller
   replicas: 1
   serviceName: openebs-lvm
+  logLevel: 5
   resizer:
     name: "csi-resizer"
     image:

@@ -42,9 +42,11 @@ spec:
         - name: {{ .Values.lvmController.resizer.name }}
           image: "{{ .Values.lvmController.resizer.image.registry }}{{ .Values.lvmController.resizer.image.repository }}:{{ .Values.lvmController.resizer.image.tag }}"
           args:
-            - "--v=5"
+            - "--v={{ .Values.lvmController.logLevel }}"
             - "--csi-address=$(ADDRESS)"
+            {{- if gt (int .Values.lvmController.replicas) 1 }}
             - "--leader-election"
+            {{- end }}
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
@@ -59,7 +61,9 @@ spec:
           imagePullPolicy: {{ .Values.lvmController.snapshotter.image.pullPolicy }}
           args:
             - "--csi-address=$(ADDRESS)"
+            {{- if gt (int .Values.lvmController.replicas) 1 }}
             - "--leader-election"
+            {{- end }}
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
@@ -71,8 +75,10 @@ spec:
         - name: {{ .Values.lvmController.snapshotController.name }}
           image: "{{ .Values.lvmController.snapshotController.image.registry }}{{ .Values.lvmController.snapshotController.image.repository }}:{{ .Values.lvmController.snapshotController.image.tag }}"
           args:
-            - "--v=5"
+            - "--v={{ .Values.lvmController.logLevel }}"
+            {{- if gt (int .Values.lvmController.replicas) 1 }}
             - "--leader-election=true"
+            {{- end }}
           imagePullPolicy: {{ .Values.lvmController.snapshotController.image.pullPolicy }}
           resources:
             {{- toYaml .Values.lvmController.resources | nindent 12 }}
@@ -81,10 +87,12 @@ spec:
           imagePullPolicy: {{ .Values.lvmController.provisioner.image.pullPolicy }}
           args:
             - "--csi-address=$(ADDRESS)"
-            - "--v=5"
+            - "--v={{ .Values.lvmController.logLevel }}"
             - "--feature-gates=Topology=true"
             - "--strict-topology"
+            {{- if gt (int .Values.lvmController.replicas) 1 }}
             - "--leader-election"
+            {{- end }}
             - "--enable-capacity={{ .Values.storageCapacity }}"
             - "--extra-create-metadata=true"
             - "--default-fstype=ext4"

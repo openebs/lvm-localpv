@@ -36,7 +36,7 @@ spec:
           image: "{{ .Values.lvmNode.driverRegistrar.image.registry }}{{ .Values.lvmNode.driverRegistrar.image.repository }}:{{ .Values.lvmNode.driverRegistrar.image.tag }}"
           imagePullPolicy: {{ .Values.lvmNode.driverRegistrar.image.pullPolicy }}
           args:
-            - "--v=5"
+            - "--v={{ .Values.lvmNode.logLevel }}"
             - "--csi-address=$(ADDRESS)"
             - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
           lifecycle:
