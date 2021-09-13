@@ -97,6 +97,15 @@
             regexp: "replicas: 1"
             replace: "replicas: {{ lvm_ctrl_replicas }}"
 
+        ## Due to Newly added `storageCapacity` Parameter in csidriver spec
+        ## Reapply with updated yaml will fail due to change in immutable field.
+        - name: Clean up the CSIDriver CR before upgrade operator
+          shell: kubectl delete csidriver local.csi.openebs.io
+          args:
+            executable: /bin/bash
+          register: csidriver
+          failed_when: "csidriver.rc != 0"
+
         - name: Apply the lvm_operator file to deploy lvm-driver components to the newer version
           shell: 
             kubectl apply -f ./new_lvm_operator.yml
