@@ -17,7 +17,7 @@ Following matrix shows standard storageclass parameters for lvm-localpv
     <td> true </td>
     <td></td>
     <td> Supported </td>
-    <td rowspan=2> <a href="https://github.com/openebs/lvm-localpv/tree/master/e2e-tests/experiments/functional/lvm-volume-resize#about-this-experiment"> Yes </a> <br><i> (Test coverage exist for ext4 & xfs) </i></br> </td>
+    <td rowspan=2> <a href="https://github.com/openebs/lvm-localpv/tree/HEAD/e2e-tests/experiments/functional/lvm-volume-resize#about-this-experiment"> Yes </a> <br><i> (Test coverage exist for ext4 & xfs) </i></br> </td>
   </tr>
   <tr>
     <td> false </td>
@@ -38,7 +38,7 @@ Following matrix shows standard storageclass parameters for lvm-localpv
     <td> Immediate </td>
     <td></td>
     <td> Supported </td>
-    <td rowspan=2> <a href="https://github.com/openebs/lvm-localpv/tree/master/e2e-tests/experiments/functional/lvmpv-custom-topology#readme"> Yes  </a> </td>
+    <td rowspan=2> <a href="https://github.com/openebs/lvm-localpv/tree/HEAD/e2e-tests/experiments/functional/lvmpv-custom-topology#readme"> Yes  </a> </td>
   </tr>
   <tr>
     <td> WaitForFirstConsumer </td>
@@ -51,7 +51,7 @@ Following matrix shows standard storageclass parameters for lvm-localpv
     <td>  Retain </td>
     <td></td>
     <td> Supported </td>
-    <td rowspan=2> <a href="https://github.com/openebs/lvm-localpv/blob/master/e2e-tests/apps/percona/deployers/run_e2e_test.yml"> Yes </a> <br> <i> (Test coverage exist for Delete reclaim policy) </i> </br> </td>
+    <td rowspan=2> <a href="https://github.com/openebs/lvm-localpv/blob/HEAD/e2e-tests/apps/percona/deployers/run_e2e_test.yml"> Yes </a> <br> <i> (Test coverage exist for Delete reclaim policy) </i> </br> </td>
   </tr>
   <tr>
     <td> Delete </td>
@@ -64,7 +64,7 @@ Following matrix shows standard storageclass parameters for lvm-localpv
     <td> - </td>
     <td></td>
     <td> Supported </td>
-    <td> <a href="https://github.com/openebs/lvm-localpv/tree/master/e2e-tests/experiments/functional/lvmpv-custom-topology#readme"> Yes </a> </td>
+    <td> <a href="https://github.com/openebs/lvm-localpv/tree/HEAD/e2e-tests/experiments/functional/lvmpv-custom-topology#readme"> Yes </a> </td>
   </tr>
 
   <tr>
@@ -78,7 +78,7 @@ Following matrix shows standard storageclass parameters for lvm-localpv
     <td rowspan=5> <a href="#fstype-optional"> fsType </a> </td>
     <td>ext2</td>
     <td rowspan=5> Supported </td>
-    <td rowspan=5> <a href="https://github.com/openebs/lvm-localpv/tree/master/e2e-tests/experiments/functional/lvm-controller-high-availability#readme"> Yes </a> <br> <i> (Test coverage exist for ext4 & xfs) </i></br> </td>
+    <td rowspan=5> <a href="https://github.com/openebs/lvm-localpv/tree/HEAD/e2e-tests/experiments/functional/lvm-controller-high-availability#readme"> Yes </a> <br> <i> (Test coverage exist for ext4 & xfs) </i></br> </td>
   </tr>
   <tr> <td> ext3 </td> </tr>
   <tr> <td> ext4 </td> </tr>
@@ -101,7 +101,7 @@ Following matrix shows standard storageclass parameters for lvm-localpv
     <td> <a href="#shared-optional"> shared </td>
     <td> yes </td>
     <td> Supported </td>
-    <td> <a href="https://github.com/openebs/lvm-localpv/tree/master/e2e-tests/experiments/functional/lvmpv-shared-mount#readme"> Yes </a> </td>
+    <td> <a href="https://github.com/openebs/lvm-localpv/tree/HEAD/e2e-tests/experiments/functional/lvmpv-shared-mount#readme"> Yes </a> </td>
   </tr>
 
   <tr>
@@ -115,7 +115,7 @@ Following matrix shows standard storageclass parameters for lvm-localpv
     <td> <a href="#volgroup-must-parameter-if-vgpattern-is-not-provided-otherwise-optional"> volgroup </td>
     <td> Name of volume group </td>
     <td> Supported </td>
-    <td> <a href="https://github.com/openebs/lvm-localpv/blob/master/e2e-tests/experiments/lvm-localpv-provisioner/openebs-lvmsc.j2"> Yes </a> </td>
+    <td> <a href="https://github.com/openebs/lvm-localpv/blob/HEAD/e2e-tests/experiments/lvm-localpv-provisioner/openebs-lvmsc.j2"> Yes </a> </td>
   </tr>
 
   <tr>
@@ -132,7 +132,7 @@ Following matrix shows standard storageclass parameters for lvm-localpv
 
 ### AllowVolumeExpansion (Optional)
 
-Users can expand the volumes only when `allowVolumeExpansion` field is set to true in storageclass. If a field is unspecified, then volume expansion is not supported. For more information about expansion workflow click [here](https://github.com/openebs/lvm-localpv/blob/master/design/lvm/resize_workflow.md#lvm-localpv-volume-expansion).
+Users can expand the volumes only when `allowVolumeExpansion` field is set to true in storageclass. If a field is unspecified, then volume expansion is not supported. For more information about expansion workflow click [here](https://github.com/openebs/lvm-localpv/blob/HEAD/design/lvm/resize_workflow.md#lvm-localpv-volume-expansion).
 ```yaml
 apiVersion: storage.k8s.io/v1
 kind: StorageClass

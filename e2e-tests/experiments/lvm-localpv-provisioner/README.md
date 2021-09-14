@@ -16,7 +16,7 @@ LVM version : LVM 2
 - If we don't want to use this experiment to deploy lvm-localpv provisioner, we can directly apply the lvm-localpv operator file as mentioned below and make sure you have volume groups are created on desired nodes to provision volumes.
 
 ```
-kubectl apply -f https://raw.githubusercontent.com/openebs/lvm-localpv/master/deploy/lvm-operator.yaml
+kubectl apply -f https://raw.githubusercontent.com/openebs/lvm-localpv/HEAD/deploy/lvm-operator.yaml
 ```
 
 ## Exit-Criteria
