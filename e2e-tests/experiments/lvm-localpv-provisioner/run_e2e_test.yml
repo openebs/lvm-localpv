@@ -23,8 +23,8 @@ spec:
 
             # This test will download the lvm-localpv operator file from this branch.
             # Change the env value according to versioned branch name for lvm-localpv provisioner
-            # from openebs/lvm-localpv repo. for e.g. (v0.1.x , v0.2.x  OR  master)
-            # by default test-specific value of `LVM_BRANCH` is master. 
+            # from openebs/lvm-localpv repo. for e.g. (v0.1.x , v0.2.x  OR  develop)
+            # by default test-specific value of `LVM_BRANCH` is develop. 
           - name: LVM_BRANCH  
             value: 'develop'
            
