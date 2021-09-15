@@ -16,7 +16,7 @@ Following matrix shows supported PersistentVolumeClaim parameters for lvm-localp
       <td rowspan=3> <a href="#accessmode"> AccessMode </a> </td>
       <td> ReadWriteOnce </td>
       <td> Supported </td>
-      <td rowspan=3> <a href="https://github.com/openebs/lvm-localpv/tree/master/e2e-tests/experiments/lvm-localpv-provisioner#readme"> Yes </a> </td>
+      <td rowspan=3> <a href="https://github.com/openebs/lvm-localpv/tree/HEAD/e2e-tests/experiments/lvm-localpv-provisioner#readme"> Yes </a> </td>
     </tr>
     <tr>
       <td> <strike> ReadWriteMany </strkie> </td>
@@ -30,19 +30,19 @@ Following matrix shows supported PersistentVolumeClaim parameters for lvm-localp
       <td> <a href="#storageclassname"> Storageclass </td>
       <td> StorageClassName </td>
       <td> Supported </td>
-      <td> <a href="https://github.com/openebs/lvm-localpv/tree/master/e2e-tests/experiments/lvm-localpv-provisioner#readme"> Yes </a> </td>
+      <td> <a href="https://github.com/openebs/lvm-localpv/tree/HEAD/e2e-tests/experiments/lvm-localpv-provisioner#readme"> Yes </a> </td>
     </tr>
     <tr>
       <td> <a href="#capacity-resource"> Capacity Resource </a> </td>
       <td> Number along with size unit </td>
       <td> Supported </td>
-      <td> <a href="https://github.com/openebs/lvm-localpv/tree/master/e2e-tests/experiments/functional/lvm-volume-resize#readme"> Yes </a> </td>
+      <td> <a href="https://github.com/openebs/lvm-localpv/tree/HEAD/e2e-tests/experiments/functional/lvm-volume-resize#readme"> Yes </a> </td>
     </tr>
     <tr>
       <td rowspan=2> <a href="#volumemode-optional"> VolumeMode </a> </td>
       <td> Block </td>
       <td> Supported </td>
-      <td rowspan=2> <a href="https://github.com/openebs/lvm-localpv/blob/master/e2e-tests/apps/percona/deployers/run_e2e_test.yml"> Yes </a> <br> <i> Test cases available for Filesystem mode </i> </br> </td>
+      <td rowspan=2> <a href="https://github.com/openebs/lvm-localpv/blob/HEAD/e2e-tests/apps/percona/deployers/run_e2e_test.yml"> Yes </a> <br> <i> Test cases available for Filesystem mode </i> </br> </td>
     </tr>
     <tr>
       <td> Filesystem </td>
