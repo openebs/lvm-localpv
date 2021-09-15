@@ -62,7 +62,7 @@ parameters:
 
 ### Steps to create a snapshot
 
-A SnapshotClass needs to be created. A sample SnapshotClass can be found [here](https://github.com/openebs/lvm-localpv/blob/master/deploy/sample/lvmsnapclass.yaml).
+A SnapshotClass needs to be created. A sample SnapshotClass can be found [here](https://github.com/openebs/lvm-localpv/blob/HEAD/deploy/sample/lvmsnapclass.yaml).
 
 1. Apply the SnapshotClass YAML:
 ```bash
