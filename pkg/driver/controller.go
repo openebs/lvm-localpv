@@ -218,6 +218,12 @@ func (cs *controller) init() error {
 	klog.Infof("initializing csi provisioning leak protection controller")
 	pvcInformer := kubeInformerFactory.Core().V1().PersistentVolumeClaims()
 	go pvcInformer.Informer().Run(stopCh)
+
+	if lvm.GoogleAnalyticsEnabled == "true" {
+		analytics.New().Build().InstallBuilder(true).Send()
+		go analytics.PingCheck()
+	}
+
 	if cs.leakProtection, err = csipv.NewLeakProtectionController(kubeClient,
 		pvcInformer, cs.driver.config.DriverName,
 		func(pvc *corev1.PersistentVolumeClaim, volumeName string) error {
