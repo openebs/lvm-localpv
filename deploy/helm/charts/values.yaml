@@ -44,7 +44,8 @@ lvmNode:
 #      cpu: 10m
 #      memory: 32Mi
   ## Labels to be added to openebs-lvm node pods
-  podLabels: {}
+  podLabels:
+    app: openebs-lvm-node
   nodeSelector: {}
   tolerations: []
   securityContext: {}
