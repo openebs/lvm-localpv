@@ -24,15 +24,15 @@ RUN rm -rf /var/lib/apt/lists/* && \
     curl openssh-client
 
 #Installing ansible
-RUN pip install ansible==2.7.3
+RUN pip install --no-cache-dir ansible==2.7.3
 
-RUN pip install ruamel.yaml.clib==0.1.2
+RUN pip install --no-cache-dir ruamel.yaml.clib==0.1.2
 
 #Installing openshift
-RUN pip install openshift==0.11.2
+RUN pip install --no-cache-dir openshift==0.11.2
 
 #Installing jmespath
-RUN pip install jmespath
+RUN pip install --no-cache-dir jmespath
 
 RUN touch /mnt/parameters.yml
 
