@@ -104,7 +104,7 @@ func leakProtectionTest() {
 	verifyPendingLVMVolume(getGeneratedVolName(pvcObj))
 
 	existingSize := scaleControllerPlugin(0) // remove the external provisioner
-	createNodeDaemonSet(ds) // provision the volume now by restoring node plugin
+	createNodeDaemonSet(ds)                  // provision the volume now by restoring node plugin
 	By("Wait for lvm volume resource to become ready", WaitForLVMVolumeReady)
 
 	deleteAndVerifyLeakedPVC(pvcName)

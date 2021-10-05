@@ -17,12 +17,12 @@ limitations under the License.
 package lvm
 
 import (
-	"github.com/openebs/lvm-localpv/pkg/config"
-	"k8s.io/klog"
-
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/openebs/lvm-localpv/pkg/driver/config"
+	"k8s.io/klog"
 )
 
 var (

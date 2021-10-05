@@ -45,12 +45,12 @@ const (
 )
 
 var (
-	LVMClient        *volbuilder.Kubeclient
-	SCClient         *sc.Kubeclient
-	PVCClient        *pvc.Kubeclient
-	PVClient         *pv.Kubeclient
-	DeployClient     *deploy.Kubeclient
-	PodClient        *pod.KubeClient
+	LVMClient    *volbuilder.Kubeclient
+	SCClient     *sc.Kubeclient
+	PVCClient    *pvc.Kubeclient
+	PVClient     *pv.Kubeclient
+	DeployClient *deploy.Kubeclient
+	PodClient    *pod.KubeClient
 
 	K8sClient *kubernetes.Clientset
 
@@ -61,7 +61,7 @@ var (
 	snapName         = "lvmpv-snap"
 	appName          = "busybox-lvmpv"
 
-	nodeDaemonSet = "openebs-lvm-node"
+	nodeDaemonSet         = "openebs-lvm-node"
 	controllerStatefulSet = "openebs-lvm-controller"
 
 	nsObj            *corev1.Namespace
