@@ -582,7 +582,7 @@ func deleteAndVerifyLeakedPVC(pvcName string) {
 			gomega.BeNil(),
 			"fetch pvc %v", pvcName)
 		return len(pvcRes.GetFinalizers()) == 1 &&
-			pvcRes.GetFinalizers()[0] == LocalProvisioner + "/" + csipv.LeakProtectionFinalizer
+			pvcRes.GetFinalizers()[0] == LocalProvisioner+"/"+csipv.LeakProtectionFinalizer
 	}, 120, 10).Should(gomega.BeTrue())
 	gomega.Expect(status).To(gomega.Equal(true), "expecting a leak protection finalizer")
 }
@@ -612,10 +612,10 @@ func WaitForLVMVolumeReady() {
 }
 
 func scaleControllerPlugin(num int32) int32 {
-	ginkgo.By(fmt.Sprintf( "scaling controller plugin statefulset %v to size %v", controllerStatefulSet, num))
+	ginkgo.By(fmt.Sprintf("scaling controller plugin statefulset %v to size %v", controllerStatefulSet, num))
 
 	scale, err := K8sClient.AppsV1().StatefulSets(metav1.NamespaceSystem).
-		GetScale(context.Background(), controllerStatefulSet,metav1.GetOptions{})
+		GetScale(context.Background(), controllerStatefulSet, metav1.GetOptions{})
 	gomega.Expect(err).To(
 		gomega.BeNil(),
 		"fetch current replica of stateful set %v", controllerStatefulSet)
@@ -633,7 +633,7 @@ func scaleControllerPlugin(num int32) int32 {
 
 	scaled := gomega.Eventually(func() bool {
 		scale, err = K8sClient.AppsV1().StatefulSets(metav1.NamespaceSystem).
-			GetScale(context.Background(), controllerStatefulSet,metav1.GetOptions{})
+			GetScale(context.Background(), controllerStatefulSet, metav1.GetOptions{})
 		gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
 		return scale.Spec.Replicas == num
 	}, 120, 10).
@@ -679,7 +679,6 @@ func deleteNodeDaemonSet() *appsv1.DaemonSet {
 	}, 120, 10).Should(gomega.BeTrue())
 	gomega.Expect(status).To(gomega.Equal(true),
 		"waiting for deletion of node plugin daemonset")
-
 
 	// update the underlying csi node resource to ensure pvc gets scheduled
 	// by external provisioner.

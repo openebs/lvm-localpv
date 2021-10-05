@@ -15,10 +15,10 @@
 package lvm
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
 
-	"github.com/openebs/lvm-localpv/pkg/config"
+	"github.com/openebs/lvm-localpv/pkg/driver/config"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestExtractingIoLimits(t *testing.T) {
