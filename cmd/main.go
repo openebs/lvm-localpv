@@ -22,8 +22,8 @@ import (
 	"log"
 	"os"
 
-	config "github.com/openebs/lvm-localpv/pkg/driver/config"
 	"github.com/openebs/lvm-localpv/pkg/driver"
+	config "github.com/openebs/lvm-localpv/pkg/driver/config"
 	"github.com/openebs/lvm-localpv/pkg/lvm"
 	"github.com/openebs/lvm-localpv/pkg/version"
 	"github.com/spf13/cobra"

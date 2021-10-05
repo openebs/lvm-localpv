@@ -20,9 +20,9 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	
-	"k8s.io/klog"
+
 	"github.com/openebs/lvm-localpv/pkg/driver/config"
+	"k8s.io/klog"
 )
 
 var (
