@@ -63,6 +63,13 @@ We can install the latest release of OpenEBS LVM driver by running the following
 $ kubectl apply -f https://openebs.github.io/charts/lvm-operator.yaml
 ```
 
+If you want to fetch a versioned manifest, you can use the manifests for a
+specific OpenEBS release version, for example:
+
+```
+$ kubectl apply -f https://github.com/openebs/charts/blob/gh-pages/versioned/3.0.0/lvm-operator.yaml
+```
+
 **NOTE:** For some Kubernetes distributions, the `kubelet` directory must be changed at all relevant places in the YAML powering the operator (both the `openebs-lvm-controller` and `openebs-lvm-node`). 
 
 - For `microk8s`, we need to change the kubelet directory to `/var/snap/microk8s/common/var/lib/kubelet/`, we need to replace `/var/lib/kubelet/` with `/var/snap/microk8s/common/var/lib/kubelet/` at all the places in the operator yaml and then we can apply it on microk8s.
