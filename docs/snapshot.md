@@ -1,6 +1,6 @@
 ## Snapshot
 
-The LVM driver supports creating snapshots of the LVM volumes. Certain settings are applied by the LVM driver which modifies the default behaviour of LVM snapshot:
+The LVM driver supports creating snapshots of the LVM volumes. This requires the `dm-snapshot` kernel module to be loaded. Certain settings are applied by the LVM driver which modifies the default behaviour of LVM snapshot:
 
 - Snapshots created by LVM driver are ReadOnly by default as opposed to the ReadWrite snapshots created by default by `lvcreate` command
 - The size of snapshot will be set to the size of the origin volume
