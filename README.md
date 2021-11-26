@@ -25,7 +25,7 @@ See [roadmap](https://github.com/orgs/openebs/projects/30).
 Before installing LVM driver please make sure your Kubernetes Cluster
 must meet the following prerequisites:
 
-1. all the nodes must have lvm2 utils installed
+1. all the nodes must have lvm2 utils installed and the dm-snapshot kernel module loaded
 2. volume group has been setup for provisioning the volume
 3. You have access to install RBAC components into kube-system namespace.
    The OpenEBS LVM driver components are installed in kube-system namespace
