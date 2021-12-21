@@ -2,7 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 release:
-  version: "0.8.2"
+  version: "0.8.3"
 
 imagePullSecrets:
 # - name: "image-pull-secret"
@@ -135,7 +135,7 @@ lvmPlugin:
     repository: openebs/lvm-driver
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: 0.8.2
+    tag: 0.8.3
   ioLimits:
     enabled: false
     containerRuntime: containerd
