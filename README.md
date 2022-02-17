@@ -67,7 +67,7 @@ If you want to fetch a versioned manifest, you can use the manifests for a
 specific OpenEBS release version, for example:
 
 ```
-$ kubectl apply -f https://github.com/openebs/charts/blob/gh-pages/versioned/3.0.0/lvm-operator.yaml
+$ kubectl apply -f https://raw.githubusercontent.com/openebs/charts/gh-pages/versioned/3.0.0/lvm-operator.yaml
 ```
 
 **NOTE:** For some Kubernetes distributions, the `kubelet` directory must be changed at all relevant places in the YAML powering the operator (both the `openebs-lvm-controller` and `openebs-lvm-node`).
