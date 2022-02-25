@@ -1160,7 +1160,9 @@ metadata:
 value: 900000000
 globalDefault: false
 description: "This priority class should be used for the OpenEBS LVM localPV CSI driver controller deployment only."
+
 ---
+
 kind: StatefulSet
 apiVersion: apps/v1
 metadata:

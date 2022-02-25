@@ -17,11 +17,13 @@ limitations under the License.
 package driver
 
 import (
+	"math"
 	"regexp"
 	"strconv"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/openebs/lvm-localpv/pkg/builder/nodebuilder"
 	"github.com/openebs/lvm-localpv/pkg/builder/volbuilder"
 	"github.com/openebs/lvm-localpv/pkg/lvm"
 )
@@ -34,6 +36,9 @@ const (
 	// pick the node where total provisioned volumes have occupied less capacity from the given volume group
 	// this will be the default scheduler when none provided
 	CapacityWeighted = "CapacityWeighted"
+
+	// pick the node which is less loaded space wise
+	SpaceWeightedMap = "SpaceWeighted"
 )
 
 // getVolumeWeightedMap goes through all the volumegroup on all the nodes
@@ -92,6 +97,39 @@ func getCapacityWeightedMap(re *regexp.Regexp) (map[string]int64, error) {
 	return nmap, nil
 }
 
+// getSpaceWeightedMap returns how weighted a node is space wise.
+// The node which has max free space available is less loaded and
+// can accumulate more volumes.
+func getSpaceWeightedMap(re *regexp.Regexp) (map[string]int64, error) {
+	nmap := map[string]int64{}
+
+	nodeList, err := nodebuilder.NewKubeclient().
+		WithNamespace(lvm.LvmNamespace).
+		List(metav1.ListOptions{})
+
+	if err != nil {
+		return nmap, err
+	}
+
+	for _, node := range nodeList.Items {
+		var maxFree int64 = 0
+		for _, vg := range node.VolumeGroups {
+			if re.MatchString(vg.Name) {
+				freeCapacity := vg.Free.Value()
+				if maxFree < freeCapacity {
+					maxFree = freeCapacity
+				}
+			}
+		}
+		if maxFree > 0 {
+			// converting to SpaceWeighted by subtracting it with MaxInt64
+			nmap[node.Name] = math.MaxInt64 - maxFree
+		}
+	}
+
+	return nmap, nil
+}
+
 // getNodeMap returns the node mapping for the given scheduling algorithm
 func getNodeMap(schd string, vgPattern *regexp.Regexp) (map[string]int64, error) {
 	switch schd {
@@ -99,7 +137,9 @@ func getNodeMap(schd string, vgPattern *regexp.Regexp) (map[string]int64, error)
 		return getVolumeWeightedMap(vgPattern)
 	case CapacityWeighted:
 		return getCapacityWeightedMap(vgPattern)
+	case SpaceWeightedMap:
+		return getSpaceWeightedMap(vgPattern)
 	}
-	// return CapacityWeighted(default) if not specified
-	return getCapacityWeightedMap(vgPattern)
+	// return getSpaceWeightedMap(default) if not specified
+	return getSpaceWeightedMap(vgPattern)
 }
