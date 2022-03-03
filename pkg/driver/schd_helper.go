@@ -34,10 +34,10 @@ const (
 	VolumeWeighted = "VolumeWeighted"
 
 	// pick the node where total provisioned volumes have occupied less capacity from the given volume group
-	// this will be the default scheduler when none provided
 	CapacityWeighted = "CapacityWeighted"
 
 	// pick the node which is less loaded space wise
+	// this will be the default scheduler when none provided
 	SpaceWeightedMap = "SpaceWeighted"
 )
 
@@ -123,6 +123,7 @@ func getSpaceWeightedMap(re *regexp.Regexp) (map[string]int64, error) {
 		}
 		if maxFree > 0 {
 			// converting to SpaceWeighted by subtracting it with MaxInt64
+			// as the node which has max free space available is less loaded.
 			nmap[node.Name] = math.MaxInt64 - maxFree
 		}
 	}
