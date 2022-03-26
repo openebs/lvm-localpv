@@ -232,3 +232,7 @@ Features
 
 ## License
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fopenebs%2Flvm-localpv.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fopenebs%2Flvm-localpv?ref=badge_large)
+
+## Repobeats
+
+![Alt](https://repobeats.axiom.co/api/embed/baab8c2a9d1606494ab32714cbf91b65845a6001.svg "Repobeats analytics image")
