@@ -50,6 +50,11 @@ type VolumeGroup struct {
 	// +kubebuilder:validation:MinLength=1
 	UUID string `json:"uuid"`
 
+	// Attributes of the lvm volume group
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	Attribute string `json:"attr"`
+
 	// Size specifies the total size of volume group.
 	// +kubebuilder:validation:Required
 	Size resource.Quantity `json:"size"`

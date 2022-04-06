@@ -15,7 +15,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.4.0
+    controller-gen.kubebuilder.io/version: v0.5.0
   creationTimestamp: null
   name: lvmvolumes.local.openebs.io
 spec:
@@ -56,14 +56,10 @@ spec:
         description: LVMVolume represents a LVM based volume
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
@@ -75,35 +71,29 @@ spec:
                 minLength: 1
                 type: string
               ownerNodeID:
-                description: OwnerNodeID is the Node ID where the volume group is
-                  present which is where the volume has been provisioned. OwnerNodeID
-                  can not be edited after the volume has been provisioned.
+                description: OwnerNodeID is the Node ID where the volume group is present which is where the volume has been provisioned. OwnerNodeID can not be edited after the volume has been provisioned.
                 minLength: 1
                 type: string
               shared:
-                description: Shared specifies whether the volume can be shared among
-                  multiple pods. If it is not set to "yes", then the LVM LocalPV Driver
-                  will not allow the volumes to be mounted by more than one pods.
+                description: Shared specifies whether the volume can be shared among multiple pods. If it is not set to "yes", then the LVM LocalPV Driver will not allow the volumes to be mounted by more than one pods.
                 enum:
                 - "yes"
                 - "no"
                 type: string
+              sharedMode:
+                description: SharedMode specifies whether the volume can be accessed from multiple nodes which are connected to the same storage device. Currently, only "none" and "exclusive" modes are allowed.
+                type: string
               thinProvision:
-                description: ThinProvision specifies whether logical volumes can be
-                  thinly provisioned. If it is set to "yes", then the LVM LocalPV
-                  Driver will create thinProvision i.e. logical volumes that are larger
-                  than the available extents.
+                description: ThinProvision specifies whether logical volumes can be thinly provisioned. If it is set to "yes", then the LVM LocalPV Driver will create thinProvision i.e. logical volumes that are larger than the available extents.
                 enum:
                 - "yes"
                 - "no"
                 type: string
               vgPattern:
-                description: VgPattern specifies the regex to choose volume groups
-                  where volume needs to be created.
+                description: VgPattern specifies the regex to choose volume groups where volume needs to be created.
                 type: string
               volGroup:
-                description: VolGroup specifies the name of the volume group where
-                  the volume has been created.
+                description: VolGroup specifies the name of the volume group where the volume has been created.
                 type: string
             required:
             - capacity
@@ -112,27 +102,19 @@ spec:
             - volGroup
             type: object
           status:
-            description: VolStatus string that specifies the current state of the
-              volume provisioning request.
+            description: VolStatus string that specifies the current state of the volume provisioning request.
             properties:
               error:
-                description: Error denotes the error occurred during provisioning/expanding
-                  a volume. Error field should only be set when State becomes Failed.
+                description: Error denotes the error occurred during provisioning/expanding a volume. Error field should only be set when State becomes Failed.
                 properties:
                   code:
-                    description: VolumeErrorCode represents the error code to represent
-                      specific class of errors.
+                    description: VolumeErrorCode represents the error code to represent specific class of errors.
                     type: string
                   message:
                     type: string
                 type: object
               state:
-                description: State specifies the current state of the volume provisioning
-                  request. The state "Pending" means that the volume creation request
-                  has not processed yet. The state "Ready" means that the volume has
-                  been created and it is ready for the use. "Failed" means that volume
-                  provisioning has been failed and will not be retried by node agent
-                  controller.
+                description: State specifies the current state of the volume provisioning request. The state "Pending" means that the volume creation request has not processed yet. The state "Ready" means that the volume has been created and it is ready for the use. "Failed" means that volume provisioning has been failed and will not be retried by node agent controller.
                 enum:
                 - Pending
                 - Ready

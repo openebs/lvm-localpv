@@ -36,7 +36,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.4.0
+    controller-gen.kubebuilder.io/version: v0.5.0
   creationTimestamp: null
   name: lvmvolumes.local.openebs.io
 spec:
@@ -77,14 +77,10 @@ spec:
         description: LVMVolume represents a LVM based volume
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
@@ -96,35 +92,29 @@ spec:
                 minLength: 1
                 type: string
               ownerNodeID:
-                description: OwnerNodeID is the Node ID where the volume group is
-                  present which is where the volume has been provisioned. OwnerNodeID
-                  can not be edited after the volume has been provisioned.
+                description: OwnerNodeID is the Node ID where the volume group is present which is where the volume has been provisioned. OwnerNodeID can not be edited after the volume has been provisioned.
                 minLength: 1
                 type: string
               shared:
-                description: Shared specifies whether the volume can be shared among
-                  multiple pods. If it is not set to "yes", then the LVM LocalPV Driver
-                  will not allow the volumes to be mounted by more than one pods.
+                description: Shared specifies whether the volume can be shared among multiple pods. If it is not set to "yes", then the LVM LocalPV Driver will not allow the volumes to be mounted by more than one pods.
                 enum:
                 - "yes"
                 - "no"
                 type: string
+              sharedMode:
+                description: SharedMode specifies whether the volume can be accessed from multiple nodes which are connected to the same storage device. Currently, only "none" and "exclusive" modes are allowed.
+                type: string
               thinProvision:
-                description: ThinProvision specifies whether logical volumes can be
-                  thinly provisioned. If it is set to "yes", then the LVM LocalPV
-                  Driver will create thinProvision i.e. logical volumes that are larger
-                  than the available extents.
+                description: ThinProvision specifies whether logical volumes can be thinly provisioned. If it is set to "yes", then the LVM LocalPV Driver will create thinProvision i.e. logical volumes that are larger than the available extents.
                 enum:
                 - "yes"
                 - "no"
                 type: string
               vgPattern:
-                description: VgPattern specifies the regex to choose volume groups
-                  where volume needs to be created.
+                description: VgPattern specifies the regex to choose volume groups where volume needs to be created.
                 type: string
               volGroup:
-                description: VolGroup specifies the name of the volume group where
-                  the volume has been created.
+                description: VolGroup specifies the name of the volume group where the volume has been created.
                 type: string
             required:
             - capacity
@@ -133,27 +123,19 @@ spec:
             - volGroup
             type: object
           status:
-            description: VolStatus string that specifies the current state of the
-              volume provisioning request.
+            description: VolStatus string that specifies the current state of the volume provisioning request.
             properties:
               error:
-                description: Error denotes the error occurred during provisioning/expanding
-                  a volume. Error field should only be set when State becomes Failed.
+                description: Error denotes the error occurred during provisioning/expanding a volume. Error field should only be set when State becomes Failed.
                 properties:
                   code:
-                    description: VolumeErrorCode represents the error code to represent
-                      specific class of errors.
+                    description: VolumeErrorCode represents the error code to represent specific class of errors.
                     type: string
                   message:
                     type: string
                 type: object
               state:
-                description: State specifies the current state of the volume provisioning
-                  request. The state "Pending" means that the volume creation request
-                  has not processed yet. The state "Ready" means that the volume has
-                  been created and it is ready for the use. "Failed" means that volume
-                  provisioning has been failed and will not be retried by node agent
-                  controller.
+                description: State specifies the current state of the volume provisioning request. The state "Pending" means that the volume creation request has not processed yet. The state "Ready" means that the volume has been created and it is ready for the use. "Failed" means that volume provisioning has been failed and will not be retried by node agent controller.
                 enum:
                 - Pending
                 - Ready
@@ -189,7 +171,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.4.0
+    controller-gen.kubebuilder.io/version: v0.5.0
   creationTimestamp: null
   name: lvmsnapshots.local.openebs.io
 spec:
@@ -207,14 +189,10 @@ spec:
         description: LVMSnapshot represents an LVM Snapshot of the lvm volume
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
@@ -222,25 +200,21 @@ spec:
             description: LVMSnapshotSpec defines LVMSnapshot spec
             properties:
               ownerNodeID:
-                description: OwnerNodeID is the Node ID where the volume group is
-                  present which is where the snapshot has been provisioned. OwnerNodeID
-                  can not be edited after the snapshot has been provisioned.
+                description: OwnerNodeID is the Node ID where the volume group is present which is where the snapshot has been provisioned. OwnerNodeID can not be edited after the snapshot has been provisioned.
                 minLength: 1
                 type: string
               snapSize:
                 description: SnapSize specifies the space reserved for the snapshot
                 type: string
               volGroup:
-                description: VolGroup specifies the name of the volume group where
-                  the snapshot has been created.
+                description: VolGroup specifies the name of the volume group where the snapshot has been created.
                 type: string
             required:
             - ownerNodeID
             - volGroup
             type: object
           status:
-            description: SnapStatus string that reflects if the snapshot was created
-              successfully
+            description: SnapStatus string that reflects if the snapshot was created successfully
             properties:
               state:
                 type: string
@@ -274,7 +248,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.4.0
+    controller-gen.kubebuilder.io/version: v0.5.0
   creationTimestamp: null
   name: lvmnodes.local.openebs.io
 spec:
@@ -291,34 +265,27 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: LVMNode records information about all lvm volume groups available
-          in a node. In general, the openebs node-agent creates the LVMNode object
-          & periodically synchronizing the volume groups available in the node. LVMNode
-          has an owner reference pointing to the corresponding node object.
+        description: LVMNode records information about all lvm volume groups available in a node. In general, the openebs node-agent creates the LVMNode object & periodically synchronizing the volume groups available in the node. LVMNode has an owner reference pointing to the corresponding node object.
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
           volumeGroups:
             items:
-              description: VolumeGroup specifies attributes of a given vg exists on
-                node.
+              description: VolumeGroup specifies attributes of a given vg exists on node.
               properties:
                 allocationPolicy:
-                  description: 'AllocationPolicy indicates the volume group allocation
-                    policy. AllocationPolicy has the following mapping between int
-                    and string for its value: [-1: "", 0: "normal", 1: "contiguous",
-                    2: "cling", 3: "anywhere", 4: "inherited"]'
+                  description: 'AllocationPolicy indicates the volume group allocation policy. AllocationPolicy has the following mapping between int and string for its value: [-1: "", 0: "normal", 1: "contiguous", 2: "cling", 3: "anywhere", 4: "inherited"]'
                   type: integer
+                attr:
+                  description: Attributes of the lvm volume group
+                  minLength: 1
+                  type: string
                 free:
                   anyOf:
                   - type: integer
@@ -327,50 +294,42 @@ spec:
                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                   x-kubernetes-int-or-string: true
                 lvCount:
-                  description: LVCount denotes total number of logical volumes in
-                    volume group.
+                  description: LVCount denotes total number of logical volumes in volume group.
                   format: int32
                   minimum: 0
                   type: integer
                 maxLv:
-                  description: MaxLV denotes maximum number of logical volumes allowed
-                    in volume group or 0 if unlimited.
+                  description: MaxLV denotes maximum number of logical volumes allowed in volume group or 0 if unlimited.
                   format: int32
                   type: integer
                 maxPv:
-                  description: MaxPV denotes maximum number of physical volumes allowed
-                    in volume group or 0 if unlimited.
+                  description: MaxPV denotes maximum number of physical volumes allowed in volume group or 0 if unlimited.
                   format: int32
                   type: integer
                 metadataCount:
-                  description: MetadataCount denotes number of metadata areas on the
-                    volume group.
+                  description: MetadataCount denotes number of metadata areas on the volume group.
                   format: int32
                   type: integer
                 metadataFree:
                   anyOf:
                   - type: integer
                   - type: string
-                  description: MetadataFree specifies the available metadata area
-                    space for the volume group
+                  description: MetadataFree specifies the available metadata area space for the volume group
                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                   x-kubernetes-int-or-string: true
                 metadataSize:
                   anyOf:
                   - type: integer
                   - type: string
-                  description: MetadataSize specifies size of smallest metadata area
-                    for the volume group
+                  description: MetadataSize specifies size of smallest metadata area for the volume group
                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                   x-kubernetes-int-or-string: true
                 metadataUsedCount:
-                  description: MetadataUsedCount denotes number of used metadata areas
-                    in volume group
+                  description: MetadataUsedCount denotes number of used metadata areas in volume group
                   format: int32
                   type: integer
                 missingPvCount:
-                  description: MissingPVCount denotes number of physical volumes in
-                    volume group which are missing.
+                  description: MissingPVCount denotes number of physical volumes in volume group which are missing.
                   format: int32
                   type: integer
                 name:
@@ -378,14 +337,10 @@ spec:
                   minLength: 1
                   type: string
                 permissions:
-                  description: 'Permission indicates the volume group permission which
-                    can be writable or read-only. Permission has the following mapping
-                    between int and string for its value: [-1: "", 0: "writeable",
-                    1: "read-only"]'
+                  description: 'Permission indicates the volume group permission which can be writable or read-only. Permission has the following mapping between int and string for its value: [-1: "", 0: "writeable", 1: "read-only"]'
                   type: integer
                 pvCount:
-                  description: PVCount denotes total number of physical volumes constituting
-                    the volume group.
+                  description: PVCount denotes total number of physical volumes constituting the volume group.
                   format: int32
                   minimum: 0
                   type: integer
@@ -406,6 +361,7 @@ spec:
                   type: string
               required:
               - allocationPolicy
+              - attr
               - free
               - lvCount
               - maxLv

@@ -15,7 +15,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.4.0
+    controller-gen.kubebuilder.io/version: v0.5.0
   creationTimestamp: null
   name: lvmnodes.local.openebs.io
 spec:
@@ -32,34 +32,27 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: LVMNode records information about all lvm volume groups available
-          in a node. In general, the openebs node-agent creates the LVMNode object
-          & periodically synchronizing the volume groups available in the node. LVMNode
-          has an owner reference pointing to the corresponding node object.
+        description: LVMNode records information about all lvm volume groups available in a node. In general, the openebs node-agent creates the LVMNode object & periodically synchronizing the volume groups available in the node. LVMNode has an owner reference pointing to the corresponding node object.
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
           volumeGroups:
             items:
-              description: VolumeGroup specifies attributes of a given vg exists on
-                node.
+              description: VolumeGroup specifies attributes of a given vg exists on node.
               properties:
                 allocationPolicy:
-                  description: 'AllocationPolicy indicates the volume group allocation
-                    policy. AllocationPolicy has the following mapping between int
-                    and string for its value: [-1: "", 0: "normal", 1: "contiguous",
-                    2: "cling", 3: "anywhere", 4: "inherited"]'
+                  description: 'AllocationPolicy indicates the volume group allocation policy. AllocationPolicy has the following mapping between int and string for its value: [-1: "", 0: "normal", 1: "contiguous", 2: "cling", 3: "anywhere", 4: "inherited"]'
                   type: integer
+                attr:
+                  description: Attributes of the lvm volume group
+                  minLength: 1
+                  type: string
                 free:
                   anyOf:
                   - type: integer
@@ -68,50 +61,42 @@ spec:
                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                   x-kubernetes-int-or-string: true
                 lvCount:
-                  description: LVCount denotes total number of logical volumes in
-                    volume group.
+                  description: LVCount denotes total number of logical volumes in volume group.
                   format: int32
                   minimum: 0
                   type: integer
                 maxLv:
-                  description: MaxLV denotes maximum number of logical volumes allowed
-                    in volume group or 0 if unlimited.
+                  description: MaxLV denotes maximum number of logical volumes allowed in volume group or 0 if unlimited.
                   format: int32
                   type: integer
                 maxPv:
-                  description: MaxPV denotes maximum number of physical volumes allowed
-                    in volume group or 0 if unlimited.
+                  description: MaxPV denotes maximum number of physical volumes allowed in volume group or 0 if unlimited.
                   format: int32
                   type: integer
                 metadataCount:
-                  description: MetadataCount denotes number of metadata areas on the
-                    volume group.
+                  description: MetadataCount denotes number of metadata areas on the volume group.
                   format: int32
                   type: integer
                 metadataFree:
                   anyOf:
                   - type: integer
                   - type: string
-                  description: MetadataFree specifies the available metadata area
-                    space for the volume group
+                  description: MetadataFree specifies the available metadata area space for the volume group
                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                   x-kubernetes-int-or-string: true
                 metadataSize:
                   anyOf:
                   - type: integer
                   - type: string
-                  description: MetadataSize specifies size of smallest metadata area
-                    for the volume group
+                  description: MetadataSize specifies size of smallest metadata area for the volume group
                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                   x-kubernetes-int-or-string: true
                 metadataUsedCount:
-                  description: MetadataUsedCount denotes number of used metadata areas
-                    in volume group
+                  description: MetadataUsedCount denotes number of used metadata areas in volume group
                   format: int32
                   type: integer
                 missingPvCount:
-                  description: MissingPVCount denotes number of physical volumes in
-                    volume group which are missing.
+                  description: MissingPVCount denotes number of physical volumes in volume group which are missing.
                   format: int32
                   type: integer
                 name:
@@ -119,14 +104,10 @@ spec:
                   minLength: 1
                   type: string
                 permissions:
-                  description: 'Permission indicates the volume group permission which
-                    can be writable or read-only. Permission has the following mapping
-                    between int and string for its value: [-1: "", 0: "writeable",
-                    1: "read-only"]'
+                  description: 'Permission indicates the volume group permission which can be writable or read-only. Permission has the following mapping between int and string for its value: [-1: "", 0: "writeable", 1: "read-only"]'
                   type: integer
                 pvCount:
-                  description: PVCount denotes total number of physical volumes constituting
-                    the volume group.
+                  description: PVCount denotes total number of physical volumes constituting the volume group.
                   format: int32
                   minimum: 0
                   type: integer
@@ -147,6 +128,7 @@ spec:
                   type: string
               required:
               - allocationPolicy
+              - attr
               - free
               - lvCount
               - maxLv

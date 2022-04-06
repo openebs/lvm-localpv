@@ -87,6 +87,12 @@ type VolumeInfo struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=yes;no
 	ThinProvision string `json:"thinProvision,omitempty"`
+
+	// SharedMode specifies whether the volume can be accessed from
+	// multiple nodes which are connected to the same storage device.
+	// Currently, only "none" and "exclusive" modes are allowed.
+	// +kubebuilder:validation:Required
+	SharedMode SharedModeType `json:"sharedMode,omitempty"`
 }
 
 // VolStatus string that specifies the current state of the volume provisioning request.
@@ -114,10 +120,22 @@ type VolumeError struct {
 // specific class of errors.
 type VolumeErrorCode string
 
+// SharedModeType represents the different mode of sharing
+// a LVM volume group
+type SharedModeType string
+
 const (
 	// Internal represents system internal error.
 	Internal VolumeErrorCode = "Internal"
 	// InsufficientCapacity represent lvm vg doesn't
 	// have enough capacity to fit the lv request.
 	InsufficientCapacity VolumeErrorCode = "InsufficientCapacity"
+)
+
+const (
+	// LVMExclusiveSharedMode represents that the volume is activated in exclusive
+	// mode, allowing a single host to  activate the  LV at any time
+	LVMExclusiveSharedMode SharedModeType = "exclusive"
+	// LVMNoneSharedMode represents the volumes are not to be shared among hosts
+	LVMNoneSharedMode SharedModeType = "none"
 )

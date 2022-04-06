@@ -48,11 +48,13 @@ const (
 const (
 	VGCreate = "vgcreate"
 	VGList   = "vgs"
+	VGChange = "vgchange"
 
 	LVCreate = "lvcreate"
 	LVRemove = "lvremove"
 	LVExtend = "lvextend"
 	LVList   = "lvs"
+	LVChange = "lvchange"
 
 	PVList = "pvs"
 	PVScan = "pvscan"
@@ -260,9 +262,47 @@ func buildLVMDestroyArgs(vol *apis.LVMVolume) []string {
 	return LVMVolArg
 }
 
+// StartLVMVolumeGroup will start the VG causing the lock manager
+// to join the lockspace for the VG on the host where it is run.
+// This may also sometimes become necessary to perform because a node can witness a
+// failure due to which the locks on the volume groups are lost. Therefore, those locks
+// need to be started again on the host before creating/changing the volumes otherwise LVM commands
+// used for reading/displaying vg can only be used; changes, activation or volume creation
+// on top of that vg will fail
+// Command -> vgchange --lock-start <vg-name>: starts individual VG on the host i.e.
+// the lock- manager will join the lockspace for that particular VG on the host
+func StartLVMVolumeGroup(vol *apis.LVMVolume) error {
+	args := []string{
+		"--lock-start",
+		vol.Spec.VolGroup,
+	}
+
+	cmd := exec.Command(VGChange, args...)
+	raw, err := cmd.CombinedOutput()
+	if err != nil {
+		return errors.Wrapf(
+			err,
+			"volume group %v could not join the lockspace output: %s",
+			vol.Spec.VolGroup,
+			string(raw),
+		)
+	}
+
+	return nil
+}
+
 // CreateVolume creates the lvm volume
 func CreateVolume(vol *apis.LVMVolume) error {
 	volume := vol.Spec.VolGroup + "/" + vol.Name
+
+	if vol.Spec.SharedMode == apis.LVMExclusiveSharedMode {
+		// start the volume group first if we are creating a volume for shared access mode.
+		err := StartLVMVolumeGroup(vol)
+		if err != nil {
+			return err
+		}
+		klog.Infof("lvm: started the shared volume group %s before creating the volume %s", vol.Spec.VolGroup, volume)
+	}
 
 	volExists, err := CheckVolumeExists(vol)
 	if err != nil {
@@ -286,6 +326,51 @@ func CreateVolume(vol *apis.LVMVolume) error {
 	}
 	klog.Infof("lvm: created volume %s", volume)
 
+	// Deactivate the volume(s) if the shared mode is exclusive
+	if vol.Spec.SharedMode == apis.LVMExclusiveSharedMode {
+		err = ActivateLVMLogicalVolume(vol, false)
+		if err != nil {
+			return err
+		}
+		klog.Infof("lvm: deactivated volume %s successfully", volume)
+	}
+
+	return nil
+}
+
+// ActivateLVMLogicalVolume activates/deactivates the logical volume(s)
+func ActivateLVMLogicalVolume(vol *apis.LVMVolume, activate bool) error {
+	// form the desired state argument:
+	// 	1. -ay|-aey : activates the LV in exclusive mode, allowing a single host to activate the LV
+	// 	2. -an : deactivates the LV
+	var lvStateArg string
+	if activate {
+		lvStateArg = "-ay"
+	} else {
+		lvStateArg = "-an"
+	}
+
+	// change the state of thin pool first if thin volumes are provisioned
+	if vol.Spec.ThinProvision == YES {
+		// check buildLVMCreateArgs() in the current file to see how thin pool name is formed
+		pool := vol.Spec.VolGroup + "_thinpool"
+		cmd := exec.Command(LVChange, lvStateArg, vol.Spec.VolGroup+"/"+pool)
+		_, err := cmd.CombinedOutput()
+		if err != nil {
+			klog.Errorf("failed to change thin pool {%s}'s state: %v", pool, err)
+			return err
+		}
+	}
+
+	// change the state of the volume
+	volume := vol.Spec.VolGroup + "/" + vol.Name
+	cmd := exec.Command(LVChange, lvStateArg, volume)
+	_, err := cmd.CombinedOutput()
+	if err != nil {
+		klog.Errorf("failed to change the volume {%s}'s state: %v", volume, err)
+		return err
+	}
+
 	return nil
 }
 
@@ -298,6 +383,15 @@ func DestroyVolume(vol *apis.LVMVolume) error {
 
 	volume := vol.Spec.VolGroup + "/" + vol.Name
 
+	if vol.Spec.SharedMode == apis.LVMExclusiveSharedMode {
+		// start the volume group first
+		err := StartLVMVolumeGroup(vol)
+		if err != nil {
+			return err
+		}
+		klog.Infof("lvm: started the shared volume group %s before deleting the volume %s", vol.Spec.VolGroup, volume)
+	}
+
 	volExists, err := CheckVolumeExists(vol)
 	if err != nil {
 		return err
@@ -307,9 +401,28 @@ func DestroyVolume(vol *apis.LVMVolume) error {
 		return nil
 	}
 
+	// activate the LV first if shared mode is exclusive, otherwise
+	// erasing the filesystem from lv won't work
+	if vol.Spec.SharedMode == apis.LVMExclusiveSharedMode {
+		err = ActivateLVMLogicalVolume(vol, true)
+		if err != nil {
+			return err
+		}
+		klog.Infof("lvm: activated volume %s successfully", volume)
+	}
+
 	err = removeVolumeFilesystem(vol)
 	if err != nil {
 		return err
+	}
+
+	// before removing the LV, deactivate the LV first if shared mode is exclusive
+	if vol.Spec.SharedMode == apis.LVMExclusiveSharedMode {
+		err = ActivateLVMLogicalVolume(vol, false)
+		if err != nil {
+			return err
+		}
+		klog.Infof("lvm: deactivated volume %s successfully", volume)
 	}
 
 	args := buildLVMDestroyArgs(vol)
@@ -330,6 +443,21 @@ func DestroyVolume(vol *apis.LVMVolume) error {
 
 // CheckVolumeExists validates if lvm volume exists
 func CheckVolumeExists(vol *apis.LVMVolume) (bool, error) {
+	// If the volume is in shared mode then checking if volume exists
+	// through devpath might result in wrong output. Because, it might happen
+	// that the host on which the volume is to be checked might have it deactivated.
+	// Thus, not showing it in the devpath giving the feeling of volume not existing.
+	if vol.Spec.SharedMode == apis.LVMExclusiveSharedMode {
+		// check the presence of the desired lv
+		cmd := exec.Command("lvs", vol.Spec.VolGroup+"/"+vol.Name, "--noheadings", "-o", "lv_name")
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			klog.Errorf("failed to list existing volume: %v", err)
+			return false, err
+		}
+		return vol.Name == strings.TrimSpace(string(out)), nil
+	}
+
 	devPath, err := GetVolumeDevPath(vol)
 	if err != nil {
 		return false, err
@@ -577,6 +705,7 @@ func parseVolumeGroup(m map[string]string) (apis.VolumeGroup, error) {
 
 	vg.Name = m[VGName]
 	vg.UUID = m[VGUUID]
+	vg.Attribute = m[VGAttr]
 
 	int32Map := map[string]*int32{
 		VGPVvount:           &vg.PVCount,

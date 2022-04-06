@@ -35,6 +35,7 @@ type VolumeParams struct {
 
 	Scheduler     string
 	Shared        string
+	SharedMode    string
 	ThinProvision string
 	// extra optional metadata passed by external provisioner
 	// if enabled. See --extra-create-metadata flag for more details.
@@ -56,6 +57,7 @@ func NewVolumeParams(m map[string]string) (*VolumeParams, error) {
 	params := &VolumeParams{ // set up defaults, if any.
 		Scheduler:     CapacityWeighted,
 		Shared:        "no",
+		SharedMode:    "none",
 		ThinProvision: "no",
 	}
 	// parameter keys may be mistyped from the CRD specification when declaring
@@ -82,6 +84,7 @@ func NewVolumeParams(m map[string]string) (*VolumeParams, error) {
 	stringParams := map[string]*string{
 		"scheduler":     &params.Scheduler,
 		"shared":        &params.Shared,
+		"sharedmode":    &params.SharedMode,
 		"thinprovision": &params.ThinProvision,
 	}
 	for key, param := range stringParams {

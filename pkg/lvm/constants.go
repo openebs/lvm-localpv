@@ -20,6 +20,7 @@ package lvm
 const (
 	VGName              = "vg_name"
 	VGUUID              = "vg_uuid"
+	VGAttr              = "vg_attr"
 	VGPVvount           = "pv_count"
 	VGLvCount           = "lv_count"
 	VGMaxLv             = "max_lv"

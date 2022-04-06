@@ -168,6 +168,12 @@ func (c *VolController) getVgPriorityList(vol *apis.LVMVolume) ([]apis.VolumeGro
 				continue
 			}
 		}
+		// skip th vg if the volume is to be created in exclusive shared mode but the underlying
+		// vg is not shared. Shared  VGs  are indicated by "s" (for shared) in the sixth attr
+		// field
+		if vol.Spec.SharedMode == apis.LVMExclusiveSharedMode && vg.Attribute[5] != 's' {
+			continue
+		}
 		filteredVgs = append(filteredVgs, vg)
 	}
 

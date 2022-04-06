@@ -15,7 +15,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.4.0
+    controller-gen.kubebuilder.io/version: v0.5.0
   creationTimestamp: null
   name: lvmsnapshots.local.openebs.io
 spec:
@@ -33,14 +33,10 @@ spec:
         description: LVMSnapshot represents an LVM Snapshot of the lvm volume
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
@@ -48,25 +44,21 @@ spec:
             description: LVMSnapshotSpec defines LVMSnapshot spec
             properties:
               ownerNodeID:
-                description: OwnerNodeID is the Node ID where the volume group is
-                  present which is where the snapshot has been provisioned. OwnerNodeID
-                  can not be edited after the snapshot has been provisioned.
+                description: OwnerNodeID is the Node ID where the volume group is present which is where the snapshot has been provisioned. OwnerNodeID can not be edited after the snapshot has been provisioned.
                 minLength: 1
                 type: string
               snapSize:
                 description: SnapSize specifies the space reserved for the snapshot
                 type: string
               volGroup:
-                description: VolGroup specifies the name of the volume group where
-                  the snapshot has been created.
+                description: VolGroup specifies the name of the volume group where the snapshot has been created.
                 type: string
             required:
             - ownerNodeID
             - volGroup
             type: object
           status:
-            description: SnapStatus string that reflects if the snapshot was created
-              successfully
+            description: SnapStatus string that reflects if the snapshot was created successfully
             properties:
               state:
                 type: string

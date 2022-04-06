@@ -133,6 +133,22 @@ func (b *Builder) WithShared(shared string) *Builder {
 	return b
 }
 
+// WithSharedMode sets in which mode volumes are accessible.
+// There can be 3 different modes:
+// 	1. none(default mode) - the LVs can only be accessed locally
+// 	2. exclusive - the LVs can be accessed from multiple nodes but in an exclusive manner(active on one node at a time)
+// 	3. shared - the LVs can be accessed from multiple nodes(can be active on multiple nodes at a node)
+// NOTE: shared mode is currently not supported
+func (b *Builder) WithSharedMode(mode string) *Builder {
+	// Update the ShredMode only when the permitted values are used.
+	if mode == string(apis.LVMExclusiveSharedMode) || mode == string(apis.LVMNoneSharedMode) {
+		b.volume.Object.Spec.SharedMode = apis.SharedModeType(mode)
+	} else {
+		b.volume.Object.Spec.SharedMode = apis.LVMNoneSharedMode
+	}
+	return b
+}
+
 // WithThinProvision sets where thinProvision is enable or not
 func (b *Builder) WithThinProvision(thinProvision string) *Builder {
 	b.volume.Object.Spec.ThinProvision = thinProvision

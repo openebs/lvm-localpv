@@ -18,15 +18,15 @@ package driver
 
 import (
 	"errors"
-	"net/http"
-	"os"
-	"strings"
-	"sync"
-
 	"github.com/openebs/lvm-localpv/pkg/collector"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"net/http"
+	"os"
+	"strings"
+	"sync"
+	"time"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/openebs/lib-csi/pkg/btrfs"
@@ -239,6 +239,9 @@ func (ns *node) NodePublishVolume(
 
 	var (
 		err error
+		// loopcount is the no. of times volume activation success
+		// has to be checked
+		loopCount = 12
 	)
 
 	if err = ns.validateNodePublishReq(req); err != nil {
@@ -254,6 +257,37 @@ func (ns *node) NodePublishVolume(
 	if err != nil {
 		klog.Warningf("PodLVInfo could not be obtained for volume_id: %s, err = %v", req.VolumeId, err)
 	}
+
+	if vol.Spec.SharedMode == apis.LVMExclusiveSharedMode {
+		lvVolume := vol.Spec.VolGroup + "/" + vol.Name
+		// start the volume group first
+		err = lvm.StartLVMVolumeGroup(vol)
+		if err != nil {
+			return nil, err
+		}
+		klog.Infof("lvm: started the shared volume group %s before mounting the volume %s", vol.Spec.VolGroup, lvVolume)
+
+		// Activate the LV before mounting
+		// Exec -> lvchange -ay <lv-name>
+		// We may need to wait for few minutes(~2 minutes) before mounting.
+		// This wait may be necessary when a node that has the volume mounted
+		// goes bad. K8s scheduler may re-schedule the pod to a new node.
+		// Before this new node can mount the volume, it has to wait for the
+		// volume lease to expire on the previous faulted node.
+		// TODO move this to NodeStage request
+		for i := 1; i <= loopCount; i++ {
+			err = lvm.ActivateLVMLogicalVolume(vol, true)
+			if err == nil {
+				klog.Infof("lvm: activated volume %s successfully", lvVolume)
+				break
+			}
+			time.Sleep(10 * time.Second)
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	switch req.GetVolumeCapability().GetAccessType().(type) {
 	case *csi.VolumeCapability_Block:
 		// attempt block mount operation on the requested path
@@ -288,6 +322,17 @@ func (ns *node) NodeUnpublishVolume(
 		return nil, err
 	}
 
+	lvVolume := vol.Spec.VolGroup + "/" + vol.Name
+
+	if vol.Spec.SharedMode == apis.LVMExclusiveSharedMode {
+		// start the volume group first
+		err := lvm.StartLVMVolumeGroup(vol)
+		if err != nil {
+			return nil, err
+		}
+		klog.Infof("lvm: started the shared volume group %s before unmounting the volume %s", vol.Spec.VolGroup, lvVolume)
+	}
+
 	targetPath := req.GetTargetPath()
 	volumeID := req.GetVolumeId()
 
@@ -306,6 +351,16 @@ func (ns *node) NodeUnpublishVolume(
 	}
 	klog.Infof("hostpath: volume %s path: %s has been unmounted.",
 		volumeID, targetPath)
+
+	// Deactivate the LV before sending a successful response
+	// lvchange -an <lv-name>
+	if vol.Spec.SharedMode == apis.LVMExclusiveSharedMode {
+		err = lvm.ActivateLVMLogicalVolume(vol, false)
+		if err != nil {
+			return nil, err
+		}
+		klog.Infof("lvm: deactivated volume %s successfully", lvVolume)
+	}
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }

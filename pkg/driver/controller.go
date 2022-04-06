@@ -298,6 +298,7 @@ func CreateLVMVolume(ctx context.Context, req *csi.CreateVolumeRequest,
 		WithOwnerNode(owner).
 		WithVolumeStatus(lvm.LVMStatusPending).
 		WithShared(params.Shared).
+		WithSharedMode(params.SharedMode).
 		WithThinProvision(params.ThinProvision).Build()
 
 	if err != nil {
@@ -360,13 +361,20 @@ func (cs *controller) CreateVolume(
 	topology := map[string]string{lvm.LVMTopologyKey: vol.Spec.OwnerNodeID}
 	cntx := map[string]string{lvm.VolGroupKey: vol.Spec.VolGroup, lvm.OpenEBSCasTypeKey: lvm.LVMCasTypeName}
 
-	return csipayload.NewCreateVolumeResponseBuilder().
+	csiVolumeResponseBuilder := csipayload.NewCreateVolumeResponseBuilder().
 		WithName(volName).
 		WithCapacity(size).
-		WithTopology(topology).
 		WithContext(cntx).
-		WithContentSource(contentSource).
-		Build(), nil
+		WithContentSource(contentSource)
+
+	// Add topology details in the csi response only when the shared mode is none.
+	// Topology details are required in case of local lvm volumes to set the correct node
+	// affinity field in the pv spec to point to a single node.
+	if vol.Spec.SharedMode == lvmapi.LVMNoneSharedMode {
+		csiVolumeResponseBuilder.WithTopology(topology)
+	}
+
+	return csiVolumeResponseBuilder.Build(), nil
 }
 
 // DeleteVolume deletes the specified volume
