@@ -322,6 +322,15 @@ func (ns *node) NodeUnpublishVolume(
 		return nil, err
 	}
 
+	targetPath := req.GetTargetPath()
+	volumeID := req.GetVolumeId()
+
+	if vol, err = lvm.GetLVMVolume(volumeID); err != nil {
+		return nil, status.Errorf(codes.Internal,
+			"not able to get the LVMVolume %s err : %s",
+			volumeID, err.Error())
+	}
+
 	lvVolume := vol.Spec.VolGroup + "/" + vol.Name
 
 	if vol.Spec.SharedMode == apis.LVMExclusiveSharedMode {
@@ -331,15 +340,6 @@ func (ns *node) NodeUnpublishVolume(
 			return nil, err
 		}
 		klog.Infof("lvm: started the shared volume group %s before unmounting the volume %s", vol.Spec.VolGroup, lvVolume)
-	}
-
-	targetPath := req.GetTargetPath()
-	volumeID := req.GetVolumeId()
-
-	if vol, err = lvm.GetLVMVolume(volumeID); err != nil {
-		return nil, status.Errorf(codes.Internal,
-			"not able to get the LVMVolume %s err : %s",
-			volumeID, err.Error())
 	}
 
 	err = lvm.UmountVolume(vol, targetPath)
@@ -352,9 +352,9 @@ func (ns *node) NodeUnpublishVolume(
 	klog.Infof("hostpath: volume %s path: %s has been unmounted.",
 		volumeID, targetPath)
 
-	// Deactivate the LV before sending a successful response
-	// lvchange -an <lv-name>
 	if vol.Spec.SharedMode == apis.LVMExclusiveSharedMode {
+		// Deactivate the LV before sending a successful response
+		// lvchange -an <lv-name>
 		err = lvm.ActivateLVMLogicalVolume(vol, false)
 		if err != nil {
 			return nil, err
