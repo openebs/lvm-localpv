@@ -18,6 +18,7 @@ package volume
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"regexp"
 	"sort"
 	"strconv"
@@ -99,41 +100,49 @@ func (c *VolController) syncVol(vol *apis.LVMVolume) error {
 		return nil
 	}
 
-	// if there is already a volGroup field set for lvmvolume resource,
-	// we'll first try to create a volume in that volume group.
-	if vol.Spec.VolGroup != "" {
-		err = lvm.CreateVolume(vol)
-		if err == nil {
-			return lvm.UpdateVolInfo(vol, lvm.LVMStatusReady)
-		}
-	}
-
-	vgs, err := c.getVgPriorityList(vol)
-	if err != nil {
-		return err
-	}
-
-	if len(vgs) == 0 {
-		err = fmt.Errorf("no vg available to serve volume request having regex=%q & capacity=%q",
-			vol.Spec.VgPattern, vol.Spec.Capacity)
-		klog.Errorf("lvm volume %v - %v", vol.Name, err)
+	// Restrict thin volume creation in shared mode
+	// TODO add support for thin provisioning in shared mode
+	if vol.Spec.SharedMode == apis.LVMExclusiveSharedMode && vol.Spec.ThinProvision == lvm.YES {
+		err = errors.Errorf("Thin provisioning is not allowed for shared volume %s", vol.Name)
+		vol.Status.Error = c.transformLVMError(err)
 	} else {
-		for _, vg := range vgs {
-			// first update volGroup field in lvm volume resource for ensuring
-			// idempotency and avoiding volume leaks during crash.
-			if vol, err = lvm.UpdateVolGroup(vol, vg.Name); err != nil {
-				klog.Errorf("failed to update volGroup to %v: %v", vg.Name, err)
-				return err
-			}
-			if err = lvm.CreateVolume(vol); err == nil {
+		// if there is already a volGroup field set for lvmvolume resource,
+		// we'll first try to create a volume in that volume group.
+		if vol.Spec.VolGroup != "" {
+			err = lvm.CreateVolume(vol)
+			if err == nil {
 				return lvm.UpdateVolInfo(vol, lvm.LVMStatusReady)
 			}
 		}
+
+		vgs, err := c.getVgPriorityList(vol)
+		if err != nil {
+			return err
+		}
+
+		if len(vgs) == 0 {
+			err = fmt.Errorf("no vg available to serve volume request having regex=%q & capacity=%q",
+				vol.Spec.VgPattern, vol.Spec.Capacity)
+			klog.Errorf("lvm volume %v - %v", vol.Name, err)
+		} else {
+			for _, vg := range vgs {
+				// first update volGroup field in lvm volume resource for ensuring
+				// idempotency and avoiding volume leaks during crash.
+				if vol, err = lvm.UpdateVolGroup(vol, vg.Name); err != nil {
+					klog.Errorf("failed to update volGroup to %v: %v", vg.Name, err)
+					return err
+				}
+				if err = lvm.CreateVolume(vol); err == nil {
+					return lvm.UpdateVolInfo(vol, lvm.LVMStatusReady)
+				}
+			}
+		}
+
+		// In case no vg available or lvm.CreateVolume fails for all vgs, mark
+		// the volume provisioning failed so that controller can reschedule it.
+		vol.Status.Error = c.transformLVMError(err)
 	}
 
-	// In case no vg available or lvm.CreateVolume fails for all vgs, mark
-	// the volume provisioning failed so that controller can reschedule it.
-	vol.Status.Error = c.transformLVMError(err)
 	return lvm.UpdateVolInfo(vol, lvm.LVMStatusFailed)
 }
 

@@ -350,24 +350,13 @@ func ActivateLVMLogicalVolume(vol *apis.LVMVolume, activate bool) error {
 		lvStateArg = "-an"
 	}
 
-	// change the state of thin pool first if thin volumes are provisioned
-	if vol.Spec.ThinProvision == YES {
-		// check buildLVMCreateArgs() in the current file to see how thin pool name is formed
-		pool := vol.Spec.VolGroup + "_thinpool"
-		cmd := exec.Command(LVChange, lvStateArg, vol.Spec.VolGroup+"/"+pool)
-		_, err := cmd.CombinedOutput()
-		if err != nil {
-			klog.Errorf("failed to change thin pool {%s}'s state: %v", pool, err)
-			return err
-		}
-	}
-
 	// change the state of the volume
 	volume := vol.Spec.VolGroup + "/" + vol.Name
 	cmd := exec.Command(LVChange, lvStateArg, volume)
-	_, err := cmd.CombinedOutput()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		klog.Errorf("failed to change the volume {%s}'s state: %v", volume, err)
+		err = newExecError(out, err)
 		return err
 	}
 

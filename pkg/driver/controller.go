@@ -246,6 +246,12 @@ func CreateLVMVolume(ctx context.Context, req *csi.CreateVolumeRequest,
 	capacity := strconv.FormatInt(getRoundedCapacity(
 		req.GetCapacityRange().RequiredBytes), 10)
 
+	// Thin provisioning is not allowed for shared volumes currently
+	// TODO add support for thin provisioning for shared volumes
+	if lvmapi.SharedModeType(params.SharedMode) == lvmapi.LVMExclusiveSharedMode && params.ThinProvision == lvm.YES {
+		return nil, status.Errorf(codes.Internal, "Thin provisioning not allowed for shared volumes")
+	}
+
 	vol, err := lvm.GetLVMVolume(volName)
 	if err != nil {
 		if !k8serror.IsNotFound(err) {
