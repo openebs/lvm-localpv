@@ -100,7 +100,7 @@ helm install openebs-lvmlocalpv openebs-lvmlocalpv/lvm-localpv --namespace opene
 | `lvmPlugin.image.registry`| Registry for openebs-lvm-plugin image| `""`|
 | `lvmPlugin.image.repository`| Image repository for openebs-lvm-plugin| `openebs/lvm-driver`|
 | `lvmPlugin.image.pullPolicy`| Image pull policy for openebs-lvm-plugin| `IfNotPresent`|
-| `lvmPlugin.image.tag`| Image tag for openebs-lvm-plugin| `0.8.3`|
+| `lvmPlugin.image.tag`| Image tag for openebs-lvm-plugin| `0.9.0`|
 | `lvmPlugin.metricsPort`| The TCP port number used for exposing lvm-metrics | `9500`|
 | `lvmPlugin.allowedTopologies`| The comma seperated list of allowed node topologies | `kubernetes.io/hostname,`|
 | `lvmNode.driverRegistrar.image.registry`| Registry for csi-node-driver-registrar image| `k8s.gcr.io/`|
