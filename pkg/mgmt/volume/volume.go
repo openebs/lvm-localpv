@@ -18,6 +18,7 @@ package volume
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"regexp"
 	"sort"
 	"strconv"
@@ -27,6 +28,7 @@ import (
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	"github.com/openebs/lvm-localpv/pkg/lvm"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
+	runtimenew "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/cache"
@@ -49,7 +51,8 @@ func (c *VolController) syncHandler(key string) error {
 	}
 
 	// Get the Vol resource with this namespace/name
-	Vol, err := c.VolLister.LVMVolumes(namespace).Get(name)
+	klog.Infof("Getting lvmvol object name:%s, ns:%s from cache\n", name, namespace)
+	unstructuredVol, err := c.VolLister.Namespace(namespace).Get(name)
 	if k8serror.IsNotFound(err) {
 		runtime.HandleError(fmt.Errorf("lvmvolume '%s' has been deleted", key))
 		return nil
@@ -57,23 +60,123 @@ func (c *VolController) syncHandler(key string) error {
 	if err != nil {
 		return err
 	}
-	VolCopy := Vol.DeepCopy()
+	vol := &apis.LVMVolume{}
+	err = runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredVol.UnstructuredContent(), &vol)
+	//err = runtime.DefaultUnstructuredConverter.FromUnstructured(Vol.UnstructuredContent(), &vol)
+	if err != nil {
+		fmt.Printf("err %s, While converting unstructured obj to typed object\n", err.Error())
+	}
+	VolCopy := vol.DeepCopy()
 	err = c.syncVol(VolCopy)
 	return err
+}
+
+// addVol is the add event handler for LVMVolume
+func (c *VolController) addVol(obj interface{}) {
+	//Vol, ok := obj.(*apis.LVMVolume)
+	klog.Infoln("Add was called")
+	Vol, ok := c.getStructuredObject(obj)
+	if !ok {
+		runtime.HandleError(fmt.Errorf("Couldn't get Vol object %#v", obj))
+		return
+	}
+
+	if lvm.NodeID != Vol.Spec.OwnerNodeID {
+		return
+	}
+	klog.Infof("Got add event for Vol %s", Vol.Name)
+	c.enqueueVol(Vol)
+}
+
+// updateVol is the update event handler for LVMVolume
+func (c *VolController) updateVol(oldObj, newObj interface{}) {
+	klog.Infoln("Update was called")
+	//newVol, ok := newObj.(*apis.LVMVolume)
+	newVol, ok := c.getStructuredObject(newObj)
+	if !ok {
+		runtime.HandleError(fmt.Errorf("Couldn't get Vol object %#v", newVol))
+		return
+	}
+
+	if lvm.NodeID != newVol.Spec.OwnerNodeID {
+		return
+	}
+
+	if c.isDeletionCandidate(newVol) {
+		klog.Infof("Got update event for deleted Vol %s", newVol.Name)
+		klog.Infof("Deletion timestamp for the volume from UpdateVOl: %v", newVol.ObjectMeta.DeletionTimestamp)
+		c.enqueueVol(newVol)
+	}
+}
+
+// deleteVol is the delete event handler for LVMVolume
+func (c *VolController) deleteVol(obj interface{}) {
+	//Vol, ok := obj.(*apis.LVMVolume)
+	klog.Infoln("Delete was called")
+	Vol, ok := c.getStructuredObject(obj)
+	/*if !ok {
+		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
+		if !ok {
+			runtime.HandleError(fmt.Errorf("Couldn't get object from tombstone %#v", obj))
+			return
+		}
+		Vol, ok = tombstone.Obj.(*apis.LVMVolume)
+		if !ok {
+			runtime.HandleError(fmt.Errorf("Tombstone contained object that is not a lvmvolume %#v", obj))
+			return
+		}
+	}*/
+	klog.Infof("structured obj from delete event is vol: %v, ok: %v ", Vol, ok)
+	if !ok {
+		unstructuredObj, ok := obj.(*unstructured.Unstructured)
+		if ok {
+			tombStone := cache.DeletedFinalStateUnknown{}
+			err := runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredObj.UnstructuredContent(), &tombStone)
+			if err != nil {
+				runtime.HandleError(fmt.Errorf("Couldn't get object from tombstone %#v", obj))
+				return
+			}
+			Vol, ok = tombStone.Obj.(*apis.LVMVolume)
+			if !ok {
+				runtime.HandleError(fmt.Errorf("Tombstone contained object that is not a lvmvolume %#v", obj))
+				return
+			}
+		}
+	}
+
+	if lvm.NodeID != Vol.Spec.OwnerNodeID {
+		return
+	}
+
+	klog.Infof("Got delete event for Vol %s", Vol.Name)
+	c.enqueueVol(Vol)
 }
 
 // enqueueVol takes a LVMVolume resource and converts it into a namespace/name
 // string which is then put onto the work queue. This method should *not* be
 // passed resources of any type other than LVMVolume.
 func (c *VolController) enqueueVol(obj interface{}) {
-	var key string
-	var err error
-	if key, err = cache.MetaNamespaceKeyFunc(obj); err != nil {
+	key, err := cache.MetaNamespaceKeyFunc(obj)
+	if err != nil {
 		runtime.HandleError(err)
 		return
 	}
 	c.workqueue.Add(key)
+}
 
+func (c *VolController) getStructuredObject(obj interface{}) (*apis.LVMVolume, bool) {
+	unstructuredInterface, ok := obj.(*unstructured.Unstructured)
+	if ok {
+		vol := &apis.LVMVolume{}
+		err := runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredInterface.UnstructuredContent(), &vol)
+		if err != nil {
+			fmt.Printf("err %s, While converting unstructured obj to typed object\n", err.Error())
+			return nil, false
+		}
+		fmt.Println("Object from Informer cache: ", vol)
+		return vol, true
+	}
+	return nil, false
 }
 
 // synVol is the function which tries to converge to a desired state for the
@@ -88,6 +191,7 @@ func (c *VolController) syncVol(vol *apis.LVMVolume) error {
 		}
 		return err
 	}
+
 	// if status is Pending then it means we are creating the volume.
 	// Otherwise, we are just ignoring the event.
 	switch vol.Status.State {
@@ -193,64 +297,6 @@ func (c *VolController) transformLVMError(err error) *apis.VolumeError {
 		volErr.Code = apis.InsufficientCapacity
 	}
 	return volErr
-}
-
-// addVol is the add event handler for LVMVolume
-func (c *VolController) addVol(obj interface{}) {
-	Vol, ok := obj.(*apis.LVMVolume)
-	if !ok {
-		runtime.HandleError(fmt.Errorf("Couldn't get Vol object %#v", obj))
-		return
-	}
-
-	if lvm.NodeID != Vol.Spec.OwnerNodeID {
-		return
-	}
-	klog.Infof("Got add event for Vol %s", Vol.Name)
-	c.enqueueVol(Vol)
-}
-
-// updateVol is the update event handler for LVMVolume
-func (c *VolController) updateVol(oldObj, newObj interface{}) {
-
-	newVol, ok := newObj.(*apis.LVMVolume)
-	if !ok {
-		runtime.HandleError(fmt.Errorf("Couldn't get Vol object %#v", newVol))
-		return
-	}
-
-	if lvm.NodeID != newVol.Spec.OwnerNodeID {
-		return
-	}
-
-	if c.isDeletionCandidate(newVol) {
-		klog.Infof("Got update event for deleted Vol %s", newVol.Name)
-		c.enqueueVol(newVol)
-	}
-}
-
-// deleteVol is the delete event handler for LVMVolume
-func (c *VolController) deleteVol(obj interface{}) {
-	Vol, ok := obj.(*apis.LVMVolume)
-	if !ok {
-		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
-		if !ok {
-			runtime.HandleError(fmt.Errorf("Couldn't get object from tombstone %#v", obj))
-			return
-		}
-		Vol, ok = tombstone.Obj.(*apis.LVMVolume)
-		if !ok {
-			runtime.HandleError(fmt.Errorf("Tombstone contained object that is not a lvmvolume %#v", obj))
-			return
-		}
-	}
-
-	if lvm.NodeID != Vol.Spec.OwnerNodeID {
-		return
-	}
-
-	klog.Infof("Got delete event for Vol %s", Vol.Name)
-	c.enqueueVol(Vol)
 }
 
 // Run will set up the event handlers for types we are interested in, as well

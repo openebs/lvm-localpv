@@ -53,6 +53,16 @@ func Start(controllerMtx *sync.RWMutex, stopCh <-chan struct{}) error {
 		return errors.Wrap(err, "error building openebs clientset")
 	}
 
+	/*openebsClientNew, err := dynamic.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "error building dynamic client for lvmnode cr")
+	}
+
+	nodeInformer := dynamicinformer.NewFilteredDynamicSharedInformerFactory(openebsClientNew, 5*time.Minute,
+	lvm.LvmNamespace, func(options *metav1.ListOptions) {
+		options.FieldSelector = fields.OneTermEqualSelector("metadata.name", lvm.NodeID).String()
+	})*/
+
 	// setup watch only on node we are interested in.
 	nodeInformerFactory := informers.NewSharedInformerFactoryWithOptions(
 		openebsClient, 0, informers.WithNamespace(lvm.LvmNamespace),

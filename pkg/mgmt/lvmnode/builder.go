@@ -67,6 +67,11 @@ type NodeController struct {
 	ownerRef metav1.OwnerReference
 }
 
+/*func newNodeController(kubeClient kubernetes.Interface, client dynamic.Interface,
+	dynInformer dynamicinformer.DynamicSharedInformerFactory) *NodeController {
+
+}*/
+
 // NodeControllerBuilder is the builder object for controller.
 type NodeControllerBuilder struct {
 	NodeController *NodeController

@@ -23,9 +23,10 @@ import (
 
 	"time"
 
-	clientset "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset"
-	informers "github.com/openebs/lvm-localpv/pkg/generated/informer/externalversions"
-	kubeinformers "k8s.io/client-go/informers"
+	//informers "github.com/openebs/lvm-localpv/pkg/generated/informer/externalversions"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/dynamic/dynamicinformer"
+	//kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -51,14 +52,15 @@ func Start(controllerMtx *sync.RWMutex, stopCh <-chan struct{}) error {
 		return errors.Wrap(err, "error building kubernetes clientset")
 	}
 
-	// Building OpenEBS Clientset
-	openebsClient, err := clientset.NewForConfig(cfg)
+	// Building dynamic Client to watch lvmvolume cr
+	//openebsClient, err := clientset.NewForConfig(cfg)
+	openebsClient, err := dynamic.NewForConfig(cfg)
 	if err != nil {
-		return errors.Wrap(err, "error building openebs clientset")
+		return errors.Wrap(err, "error building dynamic client for lvmvolume cr")
 	}
 
-	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
-	VolInformerFactory := informers.NewSharedInformerFactory(openebsClient, time.Second*30)
+	//kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
+	VolInformerFactory := dynamicinformer.NewDynamicSharedInformerFactory(openebsClient, 5*time.Minute)
 	// Build() fn of all controllers calls AddToScheme to adds all types of this
 	// clientset into the given scheme.
 	// If multiple controllers happen to call this AddToScheme same time,
@@ -66,25 +68,23 @@ func Start(controllerMtx *sync.RWMutex, stopCh <-chan struct{}) error {
 	// This lock is used to serialize the AddToScheme call of all controllers.
 	controllerMtx.Lock()
 
-	controller, err := NewVolControllerBuilder().
-		withKubeClient(kubeClient).
-		withOpenEBSClient(openebsClient).
-		withVolSynced(VolInformerFactory).
-		withVolLister(VolInformerFactory).
-		withRecorder(kubeClient).
-		withEventHandler(VolInformerFactory).
-		withWorkqueueRateLimiting().Build()
+	/*controller, err := NewVolControllerBuilder().
+	withKubeClient(kubeClient).
+	withOpenEBSClient(openebsClient).
+	withVolSynced(VolInformerFactory).
+	withVolLister(VolInformerFactory).
+	withRecorder(kubeClient).
+	withEventHandler(VolInformerFactory).
+	withWorkqueueRateLimiting().Build()*/
 
+	controller := newVolController(kubeClient, openebsClient, VolInformerFactory)
 	// blocking call, can't use defer to release the lock
 	controllerMtx.Unlock()
 
-	if err != nil {
-		return errors.Wrapf(err, "error building controller instance")
-	}
-
-	go kubeInformerFactory.Start(stopCh)
+	klog.Info("Starting informer for lvm volume controller")
+	//go kubeInformerFactory.Start(stopCh)
 	go VolInformerFactory.Start(stopCh)
-
+	klog.Info("Starting Lvm volume controller")
 	// Threadiness defines the number of workers to be launched in Run function
 	return controller.Run(2, stopCh)
 }

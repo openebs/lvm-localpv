@@ -23,7 +23,7 @@ endif
 
 # default list of platforms for which multiarch image is built
 ifeq (${PLATFORMS}, )
-	export PLATFORMS="linux/amd64,linux/arm64"
+	export PLATFORMS="linux/amd64"
 endif
 
 # if IMG_RESULT is unspecified, by default the image will be pushed to registry
@@ -39,7 +39,7 @@ else
 endif
 
 # Name of the multiarch image for csi-driver
-DOCKERX_IMAGE_CSI_DRIVER:=${IMAGE_ORG}/lvm-driver:${TAG}
+DOCKERX_IMAGE_CSI_DRIVER:=${IMAGE_ORG}/lvm-driver-dev:${TAG}
 
 .PHONY: docker.buildx
 docker.buildx:
