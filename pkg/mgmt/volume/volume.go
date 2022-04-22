@@ -114,18 +114,6 @@ func (c *VolController) deleteVol(obj interface{}) {
 	//Vol, ok := obj.(*apis.LVMVolume)
 	klog.Infoln("Delete was called")
 	Vol, ok := c.getStructuredObject(obj)
-	/*if !ok {
-		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
-		if !ok {
-			runtime.HandleError(fmt.Errorf("Couldn't get object from tombstone %#v", obj))
-			return
-		}
-		Vol, ok = tombstone.Obj.(*apis.LVMVolume)
-		if !ok {
-			runtime.HandleError(fmt.Errorf("Tombstone contained object that is not a lvmvolume %#v", obj))
-			return
-		}
-	}*/
 	klog.Infof("structured obj from delete event is vol: %v, ok: %v ", Vol, ok)
 	if !ok {
 		unstructuredObj, ok := obj.(*unstructured.Unstructured)

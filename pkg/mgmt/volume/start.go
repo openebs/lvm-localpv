@@ -59,7 +59,6 @@ func Start(controllerMtx *sync.RWMutex, stopCh <-chan struct{}) error {
 		return errors.Wrap(err, "error building dynamic client for lvmvolume cr")
 	}
 
-	//kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
 	VolInformerFactory := dynamicinformer.NewDynamicSharedInformerFactory(openebsClient, 5*time.Minute)
 	// Build() fn of all controllers calls AddToScheme to adds all types of this
 	// clientset into the given scheme.
@@ -68,21 +67,12 @@ func Start(controllerMtx *sync.RWMutex, stopCh <-chan struct{}) error {
 	// This lock is used to serialize the AddToScheme call of all controllers.
 	controllerMtx.Lock()
 
-	/*controller, err := NewVolControllerBuilder().
-	withKubeClient(kubeClient).
-	withOpenEBSClient(openebsClient).
-	withVolSynced(VolInformerFactory).
-	withVolLister(VolInformerFactory).
-	withRecorder(kubeClient).
-	withEventHandler(VolInformerFactory).
-	withWorkqueueRateLimiting().Build()*/
-
+	//Build Lvm volume controller
 	controller := newVolController(kubeClient, openebsClient, VolInformerFactory)
 	// blocking call, can't use defer to release the lock
 	controllerMtx.Unlock()
 
 	klog.Info("Starting informer for lvm volume controller")
-	//go kubeInformerFactory.Start(stopCh)
 	go VolInformerFactory.Start(stopCh)
 	klog.Info("Starting Lvm volume controller")
 	// Threadiness defines the number of workers to be launched in Run function
