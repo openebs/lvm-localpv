@@ -38,7 +38,7 @@ const (
 
 	// pick the node which is less loaded space wise
 	// this will be the default scheduler when none provided
-	SpaceWeightedMap = "SpaceWeighted"
+	SpaceWeighted = "SpaceWeighted"
 )
 
 // getVolumeWeightedMap goes through all the volumegroup on all the nodes
@@ -138,7 +138,7 @@ func getNodeMap(schd string, vgPattern *regexp.Regexp) (map[string]int64, error)
 		return getVolumeWeightedMap(vgPattern)
 	case CapacityWeighted:
 		return getCapacityWeightedMap(vgPattern)
-	case SpaceWeightedMap:
+	case SpaceWeighted:
 		return getSpaceWeightedMap(vgPattern)
 	}
 	// return getSpaceWeightedMap(default) if not specified
