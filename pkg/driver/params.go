@@ -54,7 +54,7 @@ type SnapshotParams struct {
 // NewVolumeParams parses the input params and instantiates new VolumeParams.
 func NewVolumeParams(m map[string]string) (*VolumeParams, error) {
 	params := &VolumeParams{ // set up defaults, if any.
-		Scheduler:     CapacityWeighted,
+		Scheduler:     SpaceWeighted,
 		Shared:        "no",
 		ThinProvision: "no",
 	}
