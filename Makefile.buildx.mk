@@ -23,7 +23,7 @@ endif
 
 # default list of platforms for which multiarch image is built
 ifeq (${PLATFORMS}, )
-	export PLATFORMS="linux/amd64"
+	export PLATFORMS="linux/amd64,linux/arm64"
 endif
 
 # if IMG_RESULT is unspecified, by default the image will be pushed to registry
