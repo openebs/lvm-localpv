@@ -44,11 +44,10 @@ type VolController struct {
 	// kubeclientset is a standard kubernetes clientset
 	kubeclientset kubernetes.Interface
 
-	// clientset is a openebs custom resource package generated for custom API group.
-	//clientset clientset.Interface
+	// clientset is a interface which will be used to list lvmvolumes from Api server
 	clientset dynamic.Interface
 
-	//VolLister listers.LVMVolumeLister
+	//VolLister is used to list lvmvolumes from informer cache
 	VolLister dynamiclister.Lister
 
 	// VolSynced is used for caches sync to get populated
@@ -68,8 +67,8 @@ type VolController struct {
 
 func newVolController(kubeClient kubernetes.Interface, client dynamic.Interface,
 	dynInformer dynamicinformer.DynamicSharedInformerFactory) *VolController {
-	volInformer := dynInformer.ForResource(resource).Informer()
 
+	volInformer := dynInformer.ForResource(resource).Informer()
 	klog.Infof("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(klog.Infof)

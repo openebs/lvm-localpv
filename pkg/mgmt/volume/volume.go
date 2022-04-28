@@ -73,8 +73,6 @@ func (c *VolController) syncHandler(key string) error {
 
 // addVol is the add event handler for LVMVolume
 func (c *VolController) addVol(obj interface{}) {
-	//Vol, ok := obj.(*apis.LVMVolume)
-	klog.Infoln("Add was called")
 	Vol, ok := c.getStructuredObject(obj)
 	if !ok {
 		runtime.HandleError(fmt.Errorf("Couldn't get Vol object %#v", obj))
@@ -85,13 +83,12 @@ func (c *VolController) addVol(obj interface{}) {
 		return
 	}
 	klog.Infof("Got add event for Vol %s", Vol.Name)
+	klog.Infof("lvmvolume object to be enqueued by Add handler: %v", Vol)
 	c.enqueueVol(Vol)
 }
 
 // updateVol is the update event handler for LVMVolume
 func (c *VolController) updateVol(oldObj, newObj interface{}) {
-	klog.Infoln("Update was called")
-	//newVol, ok := newObj.(*apis.LVMVolume)
 	newVol, ok := c.getStructuredObject(newObj)
 	if !ok {
 		runtime.HandleError(fmt.Errorf("Couldn't get Vol object %#v", newVol))
@@ -111,22 +108,19 @@ func (c *VolController) updateVol(oldObj, newObj interface{}) {
 
 // deleteVol is the delete event handler for LVMVolume
 func (c *VolController) deleteVol(obj interface{}) {
-	//Vol, ok := obj.(*apis.LVMVolume)
-	klog.Infoln("Delete was called")
 	Vol, ok := c.getStructuredObject(obj)
-	klog.Infof("structured obj from delete event is vol: %v, ok: %v ", Vol, ok)
 	if !ok {
 		unstructuredObj, ok := obj.(*unstructured.Unstructured)
 		if ok {
 			tombStone := cache.DeletedFinalStateUnknown{}
 			err := runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredObj.UnstructuredContent(), &tombStone)
 			if err != nil {
-				runtime.HandleError(fmt.Errorf("Couldn't get object from tombstone %#v", obj))
+				runtime.HandleError(fmt.Errorf("couldn't get object from tombstone %#v", obj))
 				return
 			}
 			Vol, ok = tombStone.Obj.(*apis.LVMVolume)
 			if !ok {
-				runtime.HandleError(fmt.Errorf("Tombstone contained object that is not a lvmvolume %#v", obj))
+				runtime.HandleError(fmt.Errorf("tombstone contained object that is not a lvmvolume %#v", obj))
 				return
 			}
 		}
@@ -158,10 +152,9 @@ func (c *VolController) getStructuredObject(obj interface{}) (*apis.LVMVolume, b
 		vol := &apis.LVMVolume{}
 		err := runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredInterface.UnstructuredContent(), &vol)
 		if err != nil {
-			fmt.Printf("err %s, While converting unstructured obj to typed object\n", err.Error())
+			klog.Infof("err %s, While converting unstructured obj to typed object\n", err.Error())
 			return nil, false
 		}
-		fmt.Println("Object from Informer cache: ", vol)
 		return vol, true
 	}
 	return nil, false

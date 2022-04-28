@@ -18,6 +18,8 @@ package snapshot
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	runtimenew "k8s.io/apimachinery/pkg/runtime"
 	"time"
 
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
@@ -45,13 +47,19 @@ func (c *SnapController) syncHandler(key string) error {
 	}
 
 	// Get the snap resource with this namespace/name
-	snap, err := c.snapLister.LVMSnapshots(namespace).Get(name)
+	unstructuredSnap, err := c.snapLister.Namespace(namespace).Get(name)
 	if k8serror.IsNotFound(err) {
 		runtime.HandleError(fmt.Errorf("lvm snapshot '%s' has been deleted", key))
 		return nil
 	}
 	if err != nil {
 		return err
+	}
+	snap := apis.LVMSnapshot{}
+	err = runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredSnap.UnstructuredContent(), &snap)
+	//err = runtime.DefaultUnstructuredConverter.FromUnstructured(Vol.UnstructuredContent(), &vol)
+	if err != nil {
+		fmt.Printf("err %s, While converting unstructured obj to typed object\n", err.Error())
 	}
 	snapCopy := snap.DeepCopy()
 	err = c.syncSnap(snapCopy)
@@ -96,23 +104,23 @@ func (c *SnapController) syncSnap(snap *apis.LVMSnapshot) error {
 
 // addSnap is the add event handler for LVMSnapshot
 func (c *SnapController) addSnap(obj interface{}) {
-	snap, ok := obj.(*apis.LVMSnapshot)
+	snap, ok := c.getStructuredObject(obj)
 	if !ok {
-		runtime.HandleError(fmt.Errorf("Couldn't get snap object %#v", obj))
+		runtime.HandleError(fmt.Errorf("Couldn't get snaphot object %#v", obj))
 		return
 	}
 
 	if lvm.NodeID != snap.Spec.OwnerNodeID {
 		return
 	}
-	klog.Infof("Got add event for Snap %s/%s", snap.Spec.VolGroup, snap.Name)
+	klog.Infof("Got add event for Snapshot %s/%s", snap.Spec.VolGroup, snap.Name)
+	klog.Infof("lvmsnapshot object to be enqueued by Add handler: %v", snap)
 	c.enqueueSnap(snap)
 }
 
 // updateSnap is the update event handler for LVMSnapshot
 func (c *SnapController) updateSnap(oldObj, newObj interface{}) {
-
-	newSnap, ok := newObj.(*apis.LVMSnapshot)
+	newSnap, ok := c.getStructuredObject(newObj)
 	if !ok {
 		runtime.HandleError(fmt.Errorf("Couldn't get snap object %#v", newSnap))
 		return
@@ -124,23 +132,23 @@ func (c *SnapController) updateSnap(oldObj, newObj interface{}) {
 
 	// update on Snapshot CR does not make sense unless it is a deletion candidate
 	if c.isDeletionCandidate(newSnap) {
-		klog.Infof("Got update event for Snap %s/%s@%s", newSnap.Spec.VolGroup, newSnap.Labels[lvm.LVMVolKey], newSnap.Name)
+		klog.Infof("Got update event for Snapshot %s/%s@%s", newSnap.Spec.VolGroup, newSnap.Labels[lvm.LVMVolKey], newSnap.Name)
 		c.enqueueSnap(newSnap)
 	}
 }
 
 // deleteSnap is the delete event handler for LVMSnapshot
 func (c *SnapController) deleteSnap(obj interface{}) {
-	snap, ok := obj.(*apis.LVMSnapshot)
+	snap, ok := c.getStructuredObject(obj)
 	if !ok {
 		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
 		if !ok {
-			runtime.HandleError(fmt.Errorf("Couldn't get object from tombstone %#v", obj))
+			runtime.HandleError(fmt.Errorf("couldn't get object from tombstone %#v", obj))
 			return
 		}
 		snap, ok = tombstone.Obj.(*apis.LVMSnapshot)
 		if !ok {
-			runtime.HandleError(fmt.Errorf("Tombstone contained object that is not a lvmsnap %#v", obj))
+			runtime.HandleError(fmt.Errorf("tombstone contained object that is not a lvmsnap %#v", obj))
 			return
 		}
 	}
@@ -149,8 +157,22 @@ func (c *SnapController) deleteSnap(obj interface{}) {
 		return
 	}
 
-	klog.Infof("Got delete event for Snap %s/%s@%s", snap.Spec.VolGroup, snap.Labels[lvm.LVMVolKey], snap.Name)
+	klog.Infof("Got delete event for Snaphot %s/%s@%s", snap.Spec.VolGroup, snap.Labels[lvm.LVMVolKey], snap.Name)
 	c.enqueueSnap(snap)
+}
+
+func (c *SnapController) getStructuredObject(obj interface{}) (*apis.LVMSnapshot, bool) {
+	unstructuredInterface, ok := obj.(*unstructured.Unstructured)
+	if ok {
+		snap := &apis.LVMSnapshot{}
+		err := runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredInterface.UnstructuredContent(), &snap)
+		if err != nil {
+			fmt.Printf("err %s, While converting unstructured obj to typed object\n", err.Error())
+			return nil, false
+		}
+		return snap, true
+	}
+	return nil, false
 }
 
 // Run will set up the event handlers for types we are interested in, as well

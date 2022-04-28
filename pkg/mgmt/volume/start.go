@@ -17,16 +17,12 @@ limitations under the License.
 package volume
 
 import (
-	"sync"
-
 	"github.com/pkg/errors"
-
-	"time"
-
-	//informers "github.com/openebs/lvm-localpv/pkg/generated/informer/externalversions"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
-	//kubeinformers "k8s.io/client-go/informers"
+	"sync"
+	"time"
+
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -53,7 +49,6 @@ func Start(controllerMtx *sync.RWMutex, stopCh <-chan struct{}) error {
 	}
 
 	// Building dynamic Client to watch lvmvolume cr
-	//openebsClient, err := clientset.NewForConfig(cfg)
 	openebsClient, err := dynamic.NewForConfig(cfg)
 	if err != nil {
 		return errors.Wrap(err, "error building dynamic client for lvmvolume cr")

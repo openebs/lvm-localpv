@@ -49,7 +49,7 @@ EXTERNAL_TOOLS=\
 # By default the organization name is `openebs`.
 
 ifeq (${IMAGE_ORG}, )
-  IMAGE_ORG="abhilashshetty04"
+  IMAGE_ORG="openebs"
   export IMAGE_ORG
 endif
 

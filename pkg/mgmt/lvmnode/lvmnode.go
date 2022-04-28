@@ -18,6 +18,8 @@ package lvmnode
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	runtimenew "k8s.io/apimachinery/pkg/runtime"
 	"reflect"
 	"time"
 
@@ -54,13 +56,19 @@ func (c *NodeController) syncHandler(key string) error {
 // LVMNode
 func (c *NodeController) syncNode(namespace string, name string) error {
 	// Get the node resource with this namespace/name
-	cachedNode, err := c.NodeLister.LVMNodes(namespace).Get(name)
+	cachedNode, err := c.NodeLister.Namespace(namespace).Get(name)
 	if err != nil && !k8serror.IsNotFound(err) {
 		return err
 	}
+
+	nodeStruct, ok := c.getStructuredObject(cachedNode)
+	if !ok {
+		return err
+	}
+
 	var node *apis.LVMNode
 	if cachedNode != nil {
-		node = cachedNode.DeepCopy()
+		node = nodeStruct.DeepCopy()
 	}
 
 	vgs, err := c.listLVMVolumeGroup()
@@ -116,9 +124,23 @@ func (c *NodeController) syncNode(namespace string, name string) error {
 	return nil
 }
 
+func (c *NodeController) getStructuredObject(obj interface{}) (*apis.LVMNode, bool) {
+	unstructuredInterface, ok := obj.(*unstructured.Unstructured)
+	if ok {
+		node := &apis.LVMNode{}
+		err := runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredInterface.UnstructuredContent(), &node)
+		if err != nil {
+			fmt.Printf("err %s, While converting unstructured obj to typed object\n", err.Error())
+			return nil, false
+		}
+		return node, true
+	}
+	return nil, false
+}
+
 // addNode is the add event handler for LVMNode
 func (c *NodeController) addNode(obj interface{}) {
-	node, ok := obj.(*apis.LVMNode)
+	node, ok := c.getStructuredObject(obj)
 	if !ok {
 		runtime.HandleError(fmt.Errorf("Couldn't get node object %#v", obj))
 		return
@@ -130,7 +152,7 @@ func (c *NodeController) addNode(obj interface{}) {
 
 // updateNode is the update event handler for LVMNode
 func (c *NodeController) updateNode(oldObj, newObj interface{}) {
-	newNode, ok := newObj.(*apis.LVMNode)
+	newNode, ok := c.getStructuredObject(newObj)
 	if !ok {
 		runtime.HandleError(fmt.Errorf("Couldn't get node object %#v", newNode))
 		return
@@ -142,17 +164,21 @@ func (c *NodeController) updateNode(oldObj, newObj interface{}) {
 
 // deleteNode is the delete event handler for LVMNode
 func (c *NodeController) deleteNode(obj interface{}) {
-	node, ok := obj.(*apis.LVMNode)
+	node, ok := c.getStructuredObject(obj)
 	if !ok {
-		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
-		if !ok {
-			runtime.HandleError(fmt.Errorf("Couldn't get object from tombstone %#v", obj))
-			return
-		}
-		node, ok = tombstone.Obj.(*apis.LVMNode)
-		if !ok {
-			runtime.HandleError(fmt.Errorf("Tombstone contained object that is not a LVMNode %#v", obj))
-			return
+		unstructuredObj, ok := obj.(*unstructured.Unstructured)
+		if ok {
+			tombStone := cache.DeletedFinalStateUnknown{}
+			err := runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredObj.UnstructuredContent(), &tombStone)
+			if err != nil {
+				runtime.HandleError(fmt.Errorf("couldn't get object from tombstone %#v", obj))
+				return
+			}
+			node, ok = tombStone.Obj.(*apis.LVMNode)
+			if !ok {
+				runtime.HandleError(fmt.Errorf("tombstone contained object that is not a lvmvolume %#v", obj))
+				return
+			}
 		}
 	}
 

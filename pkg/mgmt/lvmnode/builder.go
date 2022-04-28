@@ -17,12 +17,12 @@
 package lvmnode
 
 import (
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/dynamic/dynamicinformer"
+	"k8s.io/client-go/dynamic/dynamiclister"
 	"time"
 
-	clientset "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset"
-	openebsScheme "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset/scheme"
-	informers "github.com/openebs/lvm-localpv/pkg/generated/informer/externalversions"
-	listers "github.com/openebs/lvm-localpv/pkg/generated/lister/lvm/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -36,15 +36,23 @@ import (
 
 const controllerAgentName = "lvmnode-controller"
 
+var resource = schema.GroupVersionResource{
+	Group:    "local.openebs.io",
+	Version:  "v1alpha1",
+	Resource: "lvmnodes",
+}
+
 // NodeController is the controller implementation for lvm node resources
+
 type NodeController struct {
 	// kubeclientset is a standard kubernetes clientset
 	kubeclientset kubernetes.Interface
 
-	// clientset is a openebs custom resource package generated for custom API group.
-	clientset clientset.Interface
+	// clientset is a interface which will be used to list lvmnode from Api server
+	clientset dynamic.Interface
 
-	NodeLister listers.LVMNodeLister
+	//NodeLister is used to list lvmnode from informer cache
+	NodeLister dynamiclister.Lister
 
 	// NodeSynced is used for caches sync to get populated
 	NodeSynced cache.InformerSynced
@@ -67,96 +75,29 @@ type NodeController struct {
 	ownerRef metav1.OwnerReference
 }
 
-/*func newNodeController(kubeClient kubernetes.Interface, client dynamic.Interface,
-	dynInformer dynamicinformer.DynamicSharedInformerFactory) *NodeController {
-
-}*/
-
-// NodeControllerBuilder is the builder object for controller.
-type NodeControllerBuilder struct {
-	NodeController *NodeController
-}
-
-// NewNodeControllerBuilder returns an empty instance of controller builder.
-func NewNodeControllerBuilder() *NodeControllerBuilder {
-	return &NodeControllerBuilder{
-		NodeController: &NodeController{},
-	}
-}
-
-// withKubeClient fills kube client to controller object.
-func (cb *NodeControllerBuilder) withKubeClient(ks kubernetes.Interface) *NodeControllerBuilder {
-	cb.NodeController.kubeclientset = ks
-	return cb
-}
-
-// withOpenEBSClient fills openebs client to controller object.
-func (cb *NodeControllerBuilder) withOpenEBSClient(cs clientset.Interface) *NodeControllerBuilder {
-	cb.NodeController.clientset = cs
-	return cb
-}
-
-// withNodeLister fills Node lister to controller object.
-func (cb *NodeControllerBuilder) withNodeLister(sl informers.SharedInformerFactory) *NodeControllerBuilder {
-	NodeInformer := sl.Local().V1alpha1().LVMNodes()
-	cb.NodeController.NodeLister = NodeInformer.Lister()
-	return cb
-}
-
-// withNodeSynced adds object sync information in cache to controller object.
-func (cb *NodeControllerBuilder) withNodeSynced(sl informers.SharedInformerFactory) *NodeControllerBuilder {
-	NodeInformer := sl.Local().V1alpha1().LVMNodes()
-	cb.NodeController.NodeSynced = NodeInformer.Informer().HasSynced
-	return cb
-}
-
-// withWorkqueue adds workqueue to controller object.
-func (cb *NodeControllerBuilder) withWorkqueueRateLimiting() *NodeControllerBuilder {
-	cb.NodeController.workqueue = workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Node")
-	return cb
-}
-
-// withRecorder adds recorder to controller object.
-func (cb *NodeControllerBuilder) withRecorder(ks kubernetes.Interface) *NodeControllerBuilder {
+func newNodeController(kubeClient kubernetes.Interface, client dynamic.Interface,
+	dynInformer dynamicinformer.DynamicSharedInformerFactory, ownerRef metav1.OwnerReference) *NodeController {
+	nodeInformer := dynInformer.ForResource(resource).Informer()
 	klog.Infof("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(klog.Infof)
-	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: ks.CoreV1().Events("")})
+	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
-	cb.NodeController.recorder = recorder
-	return cb
-}
-
-// withEventHandler adds event handlers controller object.
-func (cb *NodeControllerBuilder) withEventHandler(cvcInformerFactory informers.SharedInformerFactory) *NodeControllerBuilder {
-	cvcInformer := cvcInformerFactory.Local().V1alpha1().LVMNodes()
-	// Set up an event handler for when lvm node vg change.
-	// Note: rather than setting up the resync period at informer level,
-	// we are controlling the syncing based on pollInternal. See
-	// NodeController#Run func for more details.
-	cvcInformer.Informer().AddEventHandlerWithResyncPeriod(cache.ResourceEventHandlerFuncs{
-		AddFunc:    cb.NodeController.addNode,
-		UpdateFunc: cb.NodeController.updateNode,
-		DeleteFunc: cb.NodeController.deleteNode,
-	}, 0)
-	return cb
-}
-
-func (cb *NodeControllerBuilder) withPollInterval(interval time.Duration) *NodeControllerBuilder {
-	cb.NodeController.pollInterval = interval
-	return cb
-}
-
-func (cb *NodeControllerBuilder) withOwnerReference(ownerRef metav1.OwnerReference) *NodeControllerBuilder {
-	cb.NodeController.ownerRef = ownerRef
-	return cb
-}
-
-// Build returns a controller instance.
-func (cb *NodeControllerBuilder) Build() (*NodeController, error) {
-	err := openebsScheme.AddToScheme(scheme.Scheme)
-	if err != nil {
-		return nil, err
+	klog.Infof("Creating lvm node controller object")
+	nodeContrller := &NodeController{
+		kubeclientset: kubeClient,
+		clientset:     client,
+		NodeLister:    dynamiclister.New(nodeInformer.GetIndexer(), resource),
+		NodeSynced:    nodeInformer.HasSynced,
+		workqueue:     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Node"),
+		recorder:      recorder,
+		pollInterval:  60 * time.Second,
+		ownerRef:      ownerRef,
 	}
-	return cb.NodeController, nil
+	nodeInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    nodeContrller.addNode,
+		UpdateFunc: nodeContrller.updateNode,
+		DeleteFunc: nodeContrller.deleteNode,
+	})
+	return nodeContrller
 }

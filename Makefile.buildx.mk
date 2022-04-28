@@ -39,7 +39,7 @@ else
 endif
 
 # Name of the multiarch image for csi-driver
-DOCKERX_IMAGE_CSI_DRIVER:=${IMAGE_ORG}/lvm-driver-dev:${TAG}
+DOCKERX_IMAGE_CSI_DRIVER:=${IMAGE_ORG}/lvm-driver:${TAG}
 
 .PHONY: docker.buildx
 docker.buildx:
