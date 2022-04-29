@@ -61,13 +61,12 @@ func (c *NodeController) syncNode(namespace string, name string) error {
 		return err
 	}
 
-	nodeStruct, ok := c.getStructuredObject(cachedNode)
-	if !ok {
-		return err
-	}
-
 	var node *apis.LVMNode
 	if cachedNode != nil {
+		nodeStruct, ok := c.getStructuredObject(cachedNode)
+		if !ok {
+			return err
+		}
 		node = nodeStruct.DeepCopy()
 	}
 
