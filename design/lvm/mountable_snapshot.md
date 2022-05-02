@@ -188,4 +188,4 @@ All testcases mentioned in [Test Plan](#test-plan) section need to be automated
 ## Drawbacks
 
 - As far as I understand it, normally when creating a PersistentVolumeClaim with a snapshot as datasource it would clone the Snapshot into an actual volume, so we'd be diverging from this behaviour.
-  - We could use an annotation to specify the behaviour that we are implementing here so that the clone behaviour can be added at a later time?
+  - We could use an annotation (e.g. `local.csi.openebs.io/volume-type: mounted-snapshot`) applied to the PVC to specify the behaviour that we are implementing here. In the `CreateVolume` function of the [controller.go](../../pkg/driver/controller.go) we could then check whether this annotation is set and only then mount the snapshot. When the annotation is not set or set to `local.csi.openebs.io/volume-type: clone` the code would create a clone instead (which for now would `return nil, status.Error(codes.Unimplemented, "")`) until someone implements the logic to clone a snapshot. 
