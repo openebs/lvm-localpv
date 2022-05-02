@@ -162,6 +162,7 @@ The changes below are the primary modules that need to be modified, however, the
 
 - In the [controller.go](../../pkg/driver/controller.go) the code path in the `CreateVolume` function for the `controller` type that occurs when contentSource.GetSnapshot() is not `nil` needs to be implemented. When this path is triggered it should return the correct `volName`, `topology` and `cntx`.  
 - In the [agent.go](../../pkg/driver/agent.go) the `NodePublishVolume` function for the `node` type needs to be changed such that it checks whether the `volName` is a snapshot and if so mount the snapshot to the specified location.
+  - Finding the snapshot that is to be used can be accomplished by taking and VolumeId and removing the `snapshot-` prefix.
   - This also needs to change the write access to `rw` by using the lvchange command when the PersistentVolumeClaim specified the AccessMode as ReadWrite. Note that we do not need to change it back to read only, since we can limit the permissions of future mounts to read only by using the `MountOptions`. 
     - Alternatively we could make the Snapshots writeable by default
 - In the [agent.go](../../pkg/driver/agent.go) the `NodeUnpublishVolume` function for the `node` type needs to be changed such that it unmounts the snapshot.
