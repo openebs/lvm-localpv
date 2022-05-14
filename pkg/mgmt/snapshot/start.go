@@ -17,17 +17,15 @@ limitations under the License.
 package snapshot
 
 import (
-	"sync"
-
 	"github.com/pkg/errors"
-	"time"
-
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
+	"sync"
+	"time"
 )
 
 var (
@@ -67,7 +65,7 @@ func Start(controllerMtx *sync.RWMutex, stopCh <-chan struct{}) error {
 
 	// blocking call, can't use defer to release the lock
 	controllerMtx.Unlock()
-	
+
 	klog.Info("Starting informer for lvm snapshot controller")
 	go snapInformerFactory.Start(stopCh)
 	klog.Info("Starting Lvm snapshot controller")

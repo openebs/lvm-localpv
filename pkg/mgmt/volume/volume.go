@@ -18,7 +18,6 @@ package volume
 
 import (
 	"fmt"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"regexp"
 	"sort"
 	"strconv"
@@ -28,6 +27,7 @@ import (
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	"github.com/openebs/lvm-localpv/pkg/lvm"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	runtimenew "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -64,7 +64,7 @@ func (c *VolController) syncHandler(key string) error {
 	err = runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredVol.UnstructuredContent(), &vol)
 	//err = runtime.DefaultUnstructuredConverter.FromUnstructured(Vol.UnstructuredContent(), &vol)
 	if err != nil {
-		fmt.Printf("err %s, While converting unstructured obj to typed object\n", err.Error())
+		klog.Infof("err %s, While converting unstructured obj to typed object\n", err.Error())
 	}
 	VolCopy := vol.DeepCopy()
 	err = c.syncVol(VolCopy)

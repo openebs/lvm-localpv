@@ -18,17 +18,17 @@ package snapshot
 
 import (
 	"fmt"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	runtimenew "k8s.io/apimachinery/pkg/runtime"
-	"time"
 
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	lvm "github.com/openebs/lvm-localpv/pkg/lvm"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	runtimenew "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog"
+	"time"
 )
 
 // isDeletionCandidate checks if a lvm snapshot is a deletion candidate.

@@ -17,12 +17,12 @@ limitations under the License.
 package volume
 
 import (
-	"github.com/pkg/errors"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/dynamic/dynamicinformer"
 	"sync"
 	"time"
 
+	"github.com/pkg/errors"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
