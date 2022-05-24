@@ -33,10 +33,16 @@ import (
 
 const controllerAgentName = "lvmvolume-controller"
 
+const (
+	GroupOpenebsIO  = "local.openebs.io"
+	VersionV1alpha1 = "v1alpha1"
+	Resource        = "lvmvolumes"
+)
+
 var resource = schema.GroupVersionResource{
-	Group:    "local.openebs.io",
-	Version:  "v1alpha1",
-	Resource: "lvmvolumes",
+	Group:    GroupOpenebsIO,
+	Version:  VersionV1alpha1,
+	Resource: Resource,
 }
 
 // VolController is the controller implementation for volume resources

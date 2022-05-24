@@ -36,10 +36,16 @@ import (
 
 const controllerAgentName = "lvmnode-controller"
 
+const (
+	GroupOpenebsIO  = "local.openebs.io"
+	VersionV1alpha1 = "v1alpha1"
+	Resource        = "lvmnodes"
+)
+
 var resource = schema.GroupVersionResource{
-	Group:    "local.openebs.io",
-	Version:  "v1alpha1",
-	Resource: "lvmnodes",
+	Group:    GroupOpenebsIO,
+	Version:  VersionV1alpha1,
+	Resource: Resource,
 }
 
 // NodeController is the controller implementation for lvm node resources

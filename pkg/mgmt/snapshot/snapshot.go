@@ -57,7 +57,6 @@ func (c *SnapController) syncHandler(key string) error {
 	}
 	snap := apis.LVMSnapshot{}
 	err = runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredSnap.UnstructuredContent(), &snap)
-	//err = runtime.DefaultUnstructuredConverter.FromUnstructured(Vol.UnstructuredContent(), &vol)
 	if err != nil {
 		fmt.Printf("err %s, While converting unstructured obj to typed object\n", err.Error())
 	}
@@ -114,7 +113,6 @@ func (c *SnapController) addSnap(obj interface{}) {
 		return
 	}
 	klog.Infof("Got add event for Snapshot %s/%s", snap.Spec.VolGroup, snap.Name)
-	klog.Infof("lvmsnapshot object to be enqueued by Add handler: %v", snap)
 	c.enqueueSnap(snap)
 }
 
@@ -141,14 +139,21 @@ func (c *SnapController) updateSnap(oldObj, newObj interface{}) {
 func (c *SnapController) deleteSnap(obj interface{}) {
 	snap, ok := c.getStructuredObject(obj)
 	if !ok {
-		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
-		if !ok {
-			runtime.HandleError(fmt.Errorf("couldn't get object from tombstone %#v", obj))
-			return
-		}
-		snap, ok = tombstone.Obj.(*apis.LVMSnapshot)
-		if !ok {
-			runtime.HandleError(fmt.Errorf("tombstone contained object that is not a lvmsnap %#v", obj))
+		unstructuredObj, ok := obj.(*unstructured.Unstructured)
+		if ok {
+			tombStone := cache.DeletedFinalStateUnknown{}
+			err := runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredObj.UnstructuredContent(), &tombStone)
+			if err != nil {
+				runtime.HandleError(fmt.Errorf("couldn't get object from tombstone %#v", obj))
+				return
+			}
+			snap, ok = tombStone.Obj.(*apis.LVMSnapshot)
+			if !ok {
+				runtime.HandleError(fmt.Errorf("tombstone contained object that is not a lvmvolume %#v", obj))
+				return
+			}
+		} else {
+			runtime.HandleError(fmt.Errorf("couldnt type assert obj: %#v to unstructured obj", obj))
 			return
 		}
 	}
@@ -172,6 +177,7 @@ func (c *SnapController) getStructuredObject(obj interface{}) (*apis.LVMSnapshot
 		}
 		return snap, true
 	}
+	runtime.HandleError(fmt.Errorf("couldnt type assert obj: %#v to unstructured obj", obj))
 	return nil, false
 }
 

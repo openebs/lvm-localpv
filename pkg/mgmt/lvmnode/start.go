@@ -58,12 +58,6 @@ func Start(controllerMtx *sync.RWMutex, stopCh <-chan struct{}) error {
 			options.FieldSelector = fields.OneTermEqualSelector("metadata.name", lvm.NodeID).String()
 		})
 
-	/*nodeInformerFactory := informers.NewSharedInformerFactoryWithOptions(
-	openebsClient, 0, informers.WithNamespace(lvm.LvmNamespace),
-	informers.WithTweakListOptions(func(options *metav1.ListOptions) {
-		options.FieldSelector = fields.OneTermEqualSelector("metadata.name", lvm.NodeID).String()
-	}))*/
-
 	k8sNode, err := kubeClient.CoreV1().Nodes().Get(context.TODO(), lvm.NodeID, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "fetch k8s node %s", lvm.NodeID)
@@ -89,17 +83,6 @@ func Start(controllerMtx *sync.RWMutex, stopCh <-chan struct{}) error {
 	controllerMtx.Lock()
 
 	nodeCtrller := newNodeController(kubeClient, openebsClientNew, nodeInformerFactory, ownerRef)
-
-	/*controller, err := NewNodeControllerBuilder().
-	withKubeClient(kubeClient).
-	withOpenEBSClient(openebsClient).
-	withNodeSynced(nodeInformerFactory).
-	withNodeLister(nodeInformerFactory).
-	withRecorder(kubeClient).
-	withEventHandler(nodeInformerFactory).
-	withPollInterval(60 * time.Second).
-	withOwnerReference(ownerRef).
-	withWorkqueueRateLimiting().Build()*/
 
 	// blocking call, can't use defer to release the lock
 	controllerMtx.Unlock()

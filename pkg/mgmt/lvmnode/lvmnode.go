@@ -65,7 +65,7 @@ func (c *NodeController) syncNode(namespace string, name string) error {
 	if cachedNode != nil {
 		nodeStruct, ok := c.getStructuredObject(cachedNode)
 		if !ok {
-			return err
+			return fmt.Errorf("couldn't get node object %#v", cachedNode)
 		}
 		node = nodeStruct.DeepCopy()
 	}
@@ -134,6 +134,7 @@ func (c *NodeController) getStructuredObject(obj interface{}) (*apis.LVMNode, bo
 		}
 		return node, true
 	}
+	runtime.HandleError(fmt.Errorf("couldnt type assert obj: %#v to unstructured obj", obj))
 	return nil, false
 }
 
@@ -178,6 +179,9 @@ func (c *NodeController) deleteNode(obj interface{}) {
 				runtime.HandleError(fmt.Errorf("tombstone contained object that is not a lvmvolume %#v", obj))
 				return
 			}
+		} else {
+			runtime.HandleError(fmt.Errorf("couldnt type assert obj: %#v to unstructured obj", obj))
+			return
 		}
 	}
 

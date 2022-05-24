@@ -62,7 +62,6 @@ func (c *VolController) syncHandler(key string) error {
 	}
 	vol := &apis.LVMVolume{}
 	err = runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredVol.UnstructuredContent(), &vol)
-	//err = runtime.DefaultUnstructuredConverter.FromUnstructured(Vol.UnstructuredContent(), &vol)
 	if err != nil {
 		klog.Infof("err %s, While converting unstructured obj to typed object\n", err.Error())
 	}
@@ -100,8 +99,7 @@ func (c *VolController) updateVol(oldObj, newObj interface{}) {
 	}
 
 	if c.isDeletionCandidate(newVol) {
-		klog.Infof("Got update event for deleted Vol %s", newVol.Name)
-		klog.Infof("Deletion timestamp for the volume from UpdateVOl: %v", newVol.ObjectMeta.DeletionTimestamp)
+		klog.Infof("Got update event for deleted Vol %s, Deletion timestamp ", newVol.Name, newVol.ObjectMeta.DeletionTimestamp)
 		c.enqueueVol(newVol)
 	}
 }
@@ -123,6 +121,9 @@ func (c *VolController) deleteVol(obj interface{}) {
 				runtime.HandleError(fmt.Errorf("tombstone contained object that is not a lvmvolume %#v", obj))
 				return
 			}
+		} else {
+			runtime.HandleError(fmt.Errorf("couldnt type assert obj: %#v to unstructured obj", obj))
+			return
 		}
 	}
 
@@ -157,6 +158,7 @@ func (c *VolController) getStructuredObject(obj interface{}) (*apis.LVMVolume, b
 		}
 		return vol, true
 	}
+	runtime.HandleError(fmt.Errorf("couldnt type assert obj: %#v to unstructured obj", obj))
 	return nil, false
 }
 
