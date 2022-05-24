@@ -99,7 +99,7 @@ func (c *VolController) updateVol(oldObj, newObj interface{}) {
 	}
 
 	if c.isDeletionCandidate(newVol) {
-		klog.Infof("Got update event for deleted Vol %s, Deletion timestamp ", newVol.Name, newVol.ObjectMeta.DeletionTimestamp)
+		klog.Infof("Got update event for deleted Vol %s, Deletion timestamp %s", newVol.Name, newVol.ObjectMeta.DeletionTimestamp)
 		c.enqueueVol(newVol)
 	}
 }
