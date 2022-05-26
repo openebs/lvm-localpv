@@ -17,14 +17,12 @@
 package lvmnode
 
 import (
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/dynamic/dynamiclister"
-	"time"
-
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -32,6 +30,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog"
+	"time"
 )
 
 const controllerAgentName = "lvmnode-controller"
@@ -81,6 +80,7 @@ type NodeController struct {
 	ownerRef metav1.OwnerReference
 }
 
+//This function returns controller object with all required keys set to watch over lvmnode object
 func newNodeController(kubeClient kubernetes.Interface, client dynamic.Interface,
 	dynInformer dynamicinformer.DynamicSharedInformerFactory, ownerRef metav1.OwnerReference) *NodeController {
 	nodeInformer := dynInformer.ForResource(resource).Informer()

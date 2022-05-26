@@ -71,6 +71,7 @@ type VolController struct {
 	recorder record.EventRecorder
 }
 
+//This function returns controller object with all required keys set to watch over lvmvolume object
 func newVolController(kubeClient kubernetes.Interface, client dynamic.Interface,
 	dynInformer dynamicinformer.DynamicSharedInformerFactory) *VolController {
 

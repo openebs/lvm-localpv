@@ -71,6 +71,7 @@ type SnapController struct {
 	recorder record.EventRecorder
 }
 
+//This function returns controller object with all required keys set to watch over lvmsnapshot object
 func newSnapController(kubeClient kubernetes.Interface, client dynamic.Interface,
 	dynInformer dynamicinformer.DynamicSharedInformerFactory) *SnapController {
 	snapInformer := dynInformer.ForResource(resource).Informer()
