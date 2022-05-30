@@ -33,12 +33,11 @@ import (
 	"time"
 )
 
-const controllerAgentName = "lvmnode-controller"
-
 const (
-	GroupOpenebsIO  = "local.openebs.io"
-	VersionV1alpha1 = "v1alpha1"
-	Resource        = "lvmnodes"
+	controllerAgentName = "lvmnode-controller"
+	GroupOpenebsIO      = "local.openebs.io"
+	VersionV1alpha1     = "v1alpha1"
+	Resource            = "lvmnodes"
 )
 
 var resource = schema.GroupVersionResource{

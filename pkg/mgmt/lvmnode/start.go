@@ -82,7 +82,7 @@ func Start(controllerMtx *sync.RWMutex, stopCh <-chan struct{}) error {
 	// This lock is used to serialize the AddToScheme call of all controllers.
 	controllerMtx.Lock()
 
-	nodeCtrller := newNodeController(kubeClient, openebsClientNew, nodeInformerFactory, ownerRef)
+	controller := newNodeController(kubeClient, openebsClientNew, nodeInformerFactory, ownerRef)
 
 	// blocking call, can't use defer to release the lock
 	controllerMtx.Unlock()
@@ -96,5 +96,5 @@ func Start(controllerMtx *sync.RWMutex, stopCh <-chan struct{}) error {
 
 	klog.Info("Starting Lvm node controller")
 	// Threadiness defines the number of workers to be launched in Run function
-	return nodeCtrller.Run(1, stopCh)
+	return controller.Run(1, stopCh)
 }

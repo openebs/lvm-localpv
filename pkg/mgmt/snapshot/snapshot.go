@@ -18,6 +18,7 @@ package snapshot
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	lvm "github.com/openebs/lvm-localpv/pkg/lvm"
@@ -140,20 +141,19 @@ func (c *SnapController) deleteSnap(obj interface{}) {
 	snap, ok := c.getStructuredObject(obj)
 	if !ok {
 		unstructuredObj, ok := obj.(*unstructured.Unstructured)
-		if ok {
-			tombStone := cache.DeletedFinalStateUnknown{}
-			err := runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredObj.UnstructuredContent(), &tombStone)
-			if err != nil {
-				runtime.HandleError(fmt.Errorf("couldn't get object from tombstone %#v", obj))
-				return
-			}
-			snap, ok = tombStone.Obj.(*apis.LVMSnapshot)
-			if !ok {
-				runtime.HandleError(fmt.Errorf("tombstone contained object that is not a lvmvolume %#v", obj))
-				return
-			}
-		} else {
+		if !ok {
 			runtime.HandleError(fmt.Errorf("couldnt type assert obj: %#v to unstructured obj", obj))
+			return
+		}
+		tombStone := cache.DeletedFinalStateUnknown{}
+		err := runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredObj.UnstructuredContent(), &tombStone)
+		if err != nil {
+			runtime.HandleError(fmt.Errorf("couldn't get object from tombstone %#v", obj))
+			return
+		}
+		snap, ok = tombStone.Obj.(*apis.LVMSnapshot)
+		if !ok {
+			runtime.HandleError(fmt.Errorf("tombstone contained object that is not a lvmsnapshot %#v", obj))
 			return
 		}
 	}
@@ -169,17 +169,18 @@ func (c *SnapController) deleteSnap(obj interface{}) {
 //Obj from queue is not readily in lvmsnapshot type. This function would convert obj into lvmsnapshot type.
 func (c *SnapController) getStructuredObject(obj interface{}) (*apis.LVMSnapshot, bool) {
 	unstructuredInterface, ok := obj.(*unstructured.Unstructured)
-	if ok {
-		snap := &apis.LVMSnapshot{}
-		err := runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredInterface.UnstructuredContent(), &snap)
-		if err != nil {
-			fmt.Printf("err %s, While converting unstructured obj to typed object\n", err.Error())
-			return nil, false
-		}
-		return snap, true
+	if !ok {
+		runtime.HandleError(errors.Errorf("couldnt type assert obj: %#v to unstructured obj", obj))
+		return nil, false
 	}
-	runtime.HandleError(fmt.Errorf("couldnt type assert obj: %#v to unstructured obj", obj))
-	return nil, false
+	snap := &apis.LVMSnapshot{}
+	err := runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredInterface.UnstructuredContent(), &snap)
+	if err != nil {
+		fmt.Printf("err %s, While converting unstructured obj to typed object\n", err.Error())
+		return nil, false
+	}
+	return snap, true
+
 }
 
 // Run will set up the event handlers for types we are interested in, as well
@@ -250,7 +251,7 @@ func (c *SnapController) processNextWorkItem() bool {
 			// Forget here else we'd go into a loop of attempting to
 			// process a work item that is invalid.
 			c.workqueue.Forget(obj)
-			runtime.HandleError(fmt.Errorf("expected string in workqueue but got %#v", obj))
+			runtime.HandleError(errors.Errorf("expected string in workqueue but got %#v", obj))
 			return nil
 		}
 		// Run the syncHandler, passing it the namespace/name string of the
@@ -258,7 +259,7 @@ func (c *SnapController) processNextWorkItem() bool {
 		if err := c.syncHandler(key); err != nil {
 			// Put the item back on the workqueue to handle any transient errors.
 			c.workqueue.AddRateLimited(key)
-			return fmt.Errorf("error syncing '%s': %s, requeuing", key, err.Error())
+			return errors.Errorf("error syncing '%s': %s, requeuing", key, err.Error())
 		}
 		// Finally, if no error occurs we Forget this item so it does not
 		// get queued again until another change happens.

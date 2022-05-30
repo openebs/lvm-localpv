@@ -31,12 +31,11 @@ import (
 	"k8s.io/klog"
 )
 
-const controllerAgentName = "lvmvolume-controller"
-
 const (
-	GroupOpenebsIO  = "local.openebs.io"
-	VersionV1alpha1 = "v1alpha1"
-	Resource        = "lvmvolumes"
+	controllerAgentName = "lvmvolume-controller"
+	GroupOpenebsIO      = "local.openebs.io"
+	VersionV1alpha1     = "v1alpha1"
+	Resource            = "lvmvolumes"
 )
 
 var resource = schema.GroupVersionResource{

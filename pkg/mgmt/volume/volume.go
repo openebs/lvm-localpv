@@ -18,6 +18,7 @@ package volume
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"regexp"
 	"sort"
 	"strconv"
@@ -109,20 +110,19 @@ func (c *VolController) deleteVol(obj interface{}) {
 	Vol, ok := c.getStructuredObject(obj)
 	if !ok {
 		unstructuredObj, ok := obj.(*unstructured.Unstructured)
-		if ok {
-			tombStone := cache.DeletedFinalStateUnknown{}
-			err := runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredObj.UnstructuredContent(), &tombStone)
-			if err != nil {
-				runtime.HandleError(fmt.Errorf("couldn't get object from tombstone %#v", obj))
-				return
-			}
-			Vol, ok = tombStone.Obj.(*apis.LVMVolume)
-			if !ok {
-				runtime.HandleError(fmt.Errorf("tombstone contained object that is not a lvmvolume %#v", obj))
-				return
-			}
-		} else {
+		if !ok {
 			runtime.HandleError(fmt.Errorf("couldnt type assert obj: %#v to unstructured obj", obj))
+			return
+		}
+		tombStone := cache.DeletedFinalStateUnknown{}
+		err := runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredObj.UnstructuredContent(), &tombStone)
+		if err != nil {
+			runtime.HandleError(fmt.Errorf("couldn't get object from tombstone %#v", obj))
+			return
+		}
+		Vol, ok = tombStone.Obj.(*apis.LVMVolume)
+		if !ok {
+			runtime.HandleError(fmt.Errorf("tombstone contained object that is not a lvmvolume %#v", obj))
 			return
 		}
 	}
@@ -150,17 +150,17 @@ func (c *VolController) enqueueVol(obj interface{}) {
 //Obj from queue is not readily in lvmvol type. This function would convert obj into lvmvolume type.
 func (c *VolController) getStructuredObject(obj interface{}) (*apis.LVMVolume, bool) {
 	unstructuredInterface, ok := obj.(*unstructured.Unstructured)
-	if ok {
-		vol := &apis.LVMVolume{}
-		err := runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredInterface.UnstructuredContent(), &vol)
-		if err != nil {
-			klog.Infof("err %s, While converting unstructured obj to typed object\n", err.Error())
-			return nil, false
-		}
-		return vol, true
+	if !ok {
+		runtime.HandleError(errors.Errorf("couldnt type assert obj: %#v to unstructured obj", obj))
+		return nil, false
 	}
-	runtime.HandleError(fmt.Errorf("couldnt type assert obj: %#v to unstructured obj", obj))
-	return nil, false
+	vol := &apis.LVMVolume{}
+	err := runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredInterface.UnstructuredContent(), &vol)
+	if err != nil {
+		klog.Infof("err %s, While converting unstructured obj to typed object\n", err.Error())
+		return nil, false
+	}
+	return vol, true
 }
 
 // synVol is the function which tries to converge to a desired state for the

@@ -31,12 +31,11 @@ import (
 	"k8s.io/klog"
 )
 
-const controllerAgentName = "lvmsnap-controller"
-
 const (
-	GroupOpenebsIO  = "local.openebs.io"
-	VersionV1alpha1 = "v1alpha1"
-	Resource        = "lvmsnapshots"
+	controllerAgentName = "lvmsnap-controller"
+	GroupOpenebsIO      = "local.openebs.io"
+	VersionV1alpha1     = "v1alpha1"
+	Resource            = "lvmsnapshots"
 )
 
 var resource = schema.GroupVersionResource{
@@ -74,13 +73,14 @@ type SnapController struct {
 //This function returns controller object with all required keys set to watch over lvmsnapshot object
 func newSnapController(kubeClient kubernetes.Interface, client dynamic.Interface,
 	dynInformer dynamicinformer.DynamicSharedInformerFactory) *SnapController {
+	//Creating informer for lvmsnapshot resource
 	snapInformer := dynInformer.ForResource(resource).Informer()
+	
 	klog.Infof("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(klog.Infof)
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
-
 	klog.Infof("Creating lvm snapshot controller object")
 	snapCtrller := &SnapController{
 		kubeclientset: kubeClient,
