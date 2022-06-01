@@ -18,6 +18,9 @@ package lvmnode
 
 import (
 	"context"
+	"sync"
+	"time"
+
 	k8sapi "github.com/openebs/lib-csi/pkg/client/k8s"
 	"github.com/openebs/lvm-localpv/pkg/lvm"
 	"github.com/pkg/errors"
@@ -28,8 +31,6 @@ import (
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
-	"sync"
-	"time"
 )
 
 // Start starts the lvmnode controller.

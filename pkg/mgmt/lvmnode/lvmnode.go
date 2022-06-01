@@ -18,11 +18,12 @@ package lvmnode
 
 import (
 	"fmt"
+	"reflect"
+	"time"
+
 	"github.com/openebs/lib-csi/pkg/common/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	runtimenew "k8s.io/apimachinery/pkg/runtime"
-	"reflect"
-	"time"
 
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	"github.com/openebs/lvm-localpv/pkg/builder/nodebuilder"

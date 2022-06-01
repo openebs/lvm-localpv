@@ -17,6 +17,9 @@ limitations under the License.
 package snapshot
 
 import (
+	"sync"
+	"time"
+
 	"github.com/pkg/errors"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
@@ -24,8 +27,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
-	"sync"
-	"time"
 )
 
 var (
