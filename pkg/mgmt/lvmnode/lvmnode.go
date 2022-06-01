@@ -134,7 +134,7 @@ func (c *NodeController) getStructuredObject(obj interface{}) (*apis.LVMNode, bo
 	node := &apis.LVMNode{}
 	err := runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredInterface.UnstructuredContent(), &node)
 	if err != nil {
-		fmt.Printf("err %s, While converting unstructured obj to typed object\n", err.Error())
+		runtime.HandleError(fmt.Errorf("err %s, While converting unstructured obj to typed object\n", err.Error()))
 		return nil, false
 	}
 	return node, true

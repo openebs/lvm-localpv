@@ -38,7 +38,7 @@ const (
 	Resource            = "lvmvolumes"
 )
 
-var resource = schema.GroupVersionResource{
+var volresource = schema.GroupVersionResource{
 	Group:    GroupOpenebsIO,
 	Version:  VersionV1alpha1,
 	Resource: Resource,
@@ -74,7 +74,7 @@ type VolController struct {
 func newVolController(kubeClient kubernetes.Interface, client dynamic.Interface,
 	dynInformer dynamicinformer.DynamicSharedInformerFactory) *VolController {
 
-	volInformer := dynInformer.ForResource(resource).Informer()
+	volInformer := dynInformer.ForResource(volresource).Informer()
 	klog.Infof("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(klog.Infof)
@@ -85,7 +85,7 @@ func newVolController(kubeClient kubernetes.Interface, client dynamic.Interface,
 	volCtrller := &VolController{
 		kubeclientset: kubeClient,
 		clientset:     client,
-		VolLister:     dynamiclister.New(volInformer.GetIndexer(), resource),
+		VolLister:     dynamiclister.New(volInformer.GetIndexer(), volresource),
 		VolSynced:     volInformer.HasSynced,
 		workqueue:     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Vol"),
 		recorder:      recorder,

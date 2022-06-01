@@ -18,8 +18,6 @@ package snapshot
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
-
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	lvm "github.com/openebs/lvm-localpv/pkg/lvm"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
@@ -59,7 +57,7 @@ func (c *SnapController) syncHandler(key string) error {
 	snap := apis.LVMSnapshot{}
 	err = runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredSnap.UnstructuredContent(), &snap)
 	if err != nil {
-		fmt.Printf("err %s, While converting unstructured obj to typed object\n", err.Error())
+		klog.Infof("err %s, While converting unstructured obj to typed object\n", err.Error())
 	}
 	snapCopy := snap.DeepCopy()
 	err = c.syncSnap(snapCopy)
@@ -170,13 +168,13 @@ func (c *SnapController) deleteSnap(obj interface{}) {
 func (c *SnapController) getStructuredObject(obj interface{}) (*apis.LVMSnapshot, bool) {
 	unstructuredInterface, ok := obj.(*unstructured.Unstructured)
 	if !ok {
-		runtime.HandleError(errors.Errorf("couldnt type assert obj: %#v to unstructured obj", obj))
+		runtime.HandleError(fmt.Errorf("couldnt type assert obj: %#v to unstructured obj", obj))
 		return nil, false
 	}
 	snap := &apis.LVMSnapshot{}
 	err := runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredInterface.UnstructuredContent(), &snap)
 	if err != nil {
-		fmt.Printf("err %s, While converting unstructured obj to typed object\n", err.Error())
+		runtime.HandleError(fmt.Errorf("err %s, While converting unstructured obj to typed object\n", err.Error()))
 		return nil, false
 	}
 	return snap, true
@@ -251,7 +249,7 @@ func (c *SnapController) processNextWorkItem() bool {
 			// Forget here else we'd go into a loop of attempting to
 			// process a work item that is invalid.
 			c.workqueue.Forget(obj)
-			runtime.HandleError(errors.Errorf("expected string in workqueue but got %#v", obj))
+			runtime.HandleError(fmt.Errorf("expected string in workqueue but got %#v", obj))
 			return nil
 		}
 		// Run the syncHandler, passing it the namespace/name string of the
@@ -259,7 +257,7 @@ func (c *SnapController) processNextWorkItem() bool {
 		if err := c.syncHandler(key); err != nil {
 			// Put the item back on the workqueue to handle any transient errors.
 			c.workqueue.AddRateLimited(key)
-			return errors.Errorf("error syncing '%s': %s, requeuing", key, err.Error())
+			return fmt.Errorf("error syncing '%s': %s, requeuing", key, err.Error())
 		}
 		// Finally, if no error occurs we Forget this item so it does not
 		// get queued again until another change happens.

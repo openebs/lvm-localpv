@@ -18,7 +18,6 @@ package volume
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"regexp"
 	"sort"
 	"strconv"
@@ -151,13 +150,13 @@ func (c *VolController) enqueueVol(obj interface{}) {
 func (c *VolController) getStructuredObject(obj interface{}) (*apis.LVMVolume, bool) {
 	unstructuredInterface, ok := obj.(*unstructured.Unstructured)
 	if !ok {
-		runtime.HandleError(errors.Errorf("couldnt type assert obj: %#v to unstructured obj", obj))
+		runtime.HandleError(fmt.Errorf("couldnt type assert obj: %#v to unstructured obj", obj))
 		return nil, false
 	}
 	vol := &apis.LVMVolume{}
 	err := runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredInterface.UnstructuredContent(), &vol)
 	if err != nil {
-		klog.Infof("err %s, While converting unstructured obj to typed object\n", err.Error())
+		runtime.HandleError(fmt.Errorf("err %s, While converting unstructured obj to typed object\n", err.Error()))
 		return nil, false
 	}
 	return vol, true

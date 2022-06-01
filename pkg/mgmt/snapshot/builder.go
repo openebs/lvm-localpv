@@ -29,6 +29,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog"
+	"time"
 )
 
 const (
@@ -38,7 +39,7 @@ const (
 	Resource            = "lvmsnapshots"
 )
 
-var resource = schema.GroupVersionResource{
+var snapresource = schema.GroupVersionResource{
 	Group:    GroupOpenebsIO,
 	Version:  VersionV1alpha1,
 	Resource: Resource,
@@ -74,8 +75,9 @@ type SnapController struct {
 func newSnapController(kubeClient kubernetes.Interface, client dynamic.Interface,
 	dynInformer dynamicinformer.DynamicSharedInformerFactory) *SnapController {
 	//Creating informer for lvmsnapshot resource
-	snapInformer := dynInformer.ForResource(resource).Informer()
-	
+	snapInformer := dynInformer.ForResource(snapresource).Informer()
+	klog.Infoln("Using new rate limiter")
+	rateLimiter := workqueue.NewItemFastSlowRateLimiter(5*time.Second, 30*time.Second, 12)
 	klog.Infof("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(klog.Infof)
@@ -85,10 +87,11 @@ func newSnapController(kubeClient kubernetes.Interface, client dynamic.Interface
 	snapCtrller := &SnapController{
 		kubeclientset: kubeClient,
 		clientset:     client,
-		snapLister:    dynamiclister.New(snapInformer.GetIndexer(), resource),
+		snapLister:    dynamiclister.New(snapInformer.GetIndexer(), snapresource),
 		snapSynced:    snapInformer.HasSynced,
-		workqueue:     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Snap"),
-		recorder:      recorder,
+		//workqueue:     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Snap"),
+		workqueue: workqueue.NewNamedRateLimitingQueue(rateLimiter, "Snap"),
+		recorder:  recorder,
 	}
 	klog.Infof("Adding Event handler functions for lvm snapshot controller")
 	snapInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{

@@ -40,7 +40,7 @@ const (
 	Resource            = "lvmnodes"
 )
 
-var resource = schema.GroupVersionResource{
+var noderesource = schema.GroupVersionResource{
 	Group:    GroupOpenebsIO,
 	Version:  VersionV1alpha1,
 	Resource: Resource,
@@ -82,7 +82,7 @@ type NodeController struct {
 //This function returns controller object with all required keys set to watch over lvmnode object
 func newNodeController(kubeClient kubernetes.Interface, client dynamic.Interface,
 	dynInformer dynamicinformer.DynamicSharedInformerFactory, ownerRef metav1.OwnerReference) *NodeController {
-	nodeInformer := dynInformer.ForResource(resource).Informer()
+	nodeInformer := dynInformer.ForResource(noderesource).Informer()
 	klog.Infof("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(klog.Infof)
@@ -92,7 +92,7 @@ func newNodeController(kubeClient kubernetes.Interface, client dynamic.Interface
 	nodeContrller := &NodeController{
 		kubeclientset: kubeClient,
 		clientset:     client,
-		NodeLister:    dynamiclister.New(nodeInformer.GetIndexer(), resource),
+		NodeLister:    dynamiclister.New(nodeInformer.GetIndexer(), noderesource),
 		NodeSynced:    nodeInformer.HasSynced,
 		workqueue:     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Node"),
 		recorder:      recorder,
