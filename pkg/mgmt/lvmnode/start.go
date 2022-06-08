@@ -22,14 +22,15 @@ import (
 	"time"
 
 	k8sapi "github.com/openebs/lib-csi/pkg/client/k8s"
-	clientset "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset"
-	informers "github.com/openebs/lvm-localpv/pkg/generated/informer/externalversions"
 	"github.com/openebs/lvm-localpv/pkg/lvm"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/klog"
 )
 
 // Start starts the lvmnode controller.
@@ -47,18 +48,16 @@ func Start(controllerMtx *sync.RWMutex, stopCh <-chan struct{}) error {
 		return errors.Wrap(err, "error building kubernetes clientset")
 	}
 
-	// Building OpenEBS Clientset
-	openebsClient, err := clientset.NewForConfig(cfg)
+	openebsClientNew, err := dynamic.NewForConfig(cfg)
 	if err != nil {
-		return errors.Wrap(err, "error building openebs clientset")
+		return errors.Wrap(err, "error building dynamic client for lvmnode cr")
 	}
 
 	// setup watch only on node we are interested in.
-	nodeInformerFactory := informers.NewSharedInformerFactoryWithOptions(
-		openebsClient, 0, informers.WithNamespace(lvm.LvmNamespace),
-		informers.WithTweakListOptions(func(options *metav1.ListOptions) {
+	nodeInformerFactory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(openebsClientNew, 5*time.Minute,
+		lvm.LvmNamespace, func(options *metav1.ListOptions) {
 			options.FieldSelector = fields.OneTermEqualSelector("metadata.name", lvm.NodeID).String()
-		}))
+		})
 
 	k8sNode, err := kubeClient.CoreV1().Nodes().Get(context.TODO(), lvm.NodeID, metav1.GetOptions{})
 	if err != nil {
@@ -84,16 +83,7 @@ func Start(controllerMtx *sync.RWMutex, stopCh <-chan struct{}) error {
 	// This lock is used to serialize the AddToScheme call of all controllers.
 	controllerMtx.Lock()
 
-	controller, err := NewNodeControllerBuilder().
-		withKubeClient(kubeClient).
-		withOpenEBSClient(openebsClient).
-		withNodeSynced(nodeInformerFactory).
-		withNodeLister(nodeInformerFactory).
-		withRecorder(kubeClient).
-		withEventHandler(nodeInformerFactory).
-		withPollInterval(60 * time.Second).
-		withOwnerReference(ownerRef).
-		withWorkqueueRateLimiting().Build()
+	controller := newNodeController(kubeClient, openebsClientNew, nodeInformerFactory, ownerRef)
 
 	// blocking call, can't use defer to release the lock
 	controllerMtx.Unlock()
@@ -102,8 +92,10 @@ func Start(controllerMtx *sync.RWMutex, stopCh <-chan struct{}) error {
 		return errors.Wrapf(err, "error building controller instance")
 	}
 
+	klog.Info("Starting informer for lvm node controller")
 	nodeInformerFactory.Start(stopCh)
 
+	klog.Info("Starting Lvm node controller")
 	// Threadiness defines the number of workers to be launched in Run function
 	return controller.Run(1, stopCh)
 }

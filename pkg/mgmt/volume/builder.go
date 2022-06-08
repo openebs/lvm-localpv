@@ -17,11 +17,11 @@ limitations under the License.
 package volume
 
 import (
-	clientset "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset"
-	openebsScheme "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset/scheme"
-	informers "github.com/openebs/lvm-localpv/pkg/generated/informer/externalversions"
-	listers "github.com/openebs/lvm-localpv/pkg/generated/lister/lvm/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/dynamic/dynamicinformer"
+	"k8s.io/client-go/dynamic/dynamiclister"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -31,17 +31,29 @@ import (
 	"k8s.io/klog"
 )
 
-const controllerAgentName = "lvmvolume-controller"
+const (
+	controllerAgentName = "lvmvolume-controller"
+	GroupOpenebsIO      = "local.openebs.io"
+	VersionV1alpha1     = "v1alpha1"
+	Resource            = "lvmvolumes"
+)
+
+var volresource = schema.GroupVersionResource{
+	Group:    GroupOpenebsIO,
+	Version:  VersionV1alpha1,
+	Resource: Resource,
+}
 
 // VolController is the controller implementation for volume resources
 type VolController struct {
 	// kubeclientset is a standard kubernetes clientset
 	kubeclientset kubernetes.Interface
 
-	// clientset is a openebs custom resource package generated for custom API group.
-	clientset clientset.Interface
+	// clientset is a interface which will be used to list lvmvolumes from Api server
+	clientset dynamic.Interface
 
-	VolLister listers.LVMVolumeLister
+	//VolLister is used to list lvmvolumes from informer cache
+	VolLister dynamiclister.Lister
 
 	// VolSynced is used for caches sync to get populated
 	VolSynced cache.InformerSynced
@@ -58,78 +70,32 @@ type VolController struct {
 	recorder record.EventRecorder
 }
 
-// VolControllerBuilder is the builder object for controller.
-type VolControllerBuilder struct {
-	VolController *VolController
-}
+//This function returns controller object with all required keys set to watch over lvmvolume object
+func newVolController(kubeClient kubernetes.Interface, client dynamic.Interface,
+	dynInformer dynamicinformer.DynamicSharedInformerFactory) *VolController {
 
-// NewVolControllerBuilder returns an empty instance of controller builder.
-func NewVolControllerBuilder() *VolControllerBuilder {
-	return &VolControllerBuilder{
-		VolController: &VolController{},
-	}
-}
-
-// withKubeClient fills kube client to controller object.
-func (cb *VolControllerBuilder) withKubeClient(ks kubernetes.Interface) *VolControllerBuilder {
-	cb.VolController.kubeclientset = ks
-	return cb
-}
-
-// withOpenEBSClient fills openebs client to controller object.
-func (cb *VolControllerBuilder) withOpenEBSClient(cs clientset.Interface) *VolControllerBuilder {
-	cb.VolController.clientset = cs
-	return cb
-}
-
-// withVolLister fills Vol lister to controller object.
-func (cb *VolControllerBuilder) withVolLister(sl informers.SharedInformerFactory) *VolControllerBuilder {
-	VolInformer := sl.Local().V1alpha1().LVMVolumes()
-	cb.VolController.VolLister = VolInformer.Lister()
-	return cb
-}
-
-// withVolSynced adds object sync information in cache to controller object.
-func (cb *VolControllerBuilder) withVolSynced(sl informers.SharedInformerFactory) *VolControllerBuilder {
-	VolInformer := sl.Local().V1alpha1().LVMVolumes()
-	cb.VolController.VolSynced = VolInformer.Informer().HasSynced
-	return cb
-}
-
-// withWorkqueue adds workqueue to controller object.
-func (cb *VolControllerBuilder) withWorkqueueRateLimiting() *VolControllerBuilder {
-	cb.VolController.workqueue = workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Vol")
-	return cb
-}
-
-// withRecorder adds recorder to controller object.
-func (cb *VolControllerBuilder) withRecorder(ks kubernetes.Interface) *VolControllerBuilder {
+	volInformer := dynInformer.ForResource(volresource).Informer()
 	klog.Infof("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(klog.Infof)
-	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: ks.CoreV1().Events("")})
+	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
-	cb.VolController.recorder = recorder
-	return cb
-}
 
-// withEventHandler adds event handlers controller object.
-func (cb *VolControllerBuilder) withEventHandler(cvcInformerFactory informers.SharedInformerFactory) *VolControllerBuilder {
-	cvcInformer := cvcInformerFactory.Local().V1alpha1().LVMVolumes()
-	// Set up an event handler for when Vol resources change
-	cvcInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    cb.VolController.addVol,
-		UpdateFunc: cb.VolController.updateVol,
-		DeleteFunc: cb.VolController.deleteVol,
-	})
-	return cb
-}
-
-// Build returns a controller instance.
-func (cb *VolControllerBuilder) Build() (*VolController, error) {
-	err := openebsScheme.AddToScheme(scheme.Scheme)
-	if err != nil {
-		return nil, err
+	klog.Infof("Creating lvm volume controller object")
+	volCtrller := &VolController{
+		kubeclientset: kubeClient,
+		clientset:     client,
+		VolLister:     dynamiclister.New(volInformer.GetIndexer(), volresource),
+		VolSynced:     volInformer.HasSynced,
+		workqueue:     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Vol"),
+		recorder:      recorder,
 	}
-	return cb.VolController, nil
+	klog.Infof("Adding Event handler functions for lvm volume controller")
+	volInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    volCtrller.addVol,
+		DeleteFunc: volCtrller.deleteVol,
+		UpdateFunc: volCtrller.updateVol,
+	})
+
+	return volCtrller
 }

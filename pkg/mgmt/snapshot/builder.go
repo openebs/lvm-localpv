@@ -17,11 +17,13 @@ limitations under the License.
 package snapshot
 
 import (
-	clientset "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset"
-	openebsScheme "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset/scheme"
-	informers "github.com/openebs/lvm-localpv/pkg/generated/informer/externalversions"
-	listers "github.com/openebs/lvm-localpv/pkg/generated/lister/lvm/v1alpha1"
+	"time"
+
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/dynamic/dynamicinformer"
+	"k8s.io/client-go/dynamic/dynamiclister"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -31,17 +33,29 @@ import (
 	"k8s.io/klog"
 )
 
-const controllerAgentName = "lvmsnap-controller"
+const (
+	controllerAgentName = "lvmsnap-controller"
+	GroupOpenebsIO      = "local.openebs.io"
+	VersionV1alpha1     = "v1alpha1"
+	Resource            = "lvmsnapshots"
+)
+
+var snapresource = schema.GroupVersionResource{
+	Group:    GroupOpenebsIO,
+	Version:  VersionV1alpha1,
+	Resource: Resource,
+}
 
 // SnapController is the controller implementation for Snap resources
 type SnapController struct {
 	// kubeclientset is a standard kubernetes clientset
 	kubeclientset kubernetes.Interface
 
-	// clientset is a openebs custom resource package generated for custom API group.
-	clientset clientset.Interface
+	// clientset is a interface which will be used to list lvmsnapshot from Api server
+	clientset dynamic.Interface
 
-	snapLister listers.LVMSnapshotLister
+	//VolLister is used to list lvmsnapshot from informer cache
+	snapLister dynamiclister.Lister
 
 	// snapSynced is used for caches sync to get populated
 	snapSynced cache.InformerSynced
@@ -58,78 +72,33 @@ type SnapController struct {
 	recorder record.EventRecorder
 }
 
-// SnapControllerBuilder is the builder object for controller.
-type SnapControllerBuilder struct {
-	SnapController *SnapController
-}
-
-// NewSnapControllerBuilder returns an empty instance of controller builder.
-func NewSnapControllerBuilder() *SnapControllerBuilder {
-	return &SnapControllerBuilder{
-		SnapController: &SnapController{},
-	}
-}
-
-// withKubeClient fills kube client to controller object.
-func (cb *SnapControllerBuilder) withKubeClient(ks kubernetes.Interface) *SnapControllerBuilder {
-	cb.SnapController.kubeclientset = ks
-	return cb
-}
-
-// withOpenEBSClient fills openebs client to controller object.
-func (cb *SnapControllerBuilder) withOpenEBSClient(cs clientset.Interface) *SnapControllerBuilder {
-	cb.SnapController.clientset = cs
-	return cb
-}
-
-// withSnapLister fills snap lister to controller object.
-func (cb *SnapControllerBuilder) withSnapLister(sl informers.SharedInformerFactory) *SnapControllerBuilder {
-	snapInformer := sl.Local().V1alpha1().LVMSnapshots()
-	cb.SnapController.snapLister = snapInformer.Lister()
-	return cb
-}
-
-// withSnapSynced adds object sync information in cache to controller object.
-func (cb *SnapControllerBuilder) withSnapSynced(sl informers.SharedInformerFactory) *SnapControllerBuilder {
-	snapInformer := sl.Local().V1alpha1().LVMSnapshots()
-	cb.SnapController.snapSynced = snapInformer.Informer().HasSynced
-	return cb
-}
-
-// withWorkqueue adds workqueue to controller object.
-func (cb *SnapControllerBuilder) withWorkqueueRateLimiting() *SnapControllerBuilder {
-	cb.SnapController.workqueue = workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Snap")
-	return cb
-}
-
-// withRecorder adds recorder to controller object.
-func (cb *SnapControllerBuilder) withRecorder(ks kubernetes.Interface) *SnapControllerBuilder {
+//This function returns controller object with all required keys set to watch over lvmsnapshot object
+func newSnapController(kubeClient kubernetes.Interface, client dynamic.Interface,
+	dynInformer dynamicinformer.DynamicSharedInformerFactory) *SnapController {
+	//Creating informer for lvmsnapshot resource
+	snapInformer := dynInformer.ForResource(snapresource).Informer()
+	klog.Infoln("Using new rate limiter")
+	rateLimiter := workqueue.NewItemFastSlowRateLimiter(5*time.Second, 30*time.Second, 12)
 	klog.Infof("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(klog.Infof)
-	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: ks.CoreV1().Events("")})
+	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
-	cb.SnapController.recorder = recorder
-	return cb
-}
-
-// withEventHandler adds event handlers controller object.
-func (cb *SnapControllerBuilder) withEventHandler(cvcInformerFactory informers.SharedInformerFactory) *SnapControllerBuilder {
-	cvcInformer := cvcInformerFactory.Local().V1alpha1().LVMSnapshots()
-	// Set up an event handler for when Snap resources change
-	cvcInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    cb.SnapController.addSnap,
-		UpdateFunc: cb.SnapController.updateSnap,
-		DeleteFunc: cb.SnapController.deleteSnap,
-	})
-	return cb
-}
-
-// Build returns a controller instance.
-func (cb *SnapControllerBuilder) Build() (*SnapController, error) {
-	err := openebsScheme.AddToScheme(scheme.Scheme)
-	if err != nil {
-		return nil, err
+	klog.Infof("Creating lvm snapshot controller object")
+	snapCtrller := &SnapController{
+		kubeclientset: kubeClient,
+		clientset:     client,
+		snapLister:    dynamiclister.New(snapInformer.GetIndexer(), snapresource),
+		snapSynced:    snapInformer.HasSynced,
+		//workqueue:     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Snap"),
+		workqueue: workqueue.NewNamedRateLimitingQueue(rateLimiter, "Snap"),
+		recorder:  recorder,
 	}
-	return cb.SnapController, nil
+	klog.Infof("Adding Event handler functions for lvm snapshot controller")
+	snapInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    snapCtrller.addSnap,
+		DeleteFunc: snapCtrller.deleteSnap,
+		UpdateFunc: snapCtrller.updateSnap,
+	})
+	return snapCtrller
 }

@@ -23,6 +23,8 @@ import (
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	lvm "github.com/openebs/lvm-localpv/pkg/lvm"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	runtimenew "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/cache"
@@ -45,13 +47,18 @@ func (c *SnapController) syncHandler(key string) error {
 	}
 
 	// Get the snap resource with this namespace/name
-	snap, err := c.snapLister.LVMSnapshots(namespace).Get(name)
+	unstructuredSnap, err := c.snapLister.Namespace(namespace).Get(name)
 	if k8serror.IsNotFound(err) {
 		runtime.HandleError(fmt.Errorf("lvm snapshot '%s' has been deleted", key))
 		return nil
 	}
 	if err != nil {
 		return err
+	}
+	snap := apis.LVMSnapshot{}
+	err = runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredSnap.UnstructuredContent(), &snap)
+	if err != nil {
+		klog.Infof("err %s, While converting unstructured obj to typed object\n", err.Error())
 	}
 	snapCopy := snap.DeepCopy()
 	err = c.syncSnap(snapCopy)
@@ -96,23 +103,22 @@ func (c *SnapController) syncSnap(snap *apis.LVMSnapshot) error {
 
 // addSnap is the add event handler for LVMSnapshot
 func (c *SnapController) addSnap(obj interface{}) {
-	snap, ok := obj.(*apis.LVMSnapshot)
+	snap, ok := c.getStructuredObject(obj)
 	if !ok {
-		runtime.HandleError(fmt.Errorf("Couldn't get snap object %#v", obj))
+		runtime.HandleError(fmt.Errorf("Couldn't get snaphot object %#v", obj))
 		return
 	}
 
 	if lvm.NodeID != snap.Spec.OwnerNodeID {
 		return
 	}
-	klog.Infof("Got add event for Snap %s/%s", snap.Spec.VolGroup, snap.Name)
+	klog.Infof("Got add event for Snapshot %s/%s", snap.Spec.VolGroup, snap.Name)
 	c.enqueueSnap(snap)
 }
 
 // updateSnap is the update event handler for LVMSnapshot
 func (c *SnapController) updateSnap(oldObj, newObj interface{}) {
-
-	newSnap, ok := newObj.(*apis.LVMSnapshot)
+	newSnap, ok := c.getStructuredObject(newObj)
 	if !ok {
 		runtime.HandleError(fmt.Errorf("Couldn't get snap object %#v", newSnap))
 		return
@@ -124,23 +130,29 @@ func (c *SnapController) updateSnap(oldObj, newObj interface{}) {
 
 	// update on Snapshot CR does not make sense unless it is a deletion candidate
 	if c.isDeletionCandidate(newSnap) {
-		klog.Infof("Got update event for Snap %s/%s@%s", newSnap.Spec.VolGroup, newSnap.Labels[lvm.LVMVolKey], newSnap.Name)
+		klog.Infof("Got update event for Snapshot %s/%s@%s", newSnap.Spec.VolGroup, newSnap.Labels[lvm.LVMVolKey], newSnap.Name)
 		c.enqueueSnap(newSnap)
 	}
 }
 
 // deleteSnap is the delete event handler for LVMSnapshot
 func (c *SnapController) deleteSnap(obj interface{}) {
-	snap, ok := obj.(*apis.LVMSnapshot)
+	snap, ok := c.getStructuredObject(obj)
 	if !ok {
-		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
+		unstructuredObj, ok := obj.(*unstructured.Unstructured)
 		if !ok {
-			runtime.HandleError(fmt.Errorf("Couldn't get object from tombstone %#v", obj))
+			runtime.HandleError(fmt.Errorf("couldnt type assert obj: %#v to unstructured obj", obj))
 			return
 		}
-		snap, ok = tombstone.Obj.(*apis.LVMSnapshot)
+		tombStone := cache.DeletedFinalStateUnknown{}
+		err := runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredObj.UnstructuredContent(), &tombStone)
+		if err != nil {
+			runtime.HandleError(fmt.Errorf("couldn't get object from tombstone %#v", obj))
+			return
+		}
+		snap, ok = tombStone.Obj.(*apis.LVMSnapshot)
 		if !ok {
-			runtime.HandleError(fmt.Errorf("Tombstone contained object that is not a lvmsnap %#v", obj))
+			runtime.HandleError(fmt.Errorf("tombstone contained object that is not a lvmsnapshot %#v", obj))
 			return
 		}
 	}
@@ -149,8 +161,25 @@ func (c *SnapController) deleteSnap(obj interface{}) {
 		return
 	}
 
-	klog.Infof("Got delete event for Snap %s/%s@%s", snap.Spec.VolGroup, snap.Labels[lvm.LVMVolKey], snap.Name)
+	klog.Infof("Got delete event for Snaphot %s/%s@%s", snap.Spec.VolGroup, snap.Labels[lvm.LVMVolKey], snap.Name)
 	c.enqueueSnap(snap)
+}
+
+//Obj from queue is not readily in lvmsnapshot type. This function would convert obj into lvmsnapshot type.
+func (c *SnapController) getStructuredObject(obj interface{}) (*apis.LVMSnapshot, bool) {
+	unstructuredInterface, ok := obj.(*unstructured.Unstructured)
+	if !ok {
+		runtime.HandleError(fmt.Errorf("couldnt type assert obj: %#v to unstructured obj", obj))
+		return nil, false
+	}
+	snap := &apis.LVMSnapshot{}
+	err := runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredInterface.UnstructuredContent(), &snap)
+	if err != nil {
+		runtime.HandleError(fmt.Errorf("err %s, While converting unstructured obj to typed object\n", err.Error()))
+		return nil, false
+	}
+	return snap, true
+
 }
 
 // Run will set up the event handlers for types we are interested in, as well
