@@ -65,6 +65,7 @@
           get_url:
             url: https://raw.githubusercontent.com/openebs/lvm-localpv/{{ to_version_lvm_branch }}/deploy/lvm-operator.yaml
             dest: ./new_lvm_operator.yml
+            validate_certs: false
             force: yes
           register: result
           until: "'OK' in result.msg"
