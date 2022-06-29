@@ -77,22 +77,23 @@ func newSnapController(kubeClient kubernetes.Interface, client dynamic.Interface
 	dynInformer dynamicinformer.DynamicSharedInformerFactory) *SnapController {
 	//Creating informer for lvmsnapshot resource
 	snapInformer := dynInformer.ForResource(snapresource).Informer()
-	klog.Infoln("Using new rate limiter")
+	//This ratelimiter requeues failed items after 5 secs for first 12 attempts. Then objects are requeued after 30 secs.
 	rateLimiter := workqueue.NewItemFastSlowRateLimiter(5*time.Second, 30*time.Second, 12)
+
 	klog.Infof("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(klog.Infof)
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
+
 	klog.Infof("Creating lvm snapshot controller object")
 	snapCtrller := &SnapController{
 		kubeclientset: kubeClient,
 		clientset:     client,
 		snapLister:    dynamiclister.New(snapInformer.GetIndexer(), snapresource),
 		snapSynced:    snapInformer.HasSynced,
-		//workqueue:     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Snap"),
-		workqueue: workqueue.NewNamedRateLimitingQueue(rateLimiter, "Snap"),
-		recorder:  recorder,
+		workqueue:     workqueue.NewNamedRateLimitingQueue(rateLimiter, "Snap"),
+		recorder:      recorder,
 	}
 	klog.Infof("Adding Event handler functions for lvm snapshot controller")
 	snapInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{

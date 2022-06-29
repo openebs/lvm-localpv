@@ -17,6 +17,8 @@ limitations under the License.
 package volume
 
 import (
+	"time"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
@@ -73,8 +75,11 @@ type VolController struct {
 //This function returns controller object with all required keys set to watch over lvmvolume object
 func newVolController(kubeClient kubernetes.Interface, client dynamic.Interface,
 	dynInformer dynamicinformer.DynamicSharedInformerFactory) *VolController {
-
+	//Creating informer for lvmvolume resource
 	volInformer := dynInformer.ForResource(volresource).Informer()
+	//This ratelimiter requeues failed items after 5 secs for first 12 attempts. Then objects are requeued after 30 secs.
+	rateLimiter := workqueue.NewItemFastSlowRateLimiter(5*time.Second, 30*time.Second, 12)
+
 	klog.Infof("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(klog.Infof)
@@ -87,9 +92,10 @@ func newVolController(kubeClient kubernetes.Interface, client dynamic.Interface,
 		clientset:     client,
 		VolLister:     dynamiclister.New(volInformer.GetIndexer(), volresource),
 		VolSynced:     volInformer.HasSynced,
-		workqueue:     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Vol"),
+		workqueue:     workqueue.NewNamedRateLimitingQueue(rateLimiter, "Vol"),
 		recorder:      recorder,
 	}
+
 	klog.Infof("Adding Event handler functions for lvm volume controller")
 	volInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    volCtrller.addVol,
