@@ -83,12 +83,13 @@ type NodeController struct {
 //This function returns controller object with all required keys set to watch over lvmnode object
 func newNodeController(kubeClient kubernetes.Interface, client dynamic.Interface,
 	dynInformer dynamicinformer.DynamicSharedInformerFactory, ownerRef metav1.OwnerReference) *NodeController {
+	//Creating informer for lvm node resource
 	nodeInformer := dynInformer.ForResource(noderesource).Informer()
-	klog.Infof("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(klog.Infof)
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
+
 	klog.Infof("Creating lvm node controller object")
 	nodeContrller := &NodeController{
 		kubeclientset: kubeClient,
@@ -100,6 +101,8 @@ func newNodeController(kubeClient kubernetes.Interface, client dynamic.Interface
 		pollInterval:  60 * time.Second,
 		ownerRef:      ownerRef,
 	}
+
+	klog.Infof("Adding Event handler functions for lvm node controller")
 	nodeInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    nodeContrller.addNode,
 		UpdateFunc: nodeContrller.updateNode,
