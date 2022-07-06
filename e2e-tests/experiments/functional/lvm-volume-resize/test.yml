@@ -122,6 +122,17 @@
                 executable: /bin/bash
               register: app_pod_name
 
+            - name: Check container status in application pod
+              shell: >
+                kubectl get pod {{ app_pod_name.stdout }} -n {{ app_ns }} --no-headers
+                -o jsonpath='{.status.containerStatuses[].state}'
+              args:
+                executable: /bin/bash
+              register: containerStatus
+              until: "'running' in containerStatus.stdout"
+              delay: 2
+              retries: 45
+                
              ## Here we will dump +1Gi data than to previous pvc size
             - set_fact:
                 value_num: '{{ ( (value_str.stdout | int + 1 | int) * 262144) |  int }}'
