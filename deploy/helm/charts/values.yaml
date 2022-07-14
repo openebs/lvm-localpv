@@ -151,6 +151,8 @@ role: openebs-lvm
 
 crd:
   enableInstall: true
+  # Disable the installation of the volume snapshot CRDs if your Kubernetes distribution or another storage operator already manages them.
+  volumeSnapshot: true
 
 serviceAccount:
   lvmController:
