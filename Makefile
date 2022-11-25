@@ -148,7 +148,7 @@ bootstrap: controller-gen install-golangci-lint
 ## Install golangci-lint only if tool doesn't exist in system
 .PHONY: install-golangci-lint
 install-golangci-lint:
-	$(if $(shell which golangci-lint), echo "golangci-lint already exist in system", (curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sudo sh -s -- -b "${GOPATH}/bin" v1.40.1))
+	$(if $(shell which golangci-lint), echo "golangci-lint already exist in system", (curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sudo sh -s -- -b "${GOPATH}/bin" v1.50.1))
 
 .PHONY: controller-gen
 controller-gen:
