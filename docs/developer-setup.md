@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-* You have Go 1.14.7 installed on your local host/development machine.
+* You have Go 1.19.3 installed on your local host/development machine.
 * You have Docker installed on your local host/development machine. Docker is required for building lvm-driver container images and to push them into a Kubernetes cluster for testing. 
 * You have `kubectl` installed. For running integration tests, you can create a Minikube cluster on local host/development machine. Don't worry if you don't have access to the Kubernetes cluster, raising a PR with the lvm-localpv repository will run integration tests for your changes against a Minikube cluster.
 
