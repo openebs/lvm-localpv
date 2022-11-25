@@ -138,7 +138,7 @@ bootstrap: controller-gen install-golangci-lint
 		echo "+ Installing $$tool" ; \
 		cd && GO111MODULE=on go install $$tool; \
 	done
-	go get github.com/onsi/gomega/...
+	go get github.com/onsi/gomega/...@v1.7.0
 
 ## golangci-lint tool used to check linting tools in codebase
 ## Example: golangci-lint document is not recommending
