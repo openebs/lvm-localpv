@@ -95,9 +95,9 @@ func NewNode(d *CSIDriver) csi.NodeServer {
 	}
 }
 
-//Function to register collectors to collect LVM related metrics and exporter metrics.
+// Function to register collectors to collect LVM related metrics and exporter metrics.
 //
-//If disableExporterMetrics is set to false, exporter will include metrics about itself i.e (process_*, go_*).
+// If disableExporterMetrics is set to false, exporter will include metrics about itself i.e (process_*, go_*).
 func registerCollectors(disableExporterMetrics bool) (*prometheus.Registry, error) {
 	registry := prometheus.NewRegistry()
 
@@ -151,15 +151,15 @@ func promLogger() *promLog {
 	return &promLog{}
 }
 
-//Function to start HTTP server to expose LVM metrics.
+// Function to start HTTP server to expose LVM metrics.
 //
-//Parameters:
+// Parameters:
 //
-//listenAddr: TCP network address where the prometheus metrics endpoint will listen.
+// listenAddr: TCP network address where the prometheus metrics endpoint will listen.
 //
-//metricsPath: The HTTP path where prometheus metrics will be exposed.
+// metricsPath: The HTTP path where prometheus metrics will be exposed.
 //
-//disableExporterMetrics: Exclude metrics about the exporter itself (process_*, go_*).
+// disableExporterMetrics: Exclude metrics about the exporter itself (process_*, go_*).
 func exposeMetrics(listenAddr string, metricsPath string, disableExporterMetrics bool) {
 
 	// Registry with all the collectors registered
@@ -424,7 +424,7 @@ func (ns *node) NodeUnstageVolume(
 // TODO
 // Verify if this needs to be implemented
 //
-// NodeExpandVolume resizes the filesystem if required
+// # NodeExpandVolume resizes the filesystem if required
 //
 // If ControllerExpandVolumeResponse returns true in
 // node_expansion_required then FileSystemResizePending

@@ -44,7 +44,7 @@ func parseEndpoint(ep string) (string, string, error) {
 	return "", "", fmt.Errorf("Invalid endpoint: %v", ep)
 }
 
-//filters if the logd are informative or pollutant
+// filters if the logd are informative or pollutant
 func isInfotrmativeLog(info string) bool {
 
 	// add the messages that pollute logs to the array

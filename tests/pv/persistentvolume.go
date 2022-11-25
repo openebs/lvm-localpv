@@ -93,15 +93,15 @@ func (p *PV) GetPath() string {
 // This method expects only a single hostname to be set.
 //
 // The PV object will have the node's hostname specified as follows:
-//   nodeAffinity:
-//     required:
-//       nodeSelectorTerms:
-//       - matchExpressions:
-//         - key: kubernetes.io/hostname
-//           operator: In
-//           values:
-//           - hostname
 //
+//	nodeAffinity:
+//	  required:
+//	    nodeSelectorTerms:
+//	    - matchExpressions:
+//	      - key: kubernetes.io/hostname
+//	        operator: In
+//	        values:
+//	        - hostname
 func (p *PV) GetAffinitedNodeHostname() string {
 	nodeAffinity := p.object.Spec.NodeAffinity
 	if nodeAffinity == nil {

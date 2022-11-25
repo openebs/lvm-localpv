@@ -146,7 +146,7 @@ func (c *VolController) enqueueVol(obj interface{}) {
 	c.workqueue.Add(key)
 }
 
-//Obj from queue is not readily in lvmvol type. This function would convert obj into lvmvolume type.
+// Obj from queue is not readily in lvmvol type. This function would convert obj into lvmvolume type.
 func (c *VolController) getStructuredObject(obj interface{}) (*apis.LVMVolume, bool) {
 	unstructuredInterface, ok := obj.(*unstructured.Unstructured)
 	if !ok {

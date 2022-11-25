@@ -80,7 +80,7 @@ type NodeController struct {
 	ownerRef metav1.OwnerReference
 }
 
-//This function returns controller object with all required keys set to watch over lvmnode object
+// This function returns controller object with all required keys set to watch over lvmnode object
 func newNodeController(kubeClient kubernetes.Interface, client dynamic.Interface,
 	dynInformer dynamicinformer.DynamicSharedInformerFactory, ownerRef metav1.OwnerReference) *NodeController {
 	//Creating informer for lvm node resource

@@ -125,7 +125,7 @@ func (c *NodeController) syncNode(namespace string, name string) error {
 	return nil
 }
 
-//Obj from queue is not readily in lvmnode type. This function would convert obj into lvmnode type.
+// Obj from queue is not readily in lvmnode type. This function would convert obj into lvmnode type.
 func (c *NodeController) getStructuredObject(obj interface{}) (*apis.LVMNode, bool) {
 	unstructuredInterface, ok := obj.(*unstructured.Unstructured)
 	if !ok {

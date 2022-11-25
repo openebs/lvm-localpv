@@ -165,7 +165,7 @@ func (c *SnapController) deleteSnap(obj interface{}) {
 	c.enqueueSnap(snap)
 }
 
-//Obj from queue is not readily in lvmsnapshot type. This function would convert obj into lvmsnapshot type.
+// Obj from queue is not readily in lvmsnapshot type. This function would convert obj into lvmsnapshot type.
 func (c *SnapController) getStructuredObject(obj interface{}) (*apis.LVMSnapshot, bool) {
 	unstructuredInterface, ok := obj.(*unstructured.Unstructured)
 	if !ok {

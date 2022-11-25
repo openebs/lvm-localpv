@@ -374,7 +374,7 @@ func buildVolumeResizeArgs(vol *apis.LVMVolume, resizefs bool) []string {
 // ResizeLVMVolume resizes the underlying LVM volume and FS if resizefs
 // is set to true
 // Note:
-//	1. Triggering `lvextend <dev_path> -L <size> -r` multiple times with
+//  1. Triggering `lvextend <dev_path> -L <size> -r` multiple times with
 //     same size will not return any errors
 //  2. Triggering `lvextend <dev_path> -L <size>` more than one time will
 //     cause errors
@@ -649,7 +649,7 @@ func ReloadLVMMetadataCache() error {
 // ListLVMVolumeGroup invokes `vgs` to list all the available volume
 // groups in the node.
 //
-//In case reloadCache is false, we skip refreshing lvm metadata cache.
+// In case reloadCache is false, we skip refreshing lvm metadata cache.
 func ListLVMVolumeGroup(reloadCache bool) ([]apis.VolumeGroup, error) {
 	if reloadCache {
 		if err := ReloadLVMMetadataCache(); err != nil {
@@ -671,11 +671,11 @@ func ListLVMVolumeGroup(reloadCache bool) ([]apis.VolumeGroup, error) {
 	return decodeVgsJSON(output)
 }
 
-//Function to get LVM Logical volume device
-//It returns LVM logical volume device(dm-*).
-//This is used as a label in metrics(lvm_lv_total_size) which helps us to map lv_name to device.
+// Function to get LVM Logical volume device
+// It returns LVM logical volume device(dm-*).
+// This is used as a label in metrics(lvm_lv_total_size) which helps us to map lv_name to device.
 //
-//Example: pvc-f147582c-adbd-4015-8ca9-fe3e0a4c2452(lv_name) -> dm-0(device)
+// Example: pvc-f147582c-adbd-4015-8ca9-fe3e0a4c2452(lv_name) -> dm-0(device)
 func getLvDeviceName(path string) (string, error) {
 	dmPath, err := filepath.EvalSymlinks(path)
 	if err != nil {
@@ -686,31 +686,31 @@ func getLvDeviceName(path string) (string, error) {
 	return deviceName[len(deviceName)-1], nil
 }
 
-//To parse the output of lvs command and store it in LogicalVolume
-//It returns LogicalVolume.
+// To parse the output of lvs command and store it in LogicalVolume
+// It returns LogicalVolume.
 //
-//Example: LogicalVolume{
-//		Name:               "pvc-082c7975-9af2-4a50-9d24-762612b35f94",
-//		FullName:           "vg_thin/pvc-082c7975-9af2-4a50-9d24-762612b35f94"
-//		UUID:               "FBqcEe-Ln72-SmWO-fR4j-t4Ga-1Y90-0vieKW"
-//		Size:                4294967296,
-//		Path:                "/dev/vg_thin/pvc-082c7975-9af2-4a50-9d24-762612b35f94",
-//		DMPath:              "/dev/mapper/vg_thin-pvc--082c7975--9af2--4a50--9d24--762612b35f94"
-//		Device:              "dm-5"
-//		VGName:              "vg_thin"
-//		SegType:             "thin"
-//		Permission:          1
-//		BehaviourWhenFull:   -1
-//		HealthStatus:        0
-//		RaidSyncAction:      -1
-//		ActiveStatus:        "active"
-//		Host:                "node1-virtual-machine"
-//		PoolName:            "vg_thin_thinpool"
-//		UsedSizePercent:     0
-//		MetadataSize:        0
-//		MetadataUsedPercent: 0
-//		SnapshotUsedPercent: 0
-//	}
+//	Example: LogicalVolume{
+//			Name:               "pvc-082c7975-9af2-4a50-9d24-762612b35f94",
+//			FullName:           "vg_thin/pvc-082c7975-9af2-4a50-9d24-762612b35f94"
+//			UUID:               "FBqcEe-Ln72-SmWO-fR4j-t4Ga-1Y90-0vieKW"
+//			Size:                4294967296,
+//			Path:                "/dev/vg_thin/pvc-082c7975-9af2-4a50-9d24-762612b35f94",
+//			DMPath:              "/dev/mapper/vg_thin-pvc--082c7975--9af2--4a50--9d24--762612b35f94"
+//			Device:              "dm-5"
+//			VGName:              "vg_thin"
+//			SegType:             "thin"
+//			Permission:          1
+//			BehaviourWhenFull:   -1
+//			HealthStatus:        0
+//			RaidSyncAction:      -1
+//			ActiveStatus:        "active"
+//			Host:                "node1-virtual-machine"
+//			PoolName:            "vg_thin_thinpool"
+//			UsedSizePercent:     0
+//			MetadataSize:        0
+//			MetadataUsedPercent: 0
+//			SnapshotUsedPercent: 0
+//		}
 func parseLogicalVolume(m map[string]string) (LogicalVolume, error) {
 	var lv LogicalVolume
 	var err error
@@ -774,50 +774,50 @@ func parseLogicalVolume(m map[string]string) (LogicalVolume, error) {
 	return lv, err
 }
 
-//decodeLvsJSON([]bytes): Decode json format and pass the unmarshalled json to parseLogicalVolume to store logical volumes in LogicalVolume
+// decodeLvsJSON([]bytes): Decode json format and pass the unmarshalled json to parseLogicalVolume to store logical volumes in LogicalVolume
 //
-//Output of lvs command will be in json format:
+// Output of lvs command will be in json format:
 //
-//{
-//	"report": [
-//		{
-//			"lv": [
-//					{
-//						"lv_name":"pvc-082c7975-9af2-4a50-9d24-762612b35f94",
-//						...
-//					}
-//				]
-//		}
-//	]
-//}
-//
-//This function is used to decode the output of lvs command.
-//It returns []LogicalVolume.
-//
-//Example: []LogicalVolume{
 //	{
-//		Name:               "pvc-082c7975-9af2-4a50-9d24-762612b35f94",
-//		FullName:           "vg_thin/pvc-082c7975-9af2-4a50-9d24-762612b35f94"
-//		UUID:               "FBqcEe-Ln72-SmWO-fR4j-t4Ga-1Y90-0vieKW"
-//		Size:                4294967296,
-//		Path:                "/dev/vg_thin/pvc-082c7975-9af2-4a50-9d24-762612b35f94",
-//		DMPath:              "/dev/mapper/vg_thin-pvc--082c7975--9af2--4a50--9d24--762612b35f94"
-//		Device:              "dm-5"
-//		VGName:              "vg_thin"
-//		SegType:             "thin"
-//		Permission:          1
-//		BehaviourWhenFull:   -1
-//		HealthStatus:        0
-//		RaidSyncAction:      -1
-//		ActiveStatus:        "active"
-//		Host:                "node1-virtual-machine"
-//		PoolName:            "vg_thin_thinpool"
-//		UsedSizePercent:     0
-//		MetadataSize:        0
-//		MetadataUsedPercent: 0
-//		SnapshotUsedPercent: 0
+//		"report": [
+//			{
+//				"lv": [
+//						{
+//							"lv_name":"pvc-082c7975-9af2-4a50-9d24-762612b35f94",
+//							...
+//						}
+//					]
+//			}
+//		]
 //	}
-//}
+//
+// This function is used to decode the output of lvs command.
+// It returns []LogicalVolume.
+//
+//	Example: []LogicalVolume{
+//		{
+//			Name:               "pvc-082c7975-9af2-4a50-9d24-762612b35f94",
+//			FullName:           "vg_thin/pvc-082c7975-9af2-4a50-9d24-762612b35f94"
+//			UUID:               "FBqcEe-Ln72-SmWO-fR4j-t4Ga-1Y90-0vieKW"
+//			Size:                4294967296,
+//			Path:                "/dev/vg_thin/pvc-082c7975-9af2-4a50-9d24-762612b35f94",
+//			DMPath:              "/dev/mapper/vg_thin-pvc--082c7975--9af2--4a50--9d24--762612b35f94"
+//			Device:              "dm-5"
+//			VGName:              "vg_thin"
+//			SegType:             "thin"
+//			Permission:          1
+//			BehaviourWhenFull:   -1
+//			HealthStatus:        0
+//			RaidSyncAction:      -1
+//			ActiveStatus:        "active"
+//			Host:                "node1-virtual-machine"
+//			PoolName:            "vg_thin_thinpool"
+//			UsedSizePercent:     0
+//			MetadataSize:        0
+//			MetadataUsedPercent: 0
+//			SnapshotUsedPercent: 0
+//		}
+//	}
 func decodeLvsJSON(raw []byte) ([]LogicalVolume, error) {
 	output := &struct {
 		Report []struct {
@@ -888,23 +888,23 @@ func ListLVMPhysicalVolume() ([]PhysicalVolume, error) {
 	return decodePvsJSON(output)
 }
 
-//To parse the output of pvs command and store it in PhysicalVolume
-//It returns PhysicalVolume.
+// To parse the output of pvs command and store it in PhysicalVolume
+// It returns PhysicalVolume.
 //
-//Example: PhysicalVolume{
-//		Name:         "/dev/sdc",
-//      UUID:         "UAdQl0-dK00-gM1V-6Vda-zYeu-XUdQ-izs8KW"
-//		Size:         21441282048
-//		Used:         8657043456
-//		Free:         12784238592
-//		MetadataSize: 1044480
-//		MetadataFree: 518656
-//		DeviceSize:   21474836480
-//		Allocatable:  "allocatable"
-//		InUse:        "used"
-//		Missing:      ""
-//		VGName:       "vg_thin"
-//	}
+//	Example: PhysicalVolume{
+//			Name:         "/dev/sdc",
+//	     UUID:         "UAdQl0-dK00-gM1V-6Vda-zYeu-XUdQ-izs8KW"
+//			Size:         21441282048
+//			Used:         8657043456
+//			Free:         12784238592
+//			MetadataSize: 1044480
+//			MetadataFree: 518656
+//			DeviceSize:   21474836480
+//			Allocatable:  "allocatable"
+//			InUse:        "used"
+//			Missing:      ""
+//			VGName:       "vg_thin"
+//		}
 func parsePhysicalVolume(m map[string]string) (PhysicalVolume, error) {
 	var pv PhysicalVolume
 	var err error
@@ -941,42 +941,42 @@ func parsePhysicalVolume(m map[string]string) (PhysicalVolume, error) {
 	return pv, err
 }
 
-//decodeLvsJSON([]bytes): Decode json format and pass the unmarshalled json to parsePhysicalVolume to store physical volumes in PhysicalVolume
+// decodeLvsJSON([]bytes): Decode json format and pass the unmarshalled json to parsePhysicalVolume to store physical volumes in PhysicalVolume
 //
-//Output of pvs command will be in json format:
+// Output of pvs command will be in json format:
 //
-//{
-//	"report": [
-//		{
-//			"pv": [
-//					{
-//						"pv_name":"/dev/sdc",
-//						...
-//					}
-//				]
-//		}
-//	]
-//}
-//
-//This function is used to decode the output of pvs command.
-//It returns []PhysicalVolume.
-//
-//Example: []PhysicalVolume{
 //	{
-//		Name:         "/dev/sdc",
-//      UUID:         "UAdQl0-dK00-gM1V-6Vda-zYeu-XUdQ-izs8KW"
-//		Size:         21441282048
-//		Used:         8657043456
-//		Free:         12784238592
-//		MetadataSize: 1044480
-//		MetadataFree: 518656
-//		DeviceSize:   21474836480
-//		Allocatable:  "allocatable"
-//		InUse:        "used"
-//		Missing:      ""
-//		VGName:       "vg_thin"
+//		"report": [
+//			{
+//				"pv": [
+//						{
+//							"pv_name":"/dev/sdc",
+//							...
+//						}
+//					]
+//			}
+//		]
 //	}
-//}
+//
+// This function is used to decode the output of pvs command.
+// It returns []PhysicalVolume.
+//
+//	Example: []PhysicalVolume{
+//		{
+//			Name:         "/dev/sdc",
+//	     UUID:         "UAdQl0-dK00-gM1V-6Vda-zYeu-XUdQ-izs8KW"
+//			Size:         21441282048
+//			Used:         8657043456
+//			Free:         12784238592
+//			MetadataSize: 1044480
+//			MetadataFree: 518656
+//			DeviceSize:   21474836480
+//			Allocatable:  "allocatable"
+//			InUse:        "used"
+//			Missing:      ""
+//			VGName:       "vg_thin"
+//		}
+//	}
 func decodePvsJSON(raw []byte) ([]PhysicalVolume, error) {
 	output := &struct {
 		Report []struct {
