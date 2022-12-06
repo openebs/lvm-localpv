@@ -52,7 +52,7 @@ Create the Volume group on all the nodes, which will be used by the LVM Driver f
 
 ```
 sudo pvcreate /dev/loop0
-sudo vgcreate lvmvg /dev/loop0       ## here lvmvg is the volume group name to be created
+sudo vgcreate lvmpv-vg /dev/loop0       ## here lvmvg is the volume group name to be created
 ```
 
 ### Installation
