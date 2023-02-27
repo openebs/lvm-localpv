@@ -22,12 +22,13 @@ import (
 	"log"
 	"os"
 
-	"github.com/openebs/lvm-localpv/pkg/driver"
-	config "github.com/openebs/lvm-localpv/pkg/driver/config"
-	"github.com/openebs/lvm-localpv/pkg/lvm"
-	"github.com/openebs/lvm-localpv/pkg/version"
 	"github.com/spf13/cobra"
 	"k8s.io/klog"
+
+	"github.com/openebs/lvm-localpv/pkg/driver"
+	"github.com/openebs/lvm-localpv/pkg/driver/config"
+	"github.com/openebs/lvm-localpv/pkg/lvm"
+	"github.com/openebs/lvm-localpv/pkg/version"
 )
 
 /*
@@ -43,7 +44,7 @@ func main() {
 	_ = flag.CommandLine.Parse([]string{})
 	var config = config.Default()
 
-	cmd := &cobra.Command{
+	cmdd := &cobra.Command{
 		Use:   "lvm-driver",
 		Short: "driver for provisioning lvm volume",
 		Long: `provisions and deprovisions the volume
@@ -53,75 +54,75 @@ func main() {
 		},
 	}
 
-	cmd.Flags().AddGoFlagSet(flag.CommandLine)
+	cmdd.Flags().AddGoFlagSet(flag.CommandLine)
 
-	cmd.PersistentFlags().StringVar(
+	cmdd.PersistentFlags().StringVar(
 		&config.NodeID, "nodeid", lvm.NodeID, "NodeID to identify the node running this driver",
 	)
 
-	cmd.PersistentFlags().StringVar(
+	cmdd.PersistentFlags().StringVar(
 		&config.Version, "version", "", "Displays driver version",
 	)
 
-	cmd.PersistentFlags().StringVar(
+	cmdd.PersistentFlags().StringVar(
 		&config.Endpoint, "endpoint", "unix://csi/csi.sock", "CSI endpoint",
 	)
 
-	cmd.PersistentFlags().StringVar(
+	cmdd.PersistentFlags().StringVar(
 		&config.DriverName, "name", "local.csi.openebs.io", "Name of this driver",
 	)
 
-	cmd.PersistentFlags().StringVar(
+	cmdd.PersistentFlags().StringVar(
 		&config.PluginType, "plugin", "csi-plugin", "Type of this driver i.e. controller or node",
 	)
 
-	cmd.PersistentFlags().BoolVar(
+	cmdd.PersistentFlags().BoolVar(
 		&config.SetIOLimits, "setiolimits", false,
 		"Whether to set iops, bps rate limit for pods accessing volumes",
 	)
 
-	cmd.PersistentFlags().StringVar(
+	cmdd.PersistentFlags().StringVar(
 		&config.ContainerRuntime, "container-runtime", "containerd",
 		"Whether to set iops, bps rate limit for pods accessing volumes",
 	)
 
-	cmd.PersistentFlags().StringVar(
+	cmdd.PersistentFlags().StringVar(
 		&config.ListenAddress, "listen-address", "", "The TCP network address where the prometheus metrics endpoint will listen (example: `:9080`). The default is empty string, which means metrics endpoint is disabled.",
 	)
 
-	cmd.PersistentFlags().StringVar(
+	cmdd.PersistentFlags().StringVar(
 		&config.MetricsPath, "metrics-path", "/metrics", "The HTTP path where prometheus metrics will be exposed. Default is `/metrics`.",
 	)
 
-	cmd.PersistentFlags().BoolVar(
+	cmdd.PersistentFlags().BoolVar(
 		&config.DisableExporterMetrics, "disable-exporter-metrics", true, "Exclude metrics about the exporter itself (process_*, go_*).",
 	)
 
-	config.RIopsLimitPerGB = cmd.PersistentFlags().StringSlice(
+	config.RIopsLimitPerGB = cmdd.PersistentFlags().StringSlice(
 		"riops-per-gb", []string{},
 		"Read IOPS per GB limit to use for each volume group prefix, "+
 			"--riops-per-gb=\"vg1-prefix:100,vg2-prefix:200\"",
 	)
 
-	config.WIopsLimitPerGB = cmd.PersistentFlags().StringSlice(
+	config.WIopsLimitPerGB = cmdd.PersistentFlags().StringSlice(
 		"wiops-per-gb", []string{},
 		"Write IOPS per GB limit to use for each volume group prefix, "+
 			"--wiops-per-gb=\"vg1-prefix:100,vg2-prefix:200\"",
 	)
 
-	config.RBpsLimitPerGB = cmd.PersistentFlags().StringSlice(
+	config.RBpsLimitPerGB = cmdd.PersistentFlags().StringSlice(
 		"rbps-per-gb", []string{},
 		"Read BPS per GB limit to use for each volume group prefix, "+
 			"--rbps-per-gb=\"vg1-prefix:100,vg2-prefix:200\"",
 	)
 
-	config.WBpsLimitPerGB = cmd.PersistentFlags().StringSlice(
+	config.WBpsLimitPerGB = cmdd.PersistentFlags().StringSlice(
 		"wbps-per-gb", []string{},
 		"Write BPS per GB limit to use for each volume group prefix, "+
 			"--wbps-per-gb=\"vg1-prefix:100,vg2-prefix:200\"",
 	)
 
-	err := cmd.Execute()
+	err := cmdd.Execute()
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "%s", err.Error())
 		os.Exit(1)
