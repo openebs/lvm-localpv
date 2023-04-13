@@ -28,7 +28,7 @@ lvmNode:
       repository: sig-storage/csi-node-driver-registrar
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
-      tag: v2.3.0
+      tag: v2.7.0
   updateStrategy:
     type: RollingUpdate
   annotations: {}
@@ -79,7 +79,7 @@ lvmController:
       repository: sig-storage/csi-resizer
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
-      tag: v1.2.0
+      tag: v1.7.0
   snapshotter:
     name: "csi-snapshotter"
     image:
@@ -89,7 +89,7 @@ lvmController:
       repository: sig-storage/csi-snapshotter
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
-      tag: v4.0.0
+      tag: v6.2.1
   snapshotController:
     name: "snapshot-controller"
     image:
@@ -99,7 +99,7 @@ lvmController:
       repository: sig-storage/snapshot-controller
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
-      tag: v4.0.0
+      tag: v6.2.1
   provisioner:
     name: "csi-provisioner"
     image:
@@ -109,7 +109,7 @@ lvmController:
       repository: sig-storage/csi-provisioner
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
-      tag: v3.0.0
+      tag: v3.4.1
   updateStrategy:
     type: RollingUpdate
   annotations: {}
