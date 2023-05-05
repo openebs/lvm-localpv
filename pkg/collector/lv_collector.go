@@ -103,7 +103,13 @@ func (c *lvCollector) Collect(ch chan<- prometheus.Metric) {
 	if err != nil {
 		klog.Errorf("error in getting the list of lvm logical volumes: %v", err)
 	} else {
+		var lvIDS []string
 		for _, lv := range lvList {
+			if contains(lvIDS, lv.UUID) {
+				klog.V(2).Infof("duplicate entry for LV: %s", lv.UUID)
+				continue
+			}
+			lvIDS = append(lvIDS, lv.UUID)
 			ch <- prometheus.MustNewConstMetric(c.lvSizeMetric, prometheus.GaugeValue, float64(lv.Size), lv.Name, lv.Device)
 			ch <- prometheus.MustNewConstMetric(c.lvTotalSizeMetric, prometheus.GaugeValue, float64(lv.Size), lv.Name, lv.Path, lv.DMPath, lv.VGName, lv.Device, lv.Host, lv.SegType, lv.PoolName, lv.ActiveStatus)
 			ch <- prometheus.MustNewConstMetric(c.lvUsedSizePercentMetric, prometheus.GaugeValue, lv.UsedSizePercent, lv.Name, lv.Path, lv.DMPath, lv.VGName, lv.Device, lv.Host, lv.SegType, lv.PoolName, lv.ActiveStatus)
