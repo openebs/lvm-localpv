@@ -179,6 +179,16 @@ func (cs *controller) init() error {
 		return errors.Wrapf(err, "failed to build kubeconfig")
 	}
 
+	if cs.driver.config.KubeAPIQPS > 0 {
+		klog.Infof("setting k8s client qps to %d", cs.driver.config.KubeAPIQPS)
+		cfg.QPS = float32(cs.driver.config.KubeAPIQPS)
+	}
+
+	if cs.driver.config.KubeAPIBurst > 0 {
+		cfg.Burst = cs.driver.config.KubeAPIBurst
+		klog.Infof("setting k8s client burst to %d", cs.driver.config.KubeAPIBurst)
+	}
+
 	kubeClient, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return errors.Wrap(err, "failed to build k8s clientset")
