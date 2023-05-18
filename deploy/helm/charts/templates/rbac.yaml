@@ -123,7 +123,7 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 ---
 {{- end }}
-{{- if .Values.serviceAccount.lvmNode.create -}}
+{{- if .Values.serviceAccount.lvmNode.create }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:

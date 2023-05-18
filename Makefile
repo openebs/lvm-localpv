@@ -29,7 +29,7 @@ EXTERNAL_TOOLS=\
 	github.com/axw/gocov/gocov \
 	gopkg.in/matm/v1/gocov-html \
 	github.com/onsi/ginkgo/ginkgo \
-	github.com/onsi/gomega/...
+	github.com/onsi/gomega/...@v1.22.1
 
 # The images can be pushed to any docker/image registeries
 # like docker hub, quay. The registries are specified in

@@ -35,7 +35,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+
+      - name: Set up Go 1.14
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.14.5
 
       - name: Shellcheck
         uses: reviewdog/action-shellcheck@v1
@@ -58,13 +63,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+
+      - name: Set up Go 1.14
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.14.5
 
       - name: Unit test
         run: make test
 
       - name: Upload Coverage Report
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3
 
   bdd-test:
     needs: ['unit-test']
@@ -72,20 +82,20 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        kubernetes: [v1.20.1]
+        kubernetes: [v1.20.15]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
-      - name: Set up Go 1.16
-        uses: actions/setup-go@v2
+      - name: Set up Go 1.14
+        uses: actions/setup-go@v4
         with:
-          go-version: 1.16.5
+          go-version: 1.14.5
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@v2.3.0
+        uses: manusa/actions-setup-minikube@v2.7.2
         with:
-          minikube version: v1.16.0
+          minikube version: v1.30.1
           kubernetes version: ${{ matrix.kubernetes }}
           github token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -103,7 +113,7 @@ jobs:
     needs: ['lint', 'unit-test', 'bdd-test']
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set Image Org
         # sets the default IMAGE_ORG to openebs
@@ -112,13 +122,13 @@ jobs:
           echo "IMAGE_ORG=${IMAGE_ORG}" >> $GITHUB_ENV
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push the ansible image
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v4
         with:
           file: ./e2e-tests/Dockerfile
           push: true
@@ -132,7 +142,7 @@ jobs:
     needs: ['lint', 'unit-test', 'bdd-test']
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set Image Org
         # sets the default IMAGE_ORG to openebs
@@ -157,16 +167,14 @@ jobs:
 
       - name: Docker meta
         id: docker_meta
-        uses: crazy-max/ghaction-docker-meta@v1
+        uses: crazy-max/ghaction-docker-meta@v4
         with:
           # add each registry to which the image needs to be pushed here
           images: |
             ${{ env.IMAGE_ORG }}/lvm-driver
             quay.io/${{ env.IMAGE_ORG }}/lvm-driver
             ghcr.io/${{ env.IMAGE_ORG }}/lvm-driver
-          tag-latest: false
-          tag-custom-only: true
-          tag-custom: |
+          tags: |
             ${{ env.TAG }}
 
       - name: Print Tag info
@@ -175,38 +183,38 @@ jobs:
           echo "${{ steps.docker_meta.outputs.tags }}"
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v2
         with:
           platforms: all
 
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: v0.5.1
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Login to Quay
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_TOKEN }}
 
       - name: Login to GHCR
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build & Push Image
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v4
         with:
           context: .
           file: ./buildscripts/lvm-driver/Dockerfile.buildx

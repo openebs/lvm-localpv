@@ -4,3 +4,6 @@ featureGates:
   "CSIStorageCapacity": true
 runtimeConfig:
   "api/alpha": "true"
+nodes:
+- role: control-plane
+  image: kindest/node:v1.20.15@sha256:a32bf55309294120616886b5338f95dd98a2f7231519c7dedcec32ba29699394
