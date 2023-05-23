@@ -224,6 +224,10 @@ func buildLVMCreateArgs(vol *apis.LVMVolume) []string {
 		// check if thin pool exists for given volumegroup requested thin volume
 		if strings.TrimSpace(vol.Spec.ThinProvision) != YES {
 			LVMVolArg = append(LVMVolArg, "-L", size)
+
+			// create lv type stripe as default
+			LVMVolArg = append(LVMVolArg, "-i 2")
+
 		} else if !lvThinExists(vol.Spec.VolGroup, pool) {
 			// thinpool size can't be equal or greater than actual volumegroup size
 			LVMVolArg = append(LVMVolArg, "-L", getThinPoolSize(vol.Spec.VolGroup, vol.Spec.Capacity))
