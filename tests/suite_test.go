@@ -23,17 +23,18 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/openebs/lib-csi/pkg/common/kubernetes/client"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	storagev1 "k8s.io/api/storage/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/klog/v2"
+
 	"github.com/openebs/lvm-localpv/pkg/builder/volbuilder"
 	"github.com/openebs/lvm-localpv/tests/deploy"
 	"github.com/openebs/lvm-localpv/tests/pod"
 	"github.com/openebs/lvm-localpv/tests/pv"
 	"github.com/openebs/lvm-localpv/tests/pvc"
 	"github.com/openebs/lvm-localpv/tests/sc"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	storagev1 "k8s.io/api/storage/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/klog"
 
 	// auth plugins
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"

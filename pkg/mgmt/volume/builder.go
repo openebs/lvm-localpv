@@ -19,6 +19,7 @@ package volume
 import (
 	"time"
 
+	"github.com/openebs/lib-csi/pkg/common/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
@@ -30,7 +31,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 const (
@@ -72,9 +73,9 @@ type VolController struct {
 	recorder record.EventRecorder
 }
 
-//This function returns controller object with all required keys set to watch over lvmvolume object
+// This function returns controller object with all required keys set to watch over lvmvolume object
 func newVolController(kubeClient kubernetes.Interface, client dynamic.Interface,
-	dynInformer dynamicinformer.DynamicSharedInformerFactory) *VolController {
+	dynInformer dynamicinformer.DynamicSharedInformerFactory) (*VolController, error) {
 	//Creating informer for lvmvolume resource
 	volInformer := dynInformer.ForResource(volresource).Informer()
 	//This ratelimiter requeues failed items after 5 secs for first 12 attempts. Then objects are requeued after 30 secs.
@@ -92,16 +93,20 @@ func newVolController(kubeClient kubernetes.Interface, client dynamic.Interface,
 		clientset:     client,
 		VolLister:     dynamiclister.New(volInformer.GetIndexer(), volresource),
 		VolSynced:     volInformer.HasSynced,
-		workqueue:     workqueue.NewNamedRateLimitingQueue(rateLimiter, "Vol"),
-		recorder:      recorder,
+		workqueue: workqueue.NewRateLimitingQueueWithConfig(rateLimiter,
+			workqueue.RateLimitingQueueConfig{Name: "Vol"}),
+		recorder: recorder,
 	}
 
 	klog.Infof("Adding Event handler functions for lvm volume controller")
-	volInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, err := volInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    volCtrller.addVol,
 		DeleteFunc: volCtrller.deleteVol,
 		UpdateFunc: volCtrller.updateVol,
 	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to add event handler for lvm volume controller")
+	}
 
-	return volCtrller
+	return volCtrller, nil
 }

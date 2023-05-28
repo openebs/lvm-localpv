@@ -26,7 +26,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 var (
@@ -62,8 +62,10 @@ func Start(controllerMtx *sync.RWMutex, stopCh <-chan struct{}) error {
 	// This lock is used to serialize the AddToScheme call of all controllers.
 	controllerMtx.Lock()
 
-	controller := newSnapController(kubeClient, openebsClient, snapInformerFactory)
-
+	controller, err := newSnapController(kubeClient, openebsClient, snapInformerFactory)
+	if err != nil {
+		return errors.Wrap(err, "failed to create new lvm snapshot controller")
+	}
 	// blocking call, can't use defer to release the lock
 	controllerMtx.Unlock()
 

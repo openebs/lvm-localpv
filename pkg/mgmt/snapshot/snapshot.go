@@ -20,15 +20,16 @@ import (
 	"fmt"
 	"time"
 
-	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
-	lvm "github.com/openebs/lvm-localpv/pkg/lvm"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	runtimenew "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
+
+	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
+	"github.com/openebs/lvm-localpv/pkg/lvm"
 )
 
 // isDeletionCandidate checks if a lvm snapshot is a deletion candidate.
@@ -165,7 +166,7 @@ func (c *SnapController) deleteSnap(obj interface{}) {
 	c.enqueueSnap(snap)
 }
 
-//Obj from queue is not readily in lvmsnapshot type. This function would convert obj into lvmsnapshot type.
+// Obj from queue is not readily in lvmsnapshot type. This function would convert obj into lvmsnapshot type.
 func (c *SnapController) getStructuredObject(obj interface{}) (*apis.LVMSnapshot, bool) {
 	unstructuredInterface, ok := obj.(*unstructured.Unstructured)
 	if !ok {

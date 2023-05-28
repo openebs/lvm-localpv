@@ -24,7 +24,6 @@ import (
 	v1alpha1 "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -36,9 +35,9 @@ type FakeLVMNodes struct {
 	ns   string
 }
 
-var lvmnodesResource = schema.GroupVersionResource{Group: "local.openebs.io", Version: "v1alpha1", Resource: "lvmnodes"}
+var lvmnodesResource = v1alpha1.SchemeGroupVersion.WithResource("lvmnodes")
 
-var lvmnodesKind = schema.GroupVersionKind{Group: "local.openebs.io", Version: "v1alpha1", Kind: "LVMNode"}
+var lvmnodesKind = v1alpha1.SchemeGroupVersion.WithKind("LVMNode")
 
 // Get takes name of the lVMNode, and returns the corresponding lVMNode object, and an error if there is any.
 func (c *FakeLVMNodes) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.LVMNode, err error) {
@@ -105,7 +104,7 @@ func (c *FakeLVMNodes) Update(ctx context.Context, lVMNode *v1alpha1.LVMNode, op
 // Delete takes name of the lVMNode and deletes it. Returns an error if one occurs.
 func (c *FakeLVMNodes) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(lvmnodesResource, c.ns, name), &v1alpha1.LVMNode{})
+		Invokes(testing.NewDeleteActionWithOptions(lvmnodesResource, c.ns, name, opts), &v1alpha1.LVMNode{})
 
 	return err
 }

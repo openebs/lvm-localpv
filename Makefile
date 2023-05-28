@@ -13,9 +13,9 @@
 # limitations under the License.
 
 # list only csi source code directories
-PACKAGES = $(shell go list ./... | grep -v 'vendor\|pkg/generated')
+PACKAGES = $(shell go list ./... | grep -v 'pkg/generated')
 
-UNIT_TEST_PACKAGES = $(shell go list ./... | grep -v 'vendor\|pkg/generated\|tests')
+UNIT_TEST_PACKAGES = $(shell go list ./... | grep -v 'pkg/generated\|tests')
 
 # Lint our code. Reference: https://golang.org/cmd/vet/
 VETARGS?=-asmdecl -atomic -bool -buildtags -copylocks -methods \
@@ -126,17 +126,13 @@ verify-deps: deps
 		echo "go module files are out of date, please commit the changes to go.mod and go.sum"; exit 1; \
 	fi
 
-.PHONY: vendor
-vendor: go.mod go.sum deps
-	@go mod vendor
-
 # Bootstrap downloads tools required
 # during build
 .PHONY: bootstrap
 bootstrap: controller-gen install-golangci-lint
 	@for tool in  $(EXTERNAL_TOOLS) ; do \
 		echo "+ Installing $$tool" ; \
-		cd && GO111MODULE=on go get $$tool; \
+		cd && GO111MODULE=on go install $$tool@latest; \
 	done
 
 ## golangci-lint tool used to check linting tools in codebase
@@ -147,11 +143,11 @@ bootstrap: controller-gen install-golangci-lint
 ## Install golangci-lint only if tool doesn't exist in system
 .PHONY: install-golangci-lint
 install-golangci-lint:
-	$(if $(shell which golangci-lint), echo "golangci-lint already exist in system", (curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sudo sh -s -- -b "${GOPATH}/bin" v1.40.1))
+	$(if $(shell which golangci-lint), echo "golangci-lint already exist in system", (curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sudo sh -s -- -b "${GOPATH}/bin" v1.52.2))
 
 .PHONY: controller-gen
 controller-gen:
-	TMP_DIR=$(shell mktemp -d) && cd $$TMP_DIR && go mod init tmp && go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.0 && rm -rf $$TMP_DIR;
+	TMP_DIR=$(shell mktemp -d) && cd $$TMP_DIR && go mod init tmp && go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.0 && rm -rf $$TMP_DIR;
 
 # SRC_PKG is the path of code files
 SRC_PKG := github.com/openebs/lvm-localpv/pkg
@@ -170,7 +166,7 @@ kubegendelete:
 
 .PHONY: deepcopy-install
 deepcopy-install:
-	@go install ./vendor/k8s.io/code-generator/cmd/deepcopy-gen
+	@go install k8s.io/code-generator/cmd/deepcopy-gen
 
 .PHONY: deepcopy
 deepcopy:
@@ -182,7 +178,7 @@ deepcopy:
 
 .PHONY: clientset-install
 clientset-install:
-	@go install ./vendor/k8s.io/code-generator/cmd/client-gen
+	@go install k8s.io/code-generator/cmd/client-gen
 
 .PHONY: clientset
 clientset:
@@ -196,7 +192,7 @@ clientset:
 
 .PHONY: lister-install
 lister-install:
-	@go install ./vendor/k8s.io/code-generator/cmd/lister-gen
+	@go install k8s.io/code-generator/cmd/lister-gen
 
 .PHONY: lister
 lister:
@@ -208,7 +204,7 @@ lister:
 
 .PHONY: informer-install
 informer-install:
-	@go install ./vendor/k8s.io/code-generator/cmd/informer-gen
+	@go install k8s.io/code-generator/cmd/informer-gen
 
 .PHONY: informer
 informer:
@@ -285,7 +281,7 @@ golint:
 .PHONY: license-check
 license-check:
 	@echo "--> Checking license header..."
-	@licRes=$$(for file in $$(find . -type f -regex '.*\.sh\|.*\.go\|.*Docker.*\|.*\Makefile*' ! -path './vendor/*' ) ; do \
+	@licRes=$$(for file in $$(find . -type f -regex '.*\.sh\|.*\.go\|.*Docker.*\|.*\Makefile*') ; do \
                awk 'NR<=5' $$file | grep -Eq "(Copyright|generated|GENERATED)" || echo $$file; \
        done); \
        if [ -n "$${licRes}" ]; then \

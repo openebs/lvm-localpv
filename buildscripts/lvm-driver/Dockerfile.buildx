@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:1.14.7 as build
+FROM golang:1.19.9 as build
 
 ARG BRANCH
 ARG RELEASE_TAG
@@ -41,7 +41,7 @@ COPY . .
 
 RUN make buildx.csi-driver
 
-FROM alpine:3.12
+FROM alpine:3.14.8
 RUN apk add --no-cache lvm2 lvm2-extra util-linux device-mapper
 RUN apk add --no-cache btrfs-progs xfsprogs xfsprogs-extra e2fsprogs e2fsprogs-extra
 RUN apk add --no-cache ca-certificates libc6-compat

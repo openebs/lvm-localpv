@@ -22,12 +22,13 @@ import (
 	"log"
 	"os"
 
+	"github.com/spf13/cobra"
+	"k8s.io/klog/v2"
+
 	"github.com/openebs/lvm-localpv/pkg/driver"
-	config "github.com/openebs/lvm-localpv/pkg/driver/config"
+	"github.com/openebs/lvm-localpv/pkg/driver/config"
 	"github.com/openebs/lvm-localpv/pkg/lvm"
 	"github.com/openebs/lvm-localpv/pkg/version"
-	"github.com/spf13/cobra"
-	"k8s.io/klog"
 )
 
 /*
