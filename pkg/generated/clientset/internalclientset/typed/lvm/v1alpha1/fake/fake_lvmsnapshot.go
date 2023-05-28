@@ -24,7 +24,6 @@ import (
 	v1alpha1 "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -36,9 +35,9 @@ type FakeLVMSnapshots struct {
 	ns   string
 }
 
-var lvmsnapshotsResource = schema.GroupVersionResource{Group: "local.openebs.io", Version: "v1alpha1", Resource: "lvmsnapshots"}
+var lvmsnapshotsResource = v1alpha1.SchemeGroupVersion.WithResource("lvmsnapshots")
 
-var lvmsnapshotsKind = schema.GroupVersionKind{Group: "local.openebs.io", Version: "v1alpha1", Kind: "LVMSnapshot"}
+var lvmsnapshotsKind = v1alpha1.SchemeGroupVersion.WithKind("LVMSnapshot")
 
 // Get takes name of the lVMSnapshot, and returns the corresponding lVMSnapshot object, and an error if there is any.
 func (c *FakeLVMSnapshots) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.LVMSnapshot, err error) {
@@ -117,7 +116,7 @@ func (c *FakeLVMSnapshots) UpdateStatus(ctx context.Context, lVMSnapshot *v1alph
 // Delete takes name of the lVMSnapshot and deletes it. Returns an error if one occurs.
 func (c *FakeLVMSnapshots) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(lvmsnapshotsResource, c.ns, name), &v1alpha1.LVMSnapshot{})
+		Invokes(testing.NewDeleteActionWithOptions(lvmsnapshotsResource, c.ns, name, opts), &v1alpha1.LVMSnapshot{})
 
 	return err
 }

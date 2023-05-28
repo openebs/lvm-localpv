@@ -44,7 +44,7 @@ jobs:
           reporter: github-pr-review
           path: '.'
           pattern: '*.sh'
-          exclude: './.git/*,./vendor/*'
+          exclude: './.git/*'
 
       - name: install golangci-lint
         run: make install-golangci-lint
@@ -72,20 +72,21 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        kubernetes: [v1.20.1]
+        kubernetes: [v1.25.10]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Set up Go 1.16
-        uses: actions/setup-go@v2
+      - name: Set up Go 1.19
+        uses: actions/setup-go@v4
         with:
-          go-version: 1.16.5
+          go-version: 1.19.9
+          cache: false
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@v2.3.0
+        uses: manusa/actions-setup-minikube@v2.7.2
         with:
-          minikube version: v1.16.0
+          minikube version: v1.26.1
           kubernetes version: ${{ matrix.kubernetes }}
           github token: ${{ secrets.GITHUB_TOKEN }}
 

@@ -25,12 +25,13 @@ import (
 	"github.com/openebs/lib-csi/pkg/device/iolimit"
 
 	mnt "github.com/openebs/lib-csi/pkg/mount"
-	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	utilexec "k8s.io/utils/exec"
 	"k8s.io/utils/mount"
+
+	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 )
 
 // MountInfo contains the volume related info

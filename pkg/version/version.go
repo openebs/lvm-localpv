@@ -17,13 +17,12 @@ limitations under the License.
 package version
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 var (
@@ -62,7 +61,7 @@ func Get() string {
 	}
 
 	path := filepath.Join(os.Getenv("GOPATH") + versionFile)
-	vBytes, err := ioutil.ReadFile(path)
+	vBytes, err := os.ReadFile(path)
 	if err != nil {
 		klog.Errorf("failed to get version: %s", err.Error())
 		return ""
@@ -81,7 +80,7 @@ func GetBuildMeta() string {
 	}
 
 	path := filepath.Join(os.Getenv("GOPATH") + buildMetaFile)
-	vBytes, err := ioutil.ReadFile(path)
+	vBytes, err := os.ReadFile(path)
 	if err != nil {
 		klog.Errorf("failed to get build version: %s", err.Error())
 		return ""

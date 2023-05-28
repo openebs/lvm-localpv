@@ -24,15 +24,16 @@ import (
 	"strings"
 	"time"
 
-	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
-	"github.com/openebs/lvm-localpv/pkg/lvm"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	runtimenew "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
+
+	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
+	"github.com/openebs/lvm-localpv/pkg/lvm"
 )
 
 // isDeletionCandidate checks if a lvm volume is a deletion candidate.
@@ -146,7 +147,7 @@ func (c *VolController) enqueueVol(obj interface{}) {
 	c.workqueue.Add(key)
 }
 
-//Obj from queue is not readily in lvmvol type. This function would convert obj into lvmvolume type.
+// Obj from queue is not readily in lvmvol type. This function would convert obj into lvmvolume type.
 func (c *VolController) getStructuredObject(obj interface{}) (*apis.LVMVolume, bool) {
 	unstructuredInterface, ok := obj.(*unstructured.Unstructured)
 	if !ok {

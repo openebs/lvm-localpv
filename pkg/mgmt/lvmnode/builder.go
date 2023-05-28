@@ -19,6 +19,7 @@ package lvmnode
 import (
 	"time"
 
+	"github.com/openebs/lib-csi/pkg/common/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -31,7 +32,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 const (
@@ -80,9 +81,9 @@ type NodeController struct {
 	ownerRef metav1.OwnerReference
 }
 
-//This function returns controller object with all required keys set to watch over lvmnode object
+// This function returns controller object with all required keys set to watch over lvmnode object
 func newNodeController(kubeClient kubernetes.Interface, client dynamic.Interface,
-	dynInformer dynamicinformer.DynamicSharedInformerFactory, ownerRef metav1.OwnerReference) *NodeController {
+	dynInformer dynamicinformer.DynamicSharedInformerFactory, ownerRef metav1.OwnerReference) (*NodeController, error) {
 	//Creating informer for lvm node resource
 	nodeInformer := dynInformer.ForResource(noderesource).Informer()
 	eventBroadcaster := record.NewBroadcaster()
@@ -96,17 +97,24 @@ func newNodeController(kubeClient kubernetes.Interface, client dynamic.Interface
 		clientset:     client,
 		NodeLister:    dynamiclister.New(nodeInformer.GetIndexer(), noderesource),
 		NodeSynced:    nodeInformer.HasSynced,
-		workqueue:     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Node"),
-		recorder:      recorder,
-		pollInterval:  60 * time.Second,
-		ownerRef:      ownerRef,
+		workqueue: workqueue.NewRateLimitingQueueWithConfig(workqueue.DefaultControllerRateLimiter(),
+			workqueue.RateLimitingQueueConfig{
+				Name: "Node",
+			}),
+		recorder:     recorder,
+		pollInterval: 60 * time.Second,
+		ownerRef:     ownerRef,
 	}
 
 	klog.Infof("Adding Event handler functions for lvm node controller")
-	nodeInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, err := nodeInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    nodeContrller.addNode,
 		UpdateFunc: nodeContrller.updateNode,
 		DeleteFunc: nodeContrller.deleteNode,
 	})
-	return nodeContrller
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to add event handler for lvm node controller")
+	}
+
+	return nodeContrller, nil
 }

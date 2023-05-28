@@ -25,16 +25,17 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	runtimenew "k8s.io/apimachinery/pkg/runtime"
 
-	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
-	"github.com/openebs/lvm-localpv/pkg/builder/nodebuilder"
-	"github.com/openebs/lvm-localpv/pkg/equality"
-	"github.com/openebs/lvm-localpv/pkg/lvm"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
+
+	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
+	"github.com/openebs/lvm-localpv/pkg/builder/nodebuilder"
+	"github.com/openebs/lvm-localpv/pkg/equality"
+	"github.com/openebs/lvm-localpv/pkg/lvm"
 )
 
 func (c *NodeController) listLVMVolumeGroup() ([]apis.VolumeGroup, error) {
@@ -125,7 +126,7 @@ func (c *NodeController) syncNode(namespace string, name string) error {
 	return nil
 }
 
-//Obj from queue is not readily in lvmnode type. This function would convert obj into lvmnode type.
+// Obj from queue is not readily in lvmnode type. This function would convert obj into lvmnode type.
 func (c *NodeController) getStructuredObject(obj interface{}) (*apis.LVMNode, bool) {
 	unstructuredInterface, ok := obj.(*unstructured.Unstructured)
 	if !ok {

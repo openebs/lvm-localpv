@@ -26,7 +26,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 var (
@@ -63,7 +63,10 @@ func Start(controllerMtx *sync.RWMutex, stopCh <-chan struct{}) error {
 	controllerMtx.Lock()
 
 	//Build Lvm volume controller
-	controller := newVolController(kubeClient, openebsClient, VolInformerFactory)
+	controller, err := newVolController(kubeClient, openebsClient, VolInformerFactory)
+	if err != nil {
+		return errors.Wrap(err, "failed to create new lvm volume controller")
+	}
 	// blocking call, can't use defer to release the lock
 	controllerMtx.Unlock()
 

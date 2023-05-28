@@ -18,7 +18,7 @@ package collector
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 
 	"github.com/openebs/lvm-localpv/pkg/lvm"
 )

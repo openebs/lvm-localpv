@@ -23,27 +23,29 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/openebs/lvm-localpv/pkg/collector"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"github.com/openebs/lvm-localpv/pkg/collector"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/openebs/lib-csi/pkg/btrfs"
 	k8sapi "github.com/openebs/lib-csi/pkg/client/k8s"
 	"github.com/openebs/lib-csi/pkg/mount"
+	"golang.org/x/net/context"
+	"golang.org/x/sys/unix"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2"
+
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	"github.com/openebs/lvm-localpv/pkg/builder/volbuilder"
 	"github.com/openebs/lvm-localpv/pkg/lvm"
 	"github.com/openebs/lvm-localpv/pkg/mgmt/lvmnode"
 	"github.com/openebs/lvm-localpv/pkg/mgmt/snapshot"
 	"github.com/openebs/lvm-localpv/pkg/mgmt/volume"
-	"golang.org/x/net/context"
-	"golang.org/x/sys/unix"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/klog"
 
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
@@ -95,9 +97,9 @@ func NewNode(d *CSIDriver) csi.NodeServer {
 	}
 }
 
-//Function to register collectors to collect LVM related metrics and exporter metrics.
+// Function to register collectors to collect LVM related metrics and exporter metrics.
 //
-//If disableExporterMetrics is set to false, exporter will include metrics about itself i.e (process_*, go_*).
+// If disableExporterMetrics is set to false, exporter will include metrics about itself i.e (process_*, go_*).
 func registerCollectors(disableExporterMetrics bool) (*prometheus.Registry, error) {
 	registry := prometheus.NewRegistry()
 
@@ -151,15 +153,15 @@ func promLogger() *promLog {
 	return &promLog{}
 }
 
-//Function to start HTTP server to expose LVM metrics.
+// Function to start HTTP server to expose LVM metrics.
 //
-//Parameters:
+// Parameters:
 //
-//listenAddr: TCP network address where the prometheus metrics endpoint will listen.
+// listenAddr: TCP network address where the prometheus metrics endpoint will listen.
 //
-//metricsPath: The HTTP path where prometheus metrics will be exposed.
+// metricsPath: The HTTP path where prometheus metrics will be exposed.
 //
-//disableExporterMetrics: Exclude metrics about the exporter itself (process_*, go_*).
+// disableExporterMetrics: Exclude metrics about the exporter itself (process_*, go_*).
 func exposeMetrics(listenAddr string, metricsPath string, disableExporterMetrics bool) {
 
 	// Registry with all the collectors registered
@@ -424,7 +426,7 @@ func (ns *node) NodeUnstageVolume(
 // TODO
 // Verify if this needs to be implemented
 //
-// NodeExpandVolume resizes the filesystem if required
+// # NodeExpandVolume resizes the filesystem if required
 //
 // If ControllerExpandVolumeResponse returns true in
 // node_expansion_required then FileSystemResizePending

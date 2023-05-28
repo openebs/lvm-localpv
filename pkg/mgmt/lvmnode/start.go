@@ -22,7 +22,6 @@ import (
 	"time"
 
 	k8sapi "github.com/openebs/lib-csi/pkg/client/k8s"
-	"github.com/openebs/lvm-localpv/pkg/lvm"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -30,7 +29,9 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
+
+	"github.com/openebs/lvm-localpv/pkg/lvm"
 )
 
 // Start starts the lvmnode controller.
@@ -83,8 +84,10 @@ func Start(controllerMtx *sync.RWMutex, stopCh <-chan struct{}) error {
 	// This lock is used to serialize the AddToScheme call of all controllers.
 	controllerMtx.Lock()
 
-	controller := newNodeController(kubeClient, openebsClientNew, nodeInformerFactory, ownerRef)
-
+	controller, err := newNodeController(kubeClient, openebsClientNew, nodeInformerFactory, ownerRef)
+	if err != nil {
+		return errors.Wrap(err, "failed to create new lvm node controller")
+	}
 	// blocking call, can't use defer to release the lock
 	controllerMtx.Unlock()
 

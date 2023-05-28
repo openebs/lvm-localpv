@@ -18,10 +18,11 @@ package usage
 
 import (
 	k8sapi "github.com/openebs/lib-csi/pkg/client/k8s"
-	env "github.com/openebs/lib-csi/pkg/common/env"
-	openebsversion "github.com/openebs/lvm-localpv/pkg/version"
+	"github.com/openebs/lib-csi/pkg/common/env"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
+
+	openebsversion "github.com/openebs/lvm-localpv/pkg/version"
 )
 
 var (

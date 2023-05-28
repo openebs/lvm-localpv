@@ -24,12 +24,13 @@ import (
 
 	k8sapi "github.com/openebs/lib-csi/pkg/client/k8s"
 	"github.com/openebs/lib-csi/pkg/csipv"
-	clientset "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset"
-	informers "github.com/openebs/lvm-localpv/pkg/generated/informer/externalversions"
 	corev1 "k8s.io/api/core/v1"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+
+	clientset "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset"
+	informers "github.com/openebs/lvm-localpv/pkg/generated/informer/externalversions"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"golang.org/x/net/context"
@@ -39,10 +40,11 @@ import (
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 
-	errors "github.com/openebs/lib-csi/pkg/common/errors"
+	"github.com/openebs/lib-csi/pkg/common/errors"
 	schd "github.com/openebs/lib-csi/pkg/scheduler"
+
 	lvmapi "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	"github.com/openebs/lvm-localpv/pkg/builder/snapbuilder"
 	"github.com/openebs/lvm-localpv/pkg/builder/volbuilder"
