@@ -79,6 +79,12 @@ type Config struct {
 
 	// Exclude metrics about the exporter itself (process_*, go_*).
 	DisableExporterMetrics bool
+
+	// KubeAPIQPS is the QPS to use while talking with Kubernetes API server.
+	KubeAPIQPS int
+
+	// KubeAPIBurst is the burst to allow while talking with Kubernetes API server.
+	KubeAPIBurst int
 }
 
 // Default returns a new instance of config
