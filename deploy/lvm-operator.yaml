@@ -1273,6 +1273,8 @@ spec:
           args :
             - "--endpoint=$(OPENEBS_CSI_ENDPOINT)"
             - "--plugin=$(OPENEBS_CONTROLLER_DRIVER)"
+            - "--kube-api-qps=0"
+            - "--kube-api-burst=0"
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
@@ -1460,6 +1462,8 @@ spec:
             - "--endpoint=$(OPENEBS_CSI_ENDPOINT)"
             - "--plugin=$(OPENEBS_NODE_DRIVER)"
             - "--listen-address=$(METRICS_LISTEN_ADDRESS)"
+            - "--kube-api-qps=0"
+            - "--kube-api-burst=0"
           env:
             - name: OPENEBS_NODE_ID
               valueFrom:
