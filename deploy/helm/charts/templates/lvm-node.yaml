@@ -71,6 +71,8 @@ spec:
             - "--nodeid=$(OPENEBS_NODE_ID)"
             - "--endpoint=$(OPENEBS_CSI_ENDPOINT)"
             - "--plugin=$(OPENEBS_NODE_DRIVER)"
+            - "--kube-api-qps={{ .Values.lvmNode.kubeClientRateLimiter.qps }}"
+            - "--kube-api-burst={{ .Values.lvmNode.kubeClientRateLimiter.burst }}"
             {{- if .Values.lvmPlugin.ioLimits.enabled }}
             - "--setiolimits"
             - "--container-runtime=$(CONTAINER_RUNTIME)"

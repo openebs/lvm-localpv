@@ -54,6 +54,13 @@ lvmNode:
     create: true
     name: lvm-localpv-csi-node-critical
   logLevel: 5
+  # Configure kubernetes client API requests rate.
+  kubeClientRateLimiter:
+    # Configure the number of queries per second.
+    qps: 0
+    # Configure the maximum number of queries allowed after
+    # accounting for rolled over qps from previous seconds.
+    burst: 0
 
 
 # lvmController contains the configurables for
@@ -123,6 +130,13 @@ lvmController:
   priorityClass:
     create: true
     name: lvm-localpv-csi-controller-critical
+  # Configure kubernetes client API requests rate.
+  kubeClientRateLimiter:
+    # Configure the number of queries per second.
+    qps: 0
+    # Configure the maximum number of queries allowed after
+    # accounting for rolled over qps from previous seconds.
+    burst: 0
 
 # lvmPlugin is the common csi container used by the
 # controller statefulset and node daemonset
