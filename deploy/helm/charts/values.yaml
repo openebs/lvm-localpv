@@ -2,7 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 release:
-  version: "1.0.0"
+  version: "1.1.0"
 
 imagePullSecrets:
 # - name: "image-pull-secret"
@@ -23,8 +23,8 @@ lvmNode:
     name: "csi-node-driver-registrar"
     image:
       # Make sure that registry name end with a '/'.
-      # For example : k8s.gcr.io/ is a correct value here and quay.io is incorrect
-      registry: k8s.gcr.io/
+      # For example : registry.k8s.io/ is a correct value here and quay.io is incorrect
+      registry: registry.k8s.io/
       repository: sig-storage/csi-node-driver-registrar
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
@@ -54,6 +54,13 @@ lvmNode:
     create: true
     name: lvm-localpv-csi-node-critical
   logLevel: 5
+  # Configure kubernetes client API requests rate.
+  kubeClientRateLimiter:
+    # Configure the number of queries per second.
+    qps: 0
+    # Configure the maximum number of queries allowed after
+    # accounting for rolled over qps from previous seconds.
+    burst: 0
 
 
 # lvmController contains the configurables for
@@ -67,8 +74,8 @@ lvmController:
     name: "csi-resizer"
     image:
       # Make sure that registry name end with a '/'.
-      # For example : k8s.gcr.io/ is a correct value here and quay.io is incorrect
-      registry: k8s.gcr.io/
+      # For example : registry.k8s.io/ is a correct value here and quay.io is incorrect
+      registry: registry.k8s.io/
       repository: sig-storage/csi-resizer
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
@@ -77,8 +84,8 @@ lvmController:
     name: "csi-snapshotter"
     image:
       # Make sure that registry name end with a '/'.
-      # For example : k8s.gcr.io/ is a correct value here and quay.io is incorrect
-      registry: k8s.gcr.io/
+      # For example : registry.k8s.io/ is a correct value here and quay.io is incorrect
+      registry: registry.k8s.io/
       repository: sig-storage/csi-snapshotter
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
@@ -87,8 +94,8 @@ lvmController:
     name: "snapshot-controller"
     image:
       # Make sure that registry name end with a '/'.
-      # For example : k8s.gcr.io/ is a correct value here and quay.io is incorrect
-      registry: k8s.gcr.io/
+      # For example : registry.k8s.io/ is a correct value here and quay.io is incorrect
+      registry: registry.k8s.io/
       repository: sig-storage/snapshot-controller
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
@@ -97,8 +104,8 @@ lvmController:
     name: "csi-provisioner"
     image:
       # Make sure that registry name end with a '/'.
-      # For example : k8s.gcr.io/ is a correct value here and quay.io is incorrect
-      registry: k8s.gcr.io/
+      # For example : registry.k8s.io/ is a correct value here and quay.io is incorrect
+      registry: registry.k8s.io/
       repository: sig-storage/csi-provisioner
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
@@ -123,6 +130,13 @@ lvmController:
   priorityClass:
     create: true
     name: lvm-localpv-csi-controller-critical
+  # Configure kubernetes client API requests rate.
+  kubeClientRateLimiter:
+    # Configure the number of queries per second.
+    qps: 0
+    # Configure the maximum number of queries allowed after
+    # accounting for rolled over qps from previous seconds.
+    burst: 0
 
 # lvmPlugin is the common csi container used by the
 # controller statefulset and node daemonset
@@ -130,12 +144,12 @@ lvmPlugin:
   name: "openebs-lvm-plugin"
   image:
     # Make sure that registry name end with a '/'.
-    # For example : k8s.gcr.io/ is a correct value here and quay.io is incorrect
+    # For example : registry.k8s.io/ is a correct value here and quay.io is incorrect
     registry:
     repository: openebs/lvm-driver
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: 1.0.0
+    tag: 1.1.0
   ioLimits:
     enabled: false
     containerRuntime: containerd

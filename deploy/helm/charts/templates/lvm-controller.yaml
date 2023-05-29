@@ -131,6 +131,8 @@ spec:
           args :
             - "--endpoint=$(OPENEBS_CSI_ENDPOINT)"
             - "--plugin=$(OPENEBS_CONTROLLER_DRIVER)"
+            - "--kube-api-qps={{ .Values.lvmController.kubeClientRateLimiter.qps }}"
+            - "--kube-api-burst={{ .Values.lvmController.kubeClientRateLimiter.burst }}"
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
