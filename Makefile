@@ -110,7 +110,7 @@ format:
 .PHONY: test
 test: format
 	@echo "--> Running go test" ;
-	@go test $(UNIT_TEST_PACKAGES)
+	@go test $(UNIT_TEST_PACKAGES) -cover  -coverpkg=./... -covermode=atomic -coverprofile=coverage.txt
 
 
 .PHONY: deps
