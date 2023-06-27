@@ -27,9 +27,6 @@ on:
       - 'docs/**'
       - 'LICENSE'
       - 'MAINTAINERS'
-  pull_request:
-    branches:
-      - master
 
 jobs:
   lint:
