@@ -100,13 +100,13 @@ helm install openebs-lvmlocalpv openebs-lvmlocalpv/lvm-localpv --namespace opene
 | `lvmPlugin.image.registry`| Registry for openebs-lvm-plugin image| `""`|
 | `lvmPlugin.image.repository`| Image repository for openebs-lvm-plugin| `openebs/lvm-driver`|
 | `lvmPlugin.image.pullPolicy`| Image pull policy for openebs-lvm-plugin| `IfNotPresent`|
-| `lvmPlugin.image.tag`| Image tag for openebs-lvm-plugin| `1.1.0`|
+| `lvmPlugin.image.tag`| Image tag for openebs-lvm-plugin| `1.2.0`|
 | `lvmPlugin.metricsPort`| The TCP port number used for exposing lvm-metrics | `9500`|
 | `lvmPlugin.allowedTopologies`| The comma seperated list of allowed node topologies | `kubernetes.io/hostname,`|
 | `lvmNode.driverRegistrar.image.registry`| Registry for csi-node-driver-registrar image| `registry.k8s.io/`|
 | `lvmNode.driverRegistrar.image.repository`| Image repository for csi-node-driver-registrar| `sig-storage/csi-node-driver-registrar`|
 | `lvmNode.driverRegistrar.image.pullPolicy`| Image pull policy for csi-node-driver-registrar| `IfNotPresent`|
-| `lvmNode.driverRegistrar.image.tag`| Image tag for csi-node-driver-registrar| `v2.3.0`|
+| `lvmNode.driverRegistrar.image.tag`| Image tag for csi-node-driver-registrar| `v2.7.0`|
 | `lvmNode.updateStrategy.type`| Update strategy for lvmnode daemonset | `RollingUpdate` |
 | `lvmNode.kubeletDir`| Kubelet mount point for lvmnode daemonset| `"/var/lib/kubelet/"` |
 | `lvmNode.annotations` | Annotations for lvmnode daemonset metadata| `""`|
@@ -120,19 +120,19 @@ helm install openebs-lvmlocalpv openebs-lvmlocalpv/lvm-localpv --namespace opene
 | `lvmController.resizer.image.registry`| Registry for csi-resizer image| `registry.k8s.io/`|
 | `lvmController.resizer.image.repository`| Image repository for csi-resizer| `sig-storage/csi-resizer`|
 | `lvmController.resizer.image.pullPolicy`| Image pull policy for csi-resizer| `IfNotPresent`|
-| `lvmController.resizer.image.tag`| Image tag for csi-resizer| `v1.2.0`|
+| `lvmController.resizer.image.tag`| Image tag for csi-resizer| `v1.7.0`|
 | `lvmController.snapshotter.image.registry`| Registry for csi-snapshotter image| `registry.k8s.io/`|
 | `lvmController.snapshotter.image.repository`| Image repository for csi-snapshotter| `sig-storage/csi-snapshotter`|
 | `lvmController.snapshotter.image.pullPolicy`| Image pull policy for csi-snapshotter| `IfNotPresent`|
-| `lvmController.snapshotter.image.tag`| Image tag for csi-snapshotter| `v4.0.0`|
+| `lvmController.snapshotter.image.tag`| Image tag for csi-snapshotter| `v6.2.1`|
 | `lvmController.snapshotController.image.registry`| Registry for snapshot-controller image| `registry.k8s.io/`|
 | `lvmController.snapshotController.image.repository`| Image repository for snapshot-controller| `sig-storage/snapshot-controller`|
 | `lvmController.snapshotController.image.pullPolicy`| Image pull policy for snapshot-controller| `IfNotPresent`|
-| `lvmController.snapshotController.image.tag`| Image tag for snapshot-controller| `v4.0.0`|
+| `lvmController.snapshotController.image.tag`| Image tag for snapshot-controller| `v6.2.1`|
 | `lvmController.provisioner.image.registry`| Registry for csi-provisioner image| `registry.k8s.io/`|
 | `lvmController.provisioner.image.repository`| Image repository for csi-provisioner| `sig-storage/csi-provisioner`|
 | `lvmController.provisioner.image.pullPolicy`| Image pull policy for csi-provisioner| `IfNotPresent`|
-| `lvmController.provisioner.image.tag`| Image tag for csi-provisioner| `v2.3.0`|
+| `lvmController.provisioner.image.tag`| Image tag for csi-provisioner| `v3.4.1`|
 | `lvmController.updateStrategy.type`| Update strategy for lvm localpv controller statefulset | `RollingUpdate` |
 | `lvmController.annotations` | Annotations for lvm localpv controller statefulset metadata| `""`|
 | `lvmController.podAnnotations`| Annotations for lvm localpv controller statefulset's pods metadata | `""`|

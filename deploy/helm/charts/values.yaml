@@ -2,7 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 release:
-  version: "1.1.0"
+  version: "1.2.0"
 
 imagePullSecrets:
 # - name: "image-pull-secret"
