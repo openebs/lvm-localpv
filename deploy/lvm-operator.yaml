@@ -1200,7 +1200,7 @@ spec:
       serviceAccount: openebs-lvm-controller-sa
       containers:
         - name: csi-resizer
-          image: registry.k8s.io/sig-storage/csi-resizer:v1.2.0
+          image: registry.k8s.io/sig-storage/csi-resizer:v1.7.0
           args:
             - "--v=5"
             - "--csi-address=$(ADDRESS)"
@@ -1213,7 +1213,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-snapshotter
-          image: registry.k8s.io/sig-storage/csi-snapshotter:v4.0.0
+          image: registry.k8s.io/sig-storage/csi-snapshotter:v6.2.1
           imagePullPolicy: IfNotPresent
           args:
             - "--csi-address=$(ADDRESS)"
@@ -1225,13 +1225,13 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: snapshot-controller
-          image: registry.k8s.io/sig-storage/snapshot-controller:v4.0.0
+          image: registry.k8s.io/sig-storage/snapshot-controller:v6.2.1
           args:
             - "--v=5"
             - "--leader-election=true"
           imagePullPolicy: IfNotPresent
         - name: csi-provisioner
-          image: registry.k8s.io/sig-storage/csi-provisioner:v3.0.0
+          image: registry.k8s.io/sig-storage/csi-provisioner:v3.4.1
           imagePullPolicy: IfNotPresent
           args:
             - "--csi-address=$(ADDRESS)"
@@ -1273,8 +1273,6 @@ spec:
           args :
             - "--endpoint=$(OPENEBS_CSI_ENDPOINT)"
             - "--plugin=$(OPENEBS_CONTROLLER_DRIVER)"
-            - "--kube-api-qps=0"
-            - "--kube-api-burst=0"
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
@@ -1425,7 +1423,7 @@ spec:
       hostNetwork: true
       containers:
         - name: csi-node-driver-registrar
-          image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.3.0
+          image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.7.0
           imagePullPolicy: IfNotPresent
           args:
             - "--v=5"
@@ -1462,8 +1460,6 @@ spec:
             - "--endpoint=$(OPENEBS_CSI_ENDPOINT)"
             - "--plugin=$(OPENEBS_NODE_DRIVER)"
             - "--listen-address=$(METRICS_LISTEN_ADDRESS)"
-            - "--kube-api-qps=0"
-            - "--kube-api-burst=0"
           env:
             - name: OPENEBS_NODE_ID
               valueFrom:
