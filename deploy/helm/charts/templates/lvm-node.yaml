@@ -29,7 +29,7 @@ spec:
 {{- if .Values.lvmNode.priorityClass.create }}
       priorityClassName: {{ template "lvmlocalpv.lvmNode.priorityClassName" . }}
 {{- end }}
-      serviceAccount: {{ .Values.serviceAccount.lvmNode.name }}
+      serviceAccountName: {{ .Values.serviceAccount.lvmNode.name }}
       hostNetwork: true
       containers:
         - name: {{ .Values.lvmNode.driverRegistrar.name }}

@@ -2,7 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 release:
-  version: "1.1.0"
+  version: "1.2.0"
 
 imagePullSecrets:
 # - name: "image-pull-secret"
@@ -28,7 +28,7 @@ lvmNode:
       repository: sig-storage/csi-node-driver-registrar
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
-      tag: v2.3.0
+      tag: v2.8.0
   updateStrategy:
     type: RollingUpdate
   annotations: {}
@@ -79,7 +79,7 @@ lvmController:
       repository: sig-storage/csi-resizer
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
-      tag: v1.2.0
+      tag: v1.8.0
   snapshotter:
     name: "csi-snapshotter"
     image:
@@ -89,7 +89,7 @@ lvmController:
       repository: sig-storage/csi-snapshotter
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
-      tag: v4.0.0
+      tag: v6.2.2
   snapshotController:
     name: "snapshot-controller"
     image:
@@ -99,7 +99,7 @@ lvmController:
       repository: sig-storage/snapshot-controller
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
-      tag: v4.0.0
+      tag: v6.2.2
   provisioner:
     name: "csi-provisioner"
     image:
@@ -109,7 +109,7 @@ lvmController:
       repository: sig-storage/csi-provisioner
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
-      tag: v3.0.0
+      tag: v3.5.0
   updateStrategy:
     type: RollingUpdate
   annotations: {}
@@ -149,14 +149,15 @@ lvmPlugin:
     repository: openebs/lvm-driver
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: 1.1.0
+    tag: 1.2.0
   ioLimits:
     enabled: false
     containerRuntime: containerd
     readIopsPerGB: ""
     writeIopsPerGB: ""
   # The TCP port number used for exposing lvm-metrics.
-  # If not set, service will not be created to expose metrics endpoint to serviceMonitor and listen-address flag will not be set.
+  # If not set, service will not be created to expose metrics endpoint
+  # to serviceMonitor andlisten-address flag will not be set.
   metricsPort: 9500
   # Comma seperated list of k8s worker node topologies
   allowedTopologies: "kubernetes.io/hostname,"
@@ -165,6 +166,9 @@ role: openebs-lvm
 
 crd:
   enableInstall: true
+  # Specify installation of the kubernetes-csi volume snapshot CRDs if your Kubernetes distribution
+  # or another storage operator already manages them.
+  volumeSnapshot: true
 
 serviceAccount:
   lvmController:
