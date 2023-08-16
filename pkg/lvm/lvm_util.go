@@ -663,7 +663,7 @@ func ListLVMVolumeGroup(reloadCache bool) ([]apis.VolumeGroup, error) {
 		"--units", "b",
 	}
 	cmd := exec.Command(VGList, args...)
-	output, err := cmd.CombinedOutput()
+	output, err := cmd.Output()
 	if err != nil {
 		klog.Errorf("lvm: list volume group cmd %v: %v", args, err)
 		return nil, err
