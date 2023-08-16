@@ -1,0 +1,8 @@
+Drop the STDERR stream contents from output to avoid JSON mangling.
+
+The vgs command may print non-critical warnings to STDERR. Warnings may not
+necessarily result in a failure return code, which allows the program to
+continue with marshalling the JSON-formatted output. Combining this stream with
+STDIN will cause the next step at decodeVgsJSON() to fail due to garbage mixed
+in the JSON.
+
