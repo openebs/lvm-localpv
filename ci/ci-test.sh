@@ -43,12 +43,20 @@ cleanup_loopdev() {
 }
 
 cleanup_lvmvg() {
-  [ -f /tmp/openebs_ci_disk.img ] && rm /tmp/openebs_ci_disk.img
+  if [ -f /tmp/openebs_ci_disk.img ]
+  then
+    sudo vgremove lvmvg -y || true
+    rm /tmp/openebs_ci_disk.img
+  fi
   cleanup_loopdev
 }
 
 cleanup_foreign_lvmvg() {
-  [ -f /tmp/openebs_ci_foreign_disk.img ] && rm /tmp/openebs_ci_foreign_disk.img
+  if [ -f /tmp/openebs_ci_foreign_disk.img ]
+  then
+    sudo vgremove foreign_lvmvg --config="${LVM_CONFIG}" -y || true
+    rm /tmp/openebs_ci_foreign_disk.img
+  fi
   cleanup_loopdev
 }
 
