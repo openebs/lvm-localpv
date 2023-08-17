@@ -17,6 +17,7 @@ limitations under the License.
 package lvm
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -550,6 +551,7 @@ func decodeVgsJSON(raw []byte) ([]apis.VolumeGroup, error) {
 	}{}
 	var err error
 	if err = json.Unmarshal(raw, output); err != nil {
+		klog.Errorf("json: failed to unmarshal:\n%s", raw)
 		return nil, err
 	}
 
@@ -646,6 +648,27 @@ func ReloadLVMMetadataCache() error {
 	return nil
 }
 
+// RunCommandSplit is a wrapper function to run a command and receive its
+// STDERR and STDOUT streams in separate []byte vars.
+func RunCommandSplit(command string, args ...string) ([]byte, []byte, error) {
+	var cmdStdout bytes.Buffer
+	var cmdStderr bytes.Buffer
+
+	cmd := exec.Command(command, args...)
+	cmd.Stdout = &cmdStdout
+	cmd.Stderr = &cmdStderr
+	err := cmd.Run()
+
+	output := cmdStdout.Bytes()
+	error_output := cmdStderr.Bytes()
+
+	if len(error_output) > 0 {
+		klog.Warningf("lvm: said into stderr: %s", error_output)
+	}
+
+	return output, error_output, err
+}
+
 // ListLVMVolumeGroup invokes `vgs` to list all the available volume
 // groups in the node.
 //
@@ -662,12 +685,12 @@ func ListLVMVolumeGroup(reloadCache bool) ([]apis.VolumeGroup, error) {
 		"--reportformat", "json",
 		"--units", "b",
 	}
-	cmd := exec.Command(VGList, args...)
-	output, err := cmd.Output()
+	output, _, err := RunCommandSplit(VGList, args...)
 	if err != nil {
 		klog.Errorf("lvm: list volume group cmd %v: %v", args, err)
 		return nil, err
 	}
+
 	return decodeVgsJSON(output)
 }
 
