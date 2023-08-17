@@ -16,29 +16,82 @@
 
 set -e
 
+LVM_OPERATOR="$(realpath deploy/lvm-operator.yaml)"
+SNAP_CLASS="$(realpath deploy/sample/lvmsnapclass.yaml)"
+
+export LVM_NAMESPACE="openebs"
+export TEST_DIR="tests"
+export NAMESPACE="kube-system"
+
+# allow override
+if [ -z "${KUBECONFIG}" ]
+then
+  export KUBECONFIG="${HOME}/.kube/config"
+fi
+
+# systemid for the testing environment. The kubernetes host machine will serve as the foreign lvm system.
+LVM_SYSTEMID="openebs-ci-test-system"
+LVM_CONFIG="global{system_id_source=lvmlocal}local{system_id=${LVM_SYSTEMID}}"
+
+# Clean up generated resources for successive tests.
+cleanup_loopdev() {
+  sudo losetup -l | grep '(deleted)' | awk '{print $1}' \
+    | while IFS= read -r disk
+      do
+        sudo losetup -d "${disk}"
+      done
+}
+
+cleanup_lvmvg() {
+  [ -f /tmp/openebs_ci_disk.img ] && rm /tmp/openebs_ci_disk.img
+  cleanup_loopdev
+}
+
+cleanup_foreign_lvmvg() {
+  [ -f /tmp/openebs_ci_foreign_disk.img ] && rm /tmp/openebs_ci_foreign_disk.img
+  cleanup_loopdev
+}
+
+cleanup() {
+  set +e
+
+  echo "Cleaning up test resources"
+
+  cleanup_lvmvg
+  cleanup_foreign_lvmvg
+
+  kubectl delete pvc -n openebs lvmpv-pvc
+  kubectl delete -f "${SNAP_CLASS}"
+  kubectl delete -f "${LVM_OPERATOR}"
+
+  return 0
+}
+# trap "cleanup 2>/dev/null" EXIT
+[ ! -z "${CLEANUP_ONLY}" ] && cleanup 2>/dev/null && exit 0
+[ ! -z "${RESET}" ] && cleanup 2>/dev/null
+
 # setup the lvm volume group to create the volume
-truncate -s 1024G /tmp/disk.img
-disk=`sudo losetup -f /tmp/disk.img --show`
-sudo pvcreate "$disk"
-sudo vgcreate lvmvg "$disk"
+cleanup_lvmvg
+truncate -s 1024G /tmp/openebs_ci_disk.img
+disk=`sudo losetup -f /tmp/openebs_ci_disk.img --show`
+sudo pvcreate "${disk}"
+sudo vgcreate lvmvg "${disk}"
+
+# setup a foreign lvm to test
+cleanup_foreign_lvmvg
+truncate -s 1024G /tmp/openebs_ci_foreign_disk.img
+foreign_disk=`sudo losetup -f /tmp/openebs_ci_foreign_disk.img --show`
+sudo pvcreate "${foreign_disk}"
+sudo vgcreate foreign_lvmvg "${foreign_disk}" --systemid="${LVM_SYSTEMID}"
 
 # install snapshot and thin volume module for lvm
 sudo modprobe dm-snapshot
 sudo modprobe dm_thin_pool
 
-
-LVM_OPERATOR=deploy/lvm-operator.yaml
-SNAP_CLASS=deploy/sample/lvmsnapclass.yaml
-
-export LVM_NAMESPACE="openebs"
-export TEST_DIR="tests"
-export NAMESPACE="kube-system"
-export KUBECONFIG=$HOME/.kube/config
-
 # Prepare env for running BDD tests
 # Minikube is already running
-kubectl apply -f $LVM_OPERATOR
-kubectl apply -f $SNAP_CLASS
+kubectl apply -f "${LVM_OPERATOR}"
+kubectl apply -f "${SNAP_CLASS}"
 
 dumpAgentLogs() {
   NR=$1
@@ -135,3 +188,5 @@ exit 1
 fi
 
 printf "\n\n######### All test cases passed #########\n\n"
+
+[ ! -z "${CLEANUP}" ] && cleanup 2>/dev/null
