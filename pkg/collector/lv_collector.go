@@ -37,6 +37,10 @@ type lvCollector struct {
 	lvMetadataSizeMetric        *prometheus.Desc
 	lvMetadataUsedPercentMetric *prometheus.Desc
 	lvSnapshotUsedPercentMetric *prometheus.Desc
+	lvRiopsLimitMetric          *prometheus.Desc
+	lvWiopsLimitMetric          *prometheus.Desc
+	lvRbpsLimitMetric           *prometheus.Desc
+	lvWbpssLimitMetric          *prometheus.Desc
 }
 
 func NewLvCollector() prometheus.Collector {
@@ -82,6 +86,22 @@ func NewLvCollector() prometheus.Collector {
 			"LVM LV snap used size in percentage",
 			[]string{"name", "path", "dm_path", "vg", "device", "host", "segtype", "pool", "active_status"}, nil,
 		),
+		lvRiopsLimitMetric: prometheus.NewDesc(prometheus.BuildFQName("openebs", "lv", "riops_limit"),
+			"LVM LV riops cgroup limit, 0 means without limit",
+			[]string{"volumename"}, nil,
+		),
+		lvWiopsLimitMetric: prometheus.NewDesc(prometheus.BuildFQName("openebs", "lv", "wiops_limit"),
+			"LVM LV wiops cgroup limit, 0 means without limit",
+			[]string{"volumename"}, nil,
+		),
+		lvRbpsLimitMetric: prometheus.NewDesc(prometheus.BuildFQName("openebs", "lv", "rbps_limit"),
+			"LVM LV rbps cgroup limit, 0 means without limit",
+			[]string{"volumename"}, nil,
+		),
+		lvWbpssLimitMetric: prometheus.NewDesc(prometheus.BuildFQName("openebs", "lv", "wbps_limit"),
+			"LVM LV wbps cgroup limit, 0 means without limit",
+			[]string{"volumename"}, nil,
+		),
 	}
 }
 
@@ -120,6 +140,10 @@ func (c *lvCollector) Collect(ch chan<- prometheus.Metric) {
 			ch <- prometheus.MustNewConstMetric(c.lvMetadataSizeMetric, prometheus.GaugeValue, float64(lv.MetadataSize), lv.Name, lv.Path, lv.DMPath, lv.VGName, lv.Device, lv.Host, lv.SegType, lv.PoolName, lv.ActiveStatus)
 			ch <- prometheus.MustNewConstMetric(c.lvMetadataUsedPercentMetric, prometheus.GaugeValue, lv.MetadataUsedPercent, lv.Name, lv.Path, lv.DMPath, lv.VGName, lv.Device, lv.Host, lv.SegType, lv.PoolName, lv.ActiveStatus)
 			ch <- prometheus.MustNewConstMetric(c.lvSnapshotUsedPercentMetric, prometheus.GaugeValue, lv.SnapshotUsedPercent, lv.Name, lv.Path, lv.DMPath, lv.VGName, lv.Device, lv.Host, lv.SegType, lv.PoolName, lv.ActiveStatus)
+			ch <- prometheus.MustNewConstMetric(c.lvRiopsLimitMetric, prometheus.GaugeValue, float64(lvm.GetRIopsPerGB(lv.VGName))*float64(lv.Size>>30), lv.Name)
+			ch <- prometheus.MustNewConstMetric(c.lvWiopsLimitMetric, prometheus.GaugeValue, float64(lvm.GetWIopsPerGB(lv.VGName))*float64(lv.Size>>30), lv.Name)
+			ch <- prometheus.MustNewConstMetric(c.lvRbpsLimitMetric, prometheus.GaugeValue, float64(lvm.GetRBpsPerGB(lv.VGName))*float64(lv.Size>>30), lv.Name)
+			ch <- prometheus.MustNewConstMetric(c.lvWbpssLimitMetric, prometheus.GaugeValue, float64(lvm.GetWBpsPerGB(lv.VGName))*float64(lv.Size>>30), lv.Name)
 		}
 	}
 }

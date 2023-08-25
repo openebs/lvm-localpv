@@ -275,10 +275,10 @@ func setIOLimits(vol *apis.LVMVolume, podLVInfo *PodLVInfo, devicePath string) e
 	}
 	capacityGB := uint64(math.Ceil(float64(capacityBytes) / (1024 * 1024 * 1024)))
 	klog.Infof("Capacity of device in GB: %v", capacityGB)
-	riops := getRIopsPerGB(podLVInfo.LVGroup) * capacityGB
-	wiops := getWIopsPerGB(podLVInfo.LVGroup) * capacityGB
-	rbps := getRBpsPerGB(podLVInfo.LVGroup) * capacityGB
-	wbps := getWBpsPerGB(podLVInfo.LVGroup) * capacityGB
+	riops := GetRIopsPerGB(podLVInfo.LVGroup) * capacityGB
+	wiops := GetWIopsPerGB(podLVInfo.LVGroup) * capacityGB
+	rbps := GetRBpsPerGB(podLVInfo.LVGroup) * capacityGB
+	wbps := GetWBpsPerGB(podLVInfo.LVGroup) * capacityGB
 	klog.Infof("Setting iolimits for podUId %s, device %s: riops=%v, wiops=%v, rbps=%v, wbps=%v",
 		podLVInfo.UID, devicePath, riops, wiops, rbps, wbps,
 	)

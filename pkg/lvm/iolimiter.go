@@ -120,19 +120,19 @@ func getRatePerGB(vgName string, rateMap map[string]uint64) uint64 {
 	return uint64(0)
 }
 
-func getRIopsPerGB(vgName string) uint64 {
+func GetRIopsPerGB(vgName string) uint64 {
 	return getRatePerGB(vgName, riopsPerGB)
 }
 
-func getWIopsPerGB(vgName string) uint64 {
+func GetWIopsPerGB(vgName string) uint64 {
 	return getRatePerGB(vgName, wiopsPerGB)
 }
 
-func getRBpsPerGB(vgName string) uint64 {
+func GetRBpsPerGB(vgName string) uint64 {
 	return getRatePerGB(vgName, rbpsPerGB)
 }
 
-func getWBpsPerGB(vgName string) uint64 {
+func GetWBpsPerGB(vgName string) uint64 {
 	return getRatePerGB(vgName, wbpsPerGB)
 }
 

@@ -62,10 +62,10 @@ func TestExtractingIoLimits(t *testing.T) {
 	for _, testData := range testSuite {
 		SetIORateLimits(testData.config)
 		for _, vgName := range *testData.vgNames {
-			assert.Equal(t, testData.expected[vgName].riops, getRIopsPerGB(vgName))
-			assert.Equal(t, testData.expected[vgName].wiops, getWIopsPerGB(vgName))
-			assert.Equal(t, testData.expected[vgName].rbps, getRBpsPerGB(vgName))
-			assert.Equal(t, testData.expected[vgName].wbps, getWBpsPerGB(vgName))
+			assert.Equal(t, testData.expected[vgName].riops, GetRIopsPerGB(vgName))
+			assert.Equal(t, testData.expected[vgName].wiops, GetWIopsPerGB(vgName))
+			assert.Equal(t, testData.expected[vgName].rbps, GetRBpsPerGB(vgName))
+			assert.Equal(t, testData.expected[vgName].wbps, GetWBpsPerGB(vgName))
 		}
 	}
 }
