@@ -72,23 +72,24 @@ cleanup() {
   kubectl delete -f "${SNAP_CLASS}"
   kubectl delete -f "${LVM_OPERATOR}"
 
+  # always return true
   return 0
 }
 # trap "cleanup 2>/dev/null" EXIT
-[ ! -z "${CLEANUP_ONLY}" ] && cleanup 2>/dev/null && exit 0
-[ ! -z "${RESET}" ] && cleanup 2>/dev/null
+[ -n "${CLEANUP_ONLY}" ] && cleanup 2>/dev/null && exit 0
+[ -n "${RESET}" ] && cleanup 2>/dev/null
 
 # setup the lvm volume group to create the volume
 cleanup_lvmvg
 truncate -s 1024G /tmp/openebs_ci_disk.img
-disk=`sudo losetup -f /tmp/openebs_ci_disk.img --show`
+disk="$(sudo losetup -f /tmp/openebs_ci_disk.img --show)"
 sudo pvcreate "${disk}"
 sudo vgcreate lvmvg "${disk}"
 
 # setup a foreign lvm to test
 cleanup_foreign_lvmvg
 truncate -s 1024G /tmp/openebs_ci_foreign_disk.img
-foreign_disk=`sudo losetup -f /tmp/openebs_ci_foreign_disk.img --show`
+foreign_disk="$(sudo losetup -f /tmp/openebs_ci_foreign_disk.img --show)"
 sudo pvcreate "${foreign_disk}"
 sudo vgcreate foreign_lvmvg "${foreign_disk}" --systemid="${LVM_SYSTEMID}"
 
@@ -160,9 +161,7 @@ set +e
 
 echo "running ginkgo test case"
 
-ginkgo -v
-
-if [ $? -ne 0 ]; then
+if ! ginkgo -v ; then
 
 sudo pvscan --cache
 
@@ -197,4 +196,5 @@ fi
 
 printf "\n\n######### All test cases passed #########\n\n"
 
-[ ! -z "${CLEANUP}" ] && cleanup 2>/dev/null
+# last statement formatted to always return true
+[ -z "${CLEANUP}" ] || cleanup 2>/dev/null
