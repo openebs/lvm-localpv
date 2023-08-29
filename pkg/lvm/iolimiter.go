@@ -120,18 +120,22 @@ func getRatePerGB(vgName string, rateMap map[string]uint64) uint64 {
 	return uint64(0)
 }
 
+// GetRIopsPerGB returns read iops rates for the volume group name (or prefix)
 func GetRIopsPerGB(vgName string) uint64 {
 	return getRatePerGB(vgName, riopsPerGB)
 }
 
+// GetWIopsPerGB returns write iops rates for the volume group name (or prefix)
 func GetWIopsPerGB(vgName string) uint64 {
 	return getRatePerGB(vgName, wiopsPerGB)
 }
 
+// GetRBpsPerGB returns read bps rates for the volume group name (or prefix)
 func GetRBpsPerGB(vgName string) uint64 {
 	return getRatePerGB(vgName, rbpsPerGB)
 }
 
+// GetWBpsPerGB returns write bps rates for the volume group name (or prefix)
 func GetWBpsPerGB(vgName string) uint64 {
 	return getRatePerGB(vgName, wbpsPerGB)
 }
