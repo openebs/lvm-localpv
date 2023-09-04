@@ -85,6 +85,9 @@ type Config struct {
 
 	// KubeAPIBurst is the burst to allow while talking with Kubernetes API server.
 	KubeAPIBurst int
+
+	// NodeControllerPollingInterval is the interval, in seconds, between node polling.
+	NodeControllerPollingInterval int
 }
 
 // Default returns a new instance of config
