@@ -66,7 +66,7 @@ func NewNode(d *CSIDriver) csi.NodeServer {
 
 	// start the lvm node resource watcher
 	go func() {
-		err := lvmnode.Start(d.config.NodeControllerPollingInterval, &ControllerMutex, stopCh)
+		err := lvmnode.Start(&ControllerMutex, stopCh, d.config.NodeControllerPollingInterval)
 		if err != nil {
 			klog.Fatalf("Failed to start LVM node controller: %s", err.Error())
 		}

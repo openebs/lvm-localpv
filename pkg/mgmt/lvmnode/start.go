@@ -35,7 +35,7 @@ import (
 )
 
 // Start starts the lvmnode controller.
-func Start(pollInterval int, controllerMtx *sync.RWMutex, stopCh <-chan struct{}) error {
+func Start(controllerMtx *sync.RWMutex, stopCh <-chan struct{}, pollInterval int) error {
 
 	// Get in cluster config
 	cfg, err := k8sapi.Config().Get()
