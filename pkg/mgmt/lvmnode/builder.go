@@ -83,7 +83,8 @@ type NodeController struct {
 
 // This function returns controller object with all required keys set to watch over lvmnode object
 func newNodeController(kubeClient kubernetes.Interface, client dynamic.Interface,
-	dynInformer dynamicinformer.DynamicSharedInformerFactory, ownerRef metav1.OwnerReference) (*NodeController, error) {
+	dynInformer dynamicinformer.DynamicSharedInformerFactory, ownerRef metav1.OwnerReference,
+	pollInterval int) (*NodeController, error) {
 	//Creating informer for lvm node resource
 	nodeInformer := dynInformer.ForResource(noderesource).Informer()
 	eventBroadcaster := record.NewBroadcaster()
@@ -102,7 +103,7 @@ func newNodeController(kubeClient kubernetes.Interface, client dynamic.Interface
 				Name: "Node",
 			}),
 		recorder:     recorder,
-		pollInterval: 60 * time.Second,
+		pollInterval: time.Duration(pollInterval) * time.Second,
 		ownerRef:     ownerRef,
 	}
 

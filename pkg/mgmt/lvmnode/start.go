@@ -35,7 +35,7 @@ import (
 )
 
 // Start starts the lvmnode controller.
-func Start(controllerMtx *sync.RWMutex, stopCh <-chan struct{}) error {
+func Start(controllerMtx *sync.RWMutex, stopCh <-chan struct{}, pollInterval int) error {
 
 	// Get in cluster config
 	cfg, err := k8sapi.Config().Get()
@@ -84,7 +84,7 @@ func Start(controllerMtx *sync.RWMutex, stopCh <-chan struct{}) error {
 	// This lock is used to serialize the AddToScheme call of all controllers.
 	controllerMtx.Lock()
 
-	controller, err := newNodeController(kubeClient, openebsClientNew, nodeInformerFactory, ownerRef)
+	controller, err := newNodeController(kubeClient, openebsClientNew, nodeInformerFactory, ownerRef, pollInterval)
 	if err != nil {
 		return errors.Wrap(err, "failed to create new lvm node controller")
 	}

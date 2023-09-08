@@ -130,6 +130,10 @@ func main() {
 			"--wbps-per-gb=\"vg1-prefix:100,vg2-prefix:200\"",
 	)
 
+	cmd.PersistentFlags().IntVar(
+		&config.NodeControllerPollingInterval, "node-polling-interval", 60, "The interval, in seconds, between node polling.",
+	)
+
 	err := cmd.Execute()
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "%s", err.Error())
