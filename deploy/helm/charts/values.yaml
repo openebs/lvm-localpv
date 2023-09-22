@@ -66,11 +66,10 @@ lvmNode:
 
 
 # lvmController contains the configurables for
-# the lvm controller statefulset
+# the lvm controller deployment
 lvmController:
   componentName: openebs-lvm-controller
   replicas: 1
-  serviceName: openebs-lvm
   logLevel: 5
   resizer:
     name: "csi-resizer"
@@ -128,6 +127,7 @@ lvmController:
     name: openebs-lvm-controller
   nodeSelector: {}
   tolerations: []
+  topologySpreadConstraints: []
   securityContext: {}
   priorityClass:
     create: true
@@ -141,7 +141,7 @@ lvmController:
     burst: 0
 
 # lvmPlugin is the common csi container used by the
-# controller statefulset and node daemonset
+# controller deployment and node daemonset
 lvmPlugin:
   name: "openebs-lvm-plugin"
   image:

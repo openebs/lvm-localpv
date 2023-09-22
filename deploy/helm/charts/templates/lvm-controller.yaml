@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: {{ template "lvmlocalpv.fullname" . }}-controller
   {{- with .Values.lvmController.annotations }}
@@ -11,7 +11,6 @@ spec:
   selector:
     matchLabels:
       {{- include "lvmlocalpv.lvmController.matchLabels" . | nindent 6 }}
-  serviceName: "{{ .Values.lvmController.serviceName }}"
   replicas: {{ .Values.lvmController.replicas }}
   template:
     metadata:
@@ -156,4 +155,8 @@ spec:
 {{- if .Values.lvmController.tolerations }}
       tolerations:
 {{ toYaml .Values.lvmController.tolerations | indent 8 }}
+{{- end }}
+{{- if .Values.lvmController.topologySpreadConstraints }}
+      topologySpreadConstraints:
+{{ toYaml .Values.lvmController.topologySpreadConstraints | indent 8 }}
 {{- end }}
