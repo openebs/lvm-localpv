@@ -33,6 +33,12 @@ fi
 FOREIGN_LVM_SYSTEMID="openebs-ci-test-system"
 FOREIGN_LVM_CONFIG="global{system_id_source=lvmlocal}local{system_id=${FOREIGN_LVM_SYSTEMID}}"
 
+# RAID info for corresponding tests
+RAID_COUNT=5
+
+# RAID info for corresponding tests
+RAID_COUNT=5
+
 # Clean up generated resources for successive tests.
 cleanup_loopdev() {
   sudo losetup -l | grep '(deleted)' | awk '{print $1}' \
@@ -60,6 +66,20 @@ cleanup_foreign_lvmvg() {
   cleanup_loopdev
 }
 
+cleanup_raidvg() {
+  sudo vgremove raidvg -y || true
+
+  for IMG in `seq ${RAID_COUNT}`
+  do
+    if [ -f /tmp/openebs_ci_raid_disk_${IMG}.img ]
+    then
+      rm /tmp/openebs_ci_raid_disk_${IMG}.img
+    fi
+  done
+
+  cleanup_loopdev
+}
+
 cleanup() {
   set +e
 
@@ -67,6 +87,7 @@ cleanup() {
 
   cleanup_lvmvg
   cleanup_foreign_lvmvg
+  cleanup_raidvg
 
   kubectl delete pvc -n openebs lvmpv-pvc
   kubectl delete -f "${SNAP_CLASS}"
@@ -93,9 +114,39 @@ foreign_disk="$(sudo losetup -f /tmp/openebs_ci_foreign_disk.img --show)"
 sudo pvcreate "${foreign_disk}"
 sudo vgcreate foreign_lvmvg "${foreign_disk}" --config="${FOREIGN_LVM_CONFIG}"
 
+# setup a RAID volume group
+cleanup_raidvg
+raid_disks=()
+for IMG in `seq ${RAID_COUNT}`
+do
+  truncate -s 1024G /tmp/openebs_ci_raid_disk_${IMG}.img
+  raid_disk="$(sudo losetup -f /tmp/openebs_ci_raid_disk_${IMG}.img --show)"
+  sudo pvcreate "${raid_disk}"
+
+  raid_disks+=("${raid_disk}")
+done
+sudo vgcreate raidvg "${raid_disks[@]}"
+
+# setup a RAID volume group
+cleanup_raidvg
+raid_disks=()
+for IMG in `seq ${RAID_COUNT}`
+do
+  truncate -s 1024G /tmp/openebs_ci_raid_disk_${IMG}.img
+  raid_disk="$(sudo losetup -f /tmp/openebs_ci_raid_disk_${IMG}.img --show)"
+  sudo pvcreate "${raid_disk}"
+
+  raid_disks+=("${raid_disk}")
+done
+sudo vgcreate raidvg "${raid_disks[@]}"
+
 # install snapshot and thin volume module for lvm
 sudo modprobe dm-snapshot
 sudo modprobe dm_thin_pool
+
+# install RAID modules for lvm
+sudo modprobe dm_raid
+sudo modprobe dm_integrity
 
 # Prepare env for running BDD tests
 # Minikube is already running

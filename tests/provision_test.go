@@ -17,6 +17,7 @@ limitations under the License.
 package tests
 
 import (
+	"fmt"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -94,6 +95,45 @@ func thinVolCreationTest() {
 	By("Deleting thinProvision storage class", deleteStorageClass)
 }
 
+func raidVolCreationTest() {
+	raidTypes := []map[string]string{
+		{
+			"raidtype":  "raid0",
+			"integrity": "yes",
+		},
+		{
+			"raidtype": "raid1",
+			"mirrors":  "3",
+		},
+		{
+			"raidtype": "raid5",
+			"stripes":  "3",
+		},
+		{
+			"raidtype": "raid6",
+			"stripes":  "3",
+		},
+		{
+			"raidtype": "raid10",
+			"mirrors":  "1",
+			"stripes":  "2",
+		},
+	}
+
+	for _, args := range raidTypes {
+		By(fmt.Sprintf("Creating RAID `%s` storage class", args["raidtype"]), func() { createRaidStorageClass(args) })
+		By("creating and verifying PVC bound status", createAndVerifyPVC)
+
+		By("Creating and deploying app pod", createDeployVerifyApp)
+		By("verifying LVMVolume object", VerifyLVMVolume)
+		By("Deleting application deployment")
+		deleteAppDeployment(appName)
+		By("Deleting pvc")
+		deleteAndVerifyPVC(pvcName)
+		By("Deleting RAID storage class", deleteStorageClass)
+	}
+}
+
 func leakProtectionTest() {
 	By("Creating default storage class", createStorageClass)
 	ds := deleteNodeDaemonSet() // ensure that provisioning remains in pending state.
@@ -119,5 +159,6 @@ func volumeCreationTest() {
 	By("Running volume creation test", fsVolCreationTest)
 	By("Running block volume creation test", blockVolCreationTest)
 	By("Running thin volume creation test", thinVolCreationTest)
+	By("Running RAID volume creation test", raidVolCreationTest)
 	By("Running leak protection test", leakProtectionTest)
 }

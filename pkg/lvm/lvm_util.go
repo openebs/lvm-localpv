@@ -60,6 +60,7 @@ const (
 
 	YES        = "yes"
 	LVThinPool = "thin-pool"
+	LinearRAID = "linear"
 )
 
 var (
@@ -237,12 +238,42 @@ func buildLVMCreateArgs(vol *apis.LVMVolume) []string {
 		LVMVolArg = append(LVMVolArg, "-T", vol.Spec.VolGroup+"/"+pool, "-V", size)
 	}
 
+	// command to set raid options and mirror / stripe info
+	// `lvcreate -L 1G --type <RAID_TYPE> --raidintegrity <INTEGRITY> --nosync ...`
+	// Note: We only need to check if the raidtype is anything but the default of linear.
+	raidType := strings.TrimSpace(vol.Spec.RaidType)
+	if len(raidType) != 0 && raidType != LinearRAID {
+		LVMVolArg = append(LVMVolArg, "--type", vol.Spec.RaidType)
+
+		// Now check for optional raid config
+		if vol.Spec.Mirrors != 0 {
+			LVMVolArg = append(LVMVolArg, "--mirrors", fmt.Sprintf("%d", vol.Spec.Mirrors))
+		}
+		if strings.TrimSpace(vol.Spec.NoSync) == YES {
+			LVMVolArg = append(LVMVolArg, "--nosync")
+		}
+		if vol.Spec.StripeCount != 0 {
+			LVMVolArg = append(LVMVolArg, "--stripes", fmt.Sprintf("%d", vol.Spec.StripeCount))
+		}
+		if vol.Spec.StripeSize != 0 {
+			LVMVolArg = append(LVMVolArg, "--stripesize", fmt.Sprintf("%db", vol.Spec.StripeSize))
+		}
+		if strings.TrimSpace(vol.Spec.Integrity) == YES {
+			LVMVolArg = append(LVMVolArg, "--raidintegrity", "y")
+		}
+	}
+
 	if len(vol.Spec.VolGroup) != 0 {
 		LVMVolArg = append(LVMVolArg, "-n", volume)
 	}
 
 	if strings.TrimSpace(vol.Spec.ThinProvision) != YES {
 		LVMVolArg = append(LVMVolArg, vol.Spec.VolGroup)
+	}
+
+	// Allow passing in arbitrary LVM options
+	if len(vol.Spec.LvCreateOptions) != 0 {
+		LVMVolArg = append(LVMVolArg, strings.Split(vol.Spec.LvCreateOptions, ";")...)
 	}
 
 	// -y is used to wipe the signatures before creating LVM volume

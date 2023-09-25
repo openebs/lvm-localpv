@@ -87,6 +87,55 @@ type VolumeInfo struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=yes;no
 	ThinProvision string `json:"thinProvision,omitempty"`
+
+	// RaidType specifies the type of RAID for the logical volume.
+	// Defaults to linear, if unspecified.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:default=linear
+	// +kubebuilder:validation:Enum=linear;raid0;raid1;raid5;raid6;raid10
+	RaidType string `json:"raidtype"`
+
+	// Integrity specifies whether logical volumes should be checked for integrity.
+	// If it is set to "yes", then the LVM LocalPV Driver will enable DM integrity
+	// for the logical volume
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum=yes;no
+	Integrity string `json:"integrity,omitempty"`
+
+	// Mirrors specifies the mirror count for a RAID configuration.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:default=0
+	// +kubebuilder:validation:Minimum=0
+	Mirrors uint `json:"mirrors,omitempty"`
+
+	// NoSync enables the `--nosync` option of a RAID volume.
+	// If it is set to "yes", then LVM will skip drive sync when creating
+	// the mirrors. Defaults to "no"
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:default=no
+	// +kubebuilder:validation:Enum=yes;no
+	NoSync string `json:"nosync,omitempty"`
+
+	// StripeCount specifies the stripe count for a RAID configuration.
+	// This is equal to the number of physical volumes to scatter the
+	// logical volume
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:default=0
+	// +kubebuilder:validation:Minimum=0
+	StripeCount uint `json:"stripecount,omitempty"`
+
+	// StripeSize specifies the size of a stripe for a RAID configuration.
+	// Must be a power of 2 but must not exceed the physical extent size
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:default=0
+	// +kubebuilder:validation:Minimum=0
+	StripeSize uint `json:"stripesize,omitempty"`
+
+	// LvCreateOptions are extra options for creating a volume.
+	// Options should be separated by ;
+	// e.g. "--vdo;--readahead;auto"
+	// +kubebuilder:validation:Required
+	LvCreateOptions string `json:"lvcreateoptions,omitempty"`
 }
 
 // VolStatus string that specifies the current state of the volume provisioning request.
