@@ -261,6 +261,27 @@ func buildLVMDestroyArgs(vol *apis.LVMVolume) []string {
 	return LVMVolArg
 }
 
+// RunCommandSplit is a wrapper function to run a command and receive its
+// STDERR and STDOUT streams in separate []byte vars.
+func RunCommandSplit(command string, args ...string) ([]byte, []byte, error) {
+	var cmdStdout bytes.Buffer
+	var cmdStderr bytes.Buffer
+
+	cmd := exec.Command(command, args...)
+	cmd.Stdout = &cmdStdout
+	cmd.Stderr = &cmdStderr
+	err := cmd.Run()
+
+	output := cmdStdout.Bytes()
+	error_output := cmdStderr.Bytes()
+
+	if len(error_output) > 0 {
+		klog.Warningf("lvm: said into stderr: %s", error_output)
+	}
+
+	return output, error_output, err
+}
+
 // CreateVolume creates the lvm volume
 func CreateVolume(vol *apis.LVMVolume) error {
 	volume := vol.Spec.VolGroup + "/" + vol.Name
@@ -275,8 +296,7 @@ func CreateVolume(vol *apis.LVMVolume) error {
 	}
 
 	args := buildLVMCreateArgs(vol)
-	cmd := exec.Command(LVCreate, args...)
-	out, err := cmd.CombinedOutput()
+	out, _, err := RunCommandSplit(LVCreate, args...)
 
 	if err != nil {
 		err = newExecError(out, err)
@@ -314,8 +334,7 @@ func DestroyVolume(vol *apis.LVMVolume) error {
 	}
 
 	args := buildLVMDestroyArgs(vol)
-	cmd := exec.Command(LVRemove, args...)
-	out, err := cmd.CombinedOutput()
+	out, _, err := RunCommandSplit(LVRemove, args...)
 
 	if err != nil {
 		klog.Errorf(
@@ -406,8 +425,7 @@ func ResizeLVMVolume(vol *apis.LVMVolume, resizefs bool) error {
 	volume := vol.Spec.VolGroup + "/" + vol.Name
 
 	args := buildVolumeResizeArgs(vol, resizefs)
-	cmd := exec.Command(LVExtend, args...)
-	out, err := cmd.CombinedOutput()
+	out, _, err := RunCommandSplit(LVExtend, args...)
 
 	if err != nil {
 		klog.Errorf(
@@ -430,8 +448,7 @@ func getLVSize(vol *apis.LVMVolume) (uint64, error) {
 		"--nosuffix",
 	}
 
-	cmd := exec.Command(LVList, args...)
-	raw, err := cmd.CombinedOutput()
+	raw, _, err := RunCommandSplit(LVList, args...)
 	if err != nil {
 		return 0, errors.Wrapf(
 			err,
@@ -495,8 +512,7 @@ func CreateSnapshot(snap *apis.LVMSnapshot) error {
 	snapVolume := snap.Spec.VolGroup + "/" + getLVMSnapName(snap.Name)
 
 	args := buildLVMSnapCreateArgs(snap)
-	cmd := exec.Command(LVCreate, args...)
-	out, err := cmd.CombinedOutput()
+	out, _, err := RunCommandSplit(LVCreate, args...)
 
 	if err != nil {
 		klog.Errorf("lvm: could not create snapshot %s cmd %v error: %s", snapVolume, args, string(out))
@@ -524,8 +540,7 @@ func DestroySnapshot(snap *apis.LVMSnapshot) error {
 	}
 
 	args := buildLVMSnapDestroyArgs(snap)
-	cmd := exec.Command(LVRemove, args...)
-	out, err := cmd.CombinedOutput()
+	out, _, err := RunCommandSplit(LVRemove, args...)
 
 	if err != nil {
 		klog.Errorf("lvm: could not remove snapshot %s cmd %v error: %s", snapVolume, args, string(out))
@@ -639,34 +654,13 @@ func getIntFieldValue(fieldName, fieldValue string) int {
 // serving vgs or other lvm utility.
 func ReloadLVMMetadataCache() error {
 	args := []string{"--cache"}
-	cmd := exec.Command(PVScan, args...)
-	output, err := cmd.CombinedOutput()
+	output, _, err := RunCommandSplit(PVScan, args...)
 	if err != nil {
 		klog.Errorf("lvm: reload lvm metadata cache: %v - %v", string(output), err)
 		return err
 	}
+
 	return nil
-}
-
-// RunCommandSplit is a wrapper function to run a command and receive its
-// STDERR and STDOUT streams in separate []byte vars.
-func RunCommandSplit(command string, args ...string) ([]byte, []byte, error) {
-	var cmdStdout bytes.Buffer
-	var cmdStderr bytes.Buffer
-
-	cmd := exec.Command(command, args...)
-	cmd.Stdout = &cmdStdout
-	cmd.Stderr = &cmdStderr
-	err := cmd.Run()
-
-	output := cmdStdout.Bytes()
-	error_output := cmdStderr.Bytes()
-
-	if len(error_output) > 0 {
-		klog.Warningf("lvm: said into stderr: %s", error_output)
-	}
-
-	return output, error_output, err
 }
 
 // ListLVMVolumeGroup invokes `vgs` to list all the available volume
@@ -880,12 +874,12 @@ func ListLVMLogicalVolume() ([]LogicalVolume, error) {
 		"--reportformat", "json",
 		"--units", "b",
 	}
-	cmd := exec.Command(LVList, args...)
-	output, err := cmd.CombinedOutput()
+	output, _, err := RunCommandSplit(LVList, args...)
 	if err != nil {
 		klog.Errorf("lvm: error while running command %s %v: %v", LVList, args, err)
 		return nil, err
 	}
+
 	return decodeLvsJSON(output)
 }
 
@@ -902,12 +896,12 @@ func ListLVMPhysicalVolume() ([]PhysicalVolume, error) {
 		"--reportformat", "json",
 		"--units", "b",
 	}
-	cmd := exec.Command(PVList, args...)
-	output, err := cmd.CombinedOutput()
+	output, _, err := RunCommandSplit(PVList, args...)
 	if err != nil {
 		klog.Errorf("lvm: error while running command %s %v: %v", PVList, args, err)
 		return nil, err
 	}
+
 	return decodePvsJSON(output)
 }
 
@@ -1029,20 +1023,19 @@ func decodePvsJSON(raw []byte) ([]PhysicalVolume, error) {
 
 // lvThinExists verifies if thin pool/volume already exists for given volumegroup
 func lvThinExists(vg string, name string) bool {
-	cmd := exec.Command("lvs", vg+"/"+name, "--noheadings", "-o", "lv_name")
-	out, err := cmd.CombinedOutput()
+	out, _, err := RunCommandSplit("lvs", vg+"/"+name, "--noheadings", "-o", "lv_name")
 	if err != nil {
 		klog.Errorf("failed to list existing volumes:%v", err)
 		return false
 	}
+
 	return name == strings.TrimSpace(string(out))
 }
 
 // snapshotExists checks if a snapshot volume exists for the given volumegroup
 // and snapshot name.
 func isSnapshotExists(vg, snapVolumeName string) (bool, error) {
-	cmd := exec.Command("lvs", vg+"/"+snapVolumeName, "--noheadings", "-o", "lv_name")
-	out, err := cmd.CombinedOutput()
+	out, _, err := RunCommandSplit("lvs", vg+"/"+snapVolumeName, "--noheadings", "-o", "lv_name")
 	if err != nil {
 		return false, err
 	}
@@ -1051,8 +1044,7 @@ func isSnapshotExists(vg, snapVolumeName string) (bool, error) {
 
 // getVGSize get the size in bytes for given volumegroup name
 func getVGSize(vgname string) string {
-	cmd := exec.Command("vgs", vgname, "--noheadings", "-o", "vg_free", "--units", "b", "--nosuffix")
-	out, err := cmd.CombinedOutput()
+	out, _, err := RunCommandSplit("vgs", vgname, "--noheadings", "-o", "vg_free", "--units", "b", "--nosuffix")
 	if err != nil {
 		klog.Errorf("failed to list existing volumegroup:%v , %v", vgname, err)
 		return ""
