@@ -553,20 +553,17 @@ func (cs *controller) ControllerExpandVolume(
 	 * to the specified volume ID is already larger than or equal to the target
 	 * capacity of the expansion request, the plugin should reply 0 OK.
 	 */
-	if volsize >= updatedSize {
-		return csipayload.NewControllerExpandVolumeResponseBuilder().
-			WithCapacityBytes(volsize).
-			Build(), nil
+	if volsize < updatedSize {
+		if err := lvm.ResizeVolume(vol, updatedSize); err != nil {
+			return nil, status.Errorf(
+		    	codes.Internal,
+		    	"failed to handle ControllerExpandVolumeRequest for %s, {%s}",
+		    	volumeID,
+		    	err.Error(),
+		    )
+		}
 	}
-
-	if err := lvm.ResizeVolume(vol, updatedSize); err != nil {
-		return nil, status.Errorf(
-			codes.Internal,
-			"failed to handle ControllerExpandVolumeRequest for %s, {%s}",
-			volumeID,
-			err.Error(),
-		)
-	}
+		 
 	return csipayload.NewControllerExpandVolumeResponseBuilder().
 		WithCapacityBytes(updatedSize).
 		WithNodeExpansionRequired(true).
