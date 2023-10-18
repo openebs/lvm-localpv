@@ -29,9 +29,9 @@ then
   export KUBECONFIG="${HOME}/.kube/config"
 fi
 
-# systemid for the testing environment. The kubernetes host machine will serve as the foreign lvm system.
-LVM_SYSTEMID="openebs-ci-test-system"
-LVM_CONFIG="global{system_id_source=lvmlocal}local{system_id=${LVM_SYSTEMID}}"
+# foreign systemid for the testing environment.
+FOREIGN_LVM_SYSTEMID="openebs-ci-test-system"
+FOREIGN_LVM_CONFIG="global{system_id_source=lvmlocal}local{system_id=${FOREIGN_LVM_SYSTEMID}}"
 
 # Clean up generated resources for successive tests.
 cleanup_loopdev() {
@@ -54,7 +54,7 @@ cleanup_lvmvg() {
 cleanup_foreign_lvmvg() {
   if [ -f /tmp/openebs_ci_foreign_disk.img ]
   then
-    sudo vgremove foreign_lvmvg --config="${LVM_CONFIG}" -y || true
+    sudo vgremove foreign_lvmvg --config="${FOREIGN_LVM_CONFIG}" -y || true
     rm /tmp/openebs_ci_foreign_disk.img
   fi
   cleanup_loopdev
@@ -91,7 +91,7 @@ cleanup_foreign_lvmvg
 truncate -s 1024G /tmp/openebs_ci_foreign_disk.img
 foreign_disk="$(sudo losetup -f /tmp/openebs_ci_foreign_disk.img --show)"
 sudo pvcreate "${foreign_disk}"
-sudo vgcreate foreign_lvmvg "${foreign_disk}" --systemid="${LVM_SYSTEMID}"
+sudo vgcreate foreign_lvmvg "${foreign_disk}" --config="${FOREIGN_LVM_CONFIG}"
 
 # install snapshot and thin volume module for lvm
 sudo modprobe dm-snapshot
