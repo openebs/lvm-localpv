@@ -5,11 +5,11 @@ go 1.19
 require (
 	github.com/container-storage-interface/spec v1.8.0
 	github.com/docker/go-units v0.4.0
-	github.com/jpillora/go-ogle-analytics v0.0.0-20161213085824-14b04e0594ef
 	github.com/kubernetes-csi/csi-lib-utils v0.9.0
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.27.4
-	github.com/openebs/lib-csi v0.8.0
+	github.com/openebs/go-ogle-analytics v0.1.1-0.20231110084411-b4989b1cee82
+	github.com/openebs/lib-csi v0.8.2
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.15.1
 	github.com/spf13/cobra v1.6.0

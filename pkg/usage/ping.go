@@ -42,7 +42,7 @@ func PingCheck() {
 	duration := getPingPeriod()
 	ticker := time.NewTicker(duration)
 	for range ticker.C {
-		u.Build().
+		u.CommonBuild().
 			InstallBuilder(true).
 			SetCategory(Ping).
 			Send()

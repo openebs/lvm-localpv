@@ -17,7 +17,6 @@ limitations under the License.
 package usage
 
 import (
-	analytics "github.com/jpillora/go-ogle-analytics"
 	"k8s.io/klog/v2"
 )
 
@@ -27,26 +26,10 @@ import (
 func (u *Usage) Send() {
 	// Instantiate a Gclient with the tracking ID
 	go func() {
-		// Un-wrap the gaClient struct back here
-		gaClient, err := analytics.NewClient(u.Gclient.trackID)
-		if err != nil {
-			return
-		}
-		gaClient.ClientID(u.clientID).
-			CampaignSource(u.campaignSource).
-			CampaignContent(u.clientID).
-			CampaignName(u.campaignName).
-			ApplicationID(u.appID).
-			ApplicationVersion(u.appVersion).
-			DataSource(u.dataSource).
-			ApplicationName(u.appName).
-			ApplicationInstallerID(u.appInstallerID).
-			DocumentTitle(u.documentTitle)
-		// Un-wrap the Event struct back here
-		event := analytics.NewEvent(u.category, u.action)
-		event.Label(u.label)
-		event.Value(u.value)
-		if err := gaClient.Send(event); err != nil {
+		client := u.AnalyticsClient
+		event := u.OpenebsEventBuilder.Build()
+
+		if err := client.Send(event); err != nil {
 			klog.Errorf(err.Error())
 			return
 		}

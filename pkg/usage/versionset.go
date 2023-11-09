@@ -26,23 +26,25 @@ import (
 )
 
 var (
-	clusterUUID    = "OPENEBS_IO_USAGE_UUID"
-	clusterVersion = "OPENEBS_IO_K8S_VERSION"
-	clusterArch    = "OPENEBS_IO_K8S_ARCH"
-	openEBSversion = "OPENEBS_IO_VERSION_TAG"
-	nodeType       = "OPENEBS_IO_NODE_TYPE"
-	installerType  = "OPENEBS_IO_INSTALLER_TYPE"
+	clusterUUID       = "OPENEBS_IO_USAGE_UUID"
+	k8sVersion        = "OPENEBS_IO_K8S_VERSION"
+	nodeArch          = "OPENEBS_IO_K8S_ARCH"
+	openEBSversion    = "OPENEBS_IO_VERSION_TAG"
+	nodeOs            = "OPENEBS_IO_NODE_OS"
+	nodeKernelVersion = "OPENEBS_IO_NODE_KERNEL_VERSION"
+	installerType     = "OPENEBS_IO_INSTALLER_TYPE"
 )
 
 // VersionSet is a struct which stores (sort of) fixed information about a
 // k8s environment
 type VersionSet struct {
-	id             string // OPENEBS_IO_USAGE_UUID
-	k8sVersion     string // OPENEBS_IO_K8S_VERSION
-	k8sArch        string // OPENEBS_IO_K8S_ARCH
-	openebsVersion string // OPENEBS_IO_VERSION_TAG
-	nodeType       string // OPENEBS_IO_NODE_TYPE
-	installerType  string // OPENEBS_IO_INSTALLER_TYPE
+	id                string // OPENEBS_IO_USAGE_UUID
+	k8sVersion        string // OPENEBS_IO_K8S_VERSION
+	nodeArch          string // OPENEBS_IO_K8S_ARCH
+	openebsVersion    string // OPENEBS_IO_VERSION_TAG
+	nodeOs            string // OPENEBS_IO_NODE_OS
+	nodeKernelVersion string // OPENEBS_IO_NODE_KERNEL_VERSION
+	installerType     string // OPENEBS_IO_INSTALLER_TYPE
 }
 
 // NewVersion returns a new versionSet struct
@@ -53,30 +55,34 @@ func NewVersion() *VersionSet {
 // fetchAndSetVersion consumes the Kubernetes API to get environment constants
 // and returns a versionSet struct
 func (v *VersionSet) fetchAndSetVersion() error {
-	var err error
+	var (
+		err        error
+		kernelName string
+		arch       string
+	)
+
 	v.id, err = getUUIDbyNS("default")
 	if err != nil {
 		return err
 	}
-	_ = env.Set(clusterUUID, v.id)
 
 	k8s, err := k8sapi.GetServerVersion()
 	if err != nil {
 		return err
 	}
-	// eg. linux/amd64
-	v.k8sArch = k8s.Platform
+
 	v.k8sVersion = k8s.GitVersion
-	// Explicitly informing linters that we intended to avoid errors(errcheck)
-	_ = env.Set(clusterArch, v.k8sArch)
-	_ = env.Set(clusterVersion, v.k8sVersion)
-	v.nodeType, err = k8sapi.GetOSAndKernelVersion()
-	_ = env.Set(nodeType, v.nodeType)
-	if err != nil {
-		return err
-	}
 	v.openebsVersion = openebsversion.GetVersionDetails()
+	v.nodeOs, kernelName, v.nodeKernelVersion, arch, _ = k8sapi.GetNodeInfo()
+	v.nodeArch = kernelName + "/" + arch
+
+	_ = env.Set(clusterUUID, v.id)
+	_ = env.Set(nodeOs, v.nodeOs)
+	_ = env.Set(nodeKernelVersion, v.nodeKernelVersion)
+	_ = env.Set(nodeArch, v.nodeArch)
+	_ = env.Set(k8sVersion, v.k8sVersion)
 	_ = env.Set(openEBSversion, v.openebsVersion)
+
 	return nil
 }
 
@@ -92,9 +98,10 @@ func (v *VersionSet) getVersion(override bool) error {
 	}
 	// Fetch data from ENV
 	v.id = env.Get(clusterUUID)
-	v.k8sArch = env.Get(clusterArch)
-	v.k8sVersion = env.Get(clusterVersion)
-	v.nodeType = env.Get(nodeType)
+	v.nodeArch = env.Get(nodeArch)
+	v.k8sVersion = env.Get(k8sVersion)
+	v.nodeOs = env.Get(nodeOs)
+	v.nodeKernelVersion = env.Get(nodeKernelVersion)
 	v.openebsVersion = env.Get(openEBSversion)
 	v.installerType = env.Get(installerType)
 	return nil

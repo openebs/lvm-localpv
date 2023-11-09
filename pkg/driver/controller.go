@@ -99,12 +99,11 @@ var SupportedVolumeCapabilityAccessModes = []*csi.VolumeCapability_AccessMode{
 }
 
 // sendEventOrIgnore sends anonymous local-pv provision/delete events
-func sendEventOrIgnore(pvcName, pvName, capacity, stgType, method string) {
+func sendEventOrIgnore(pvcName, pvName, capacity, method string) {
 	if lvm.GoogleAnalyticsEnabled == "true" {
-		analytics.New().Build().ApplicationBuilder().
-			SetVolumeType(stgType, method).
-			SetDocumentTitle(pvName).
-			SetCampaignName(pvcName).
+		analytics.New().CommonBuild().ApplicationBuilder().
+			SetVolumeName(pvName).
+			SetVolumeClaimName(pvcName).
 			SetLabel(analytics.EventLabelCapacity).
 			SetReplicaCount(analytics.LocalPVReplicaCount, method).
 			SetCategory(method).
@@ -232,7 +231,7 @@ func (cs *controller) init() error {
 	go pvcInformer.Informer().Run(stopCh)
 
 	if lvm.GoogleAnalyticsEnabled == "true" {
-		analytics.New().Build().InstallBuilder(true).Send()
+		analytics.New().CommonBuild().InstallBuilder(true).Send()
 		go analytics.PingCheck()
 	}
 
@@ -367,7 +366,7 @@ func (cs *controller) CreateVolume(
 	}
 	sendEventOrIgnore(params.PVCName, volName,
 		strconv.FormatInt(int64(size), 10),
-		"lvm-localpv", analytics.VolumeProvision)
+		analytics.VolumeProvision)
 
 	topology := map[string]string{lvm.LVMTopologyKey: vol.Spec.OwnerNodeID}
 	cntx := map[string]string{lvm.VolGroupKey: vol.Spec.VolGroup, lvm.OpenEBSCasTypeKey: lvm.LVMCasTypeName}
@@ -419,7 +418,7 @@ func (cs *controller) deleteVolume(ctx context.Context, volumeID string) error {
 	if err = lvm.WaitForLVMVolumeDestroy(ctx, volumeID); err != nil {
 		return err
 	}
-	sendEventOrIgnore("", volumeID, vol.Spec.Capacity, "lvm-localpv", analytics.VolumeDeprovision)
+	sendEventOrIgnore("", volumeID, vol.Spec.Capacity, analytics.VolumeDeprovision)
 	return nil
 }
 
