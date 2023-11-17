@@ -31,6 +31,7 @@ import (
 
 	clientset "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset"
 	informers "github.com/openebs/lvm-localpv/pkg/generated/informer/externalversions"
+	"github.com/openebs/lvm-localpv/pkg/version"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"golang.org/x/net/context"
@@ -45,12 +46,12 @@ import (
 	"github.com/openebs/lib-csi/pkg/common/errors"
 	schd "github.com/openebs/lib-csi/pkg/scheduler"
 
+	analytics "github.com/openebs/google-analytics-4/usage"
 	lvmapi "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	"github.com/openebs/lvm-localpv/pkg/builder/snapbuilder"
 	"github.com/openebs/lvm-localpv/pkg/builder/volbuilder"
 	"github.com/openebs/lvm-localpv/pkg/lvm"
 	csipayload "github.com/openebs/lvm-localpv/pkg/response"
-	analytics "github.com/openebs/lvm-localpv/pkg/usage"
 )
 
 // size constants
@@ -59,6 +60,16 @@ const (
 	GB = 1000 * 1000 * 1000
 	Mi = 1024 * 1024
 	Gi = 1024 * 1024 * 1024
+
+	// Ping event is sent periodically
+	Ping string = "lvm-ping"
+
+	// DefaultCASType Event application name constant for volume event
+	DefaultCASType string = "lvm-localpv"
+
+	// LocalPVReplicaCount is the constant used by usage to represent
+	// replication factor in LocalPV
+	LocalPVReplicaCount string = "1"
 )
 
 // controller is the server implementation
@@ -101,11 +112,11 @@ var SupportedVolumeCapabilityAccessModes = []*csi.VolumeCapability_AccessMode{
 // sendEventOrIgnore sends anonymous local-pv provision/delete events
 func sendEventOrIgnore(pvcName, pvName, capacity, method string) {
 	if lvm.GoogleAnalyticsEnabled == "true" {
-		analytics.New().CommonBuild().ApplicationBuilder().
+		analytics.New().CommonBuild(DefaultCASType).ApplicationBuilder().
 			SetVolumeName(pvName).
 			SetVolumeClaimName(pvcName).
 			SetLabel(analytics.EventLabelCapacity).
-			SetReplicaCount(analytics.LocalPVReplicaCount, method).
+			SetReplicaCount(LocalPVReplicaCount, method).
 			SetCategory(method).
 			SetVolumeCapacity(capacity).Send()
 	}
@@ -231,8 +242,9 @@ func (cs *controller) init() error {
 	go pvcInformer.Informer().Run(stopCh)
 
 	if lvm.GoogleAnalyticsEnabled == "true" {
-		analytics.New().CommonBuild().InstallBuilder(true).Send()
-		go analytics.PingCheck()
+		analytics.RegisterVersionGetter(version.GetVersionDetails)
+		analytics.New().CommonBuild(DefaultCASType).InstallBuilder(true).Send()
+		go analytics.PingCheck(DefaultCASType, Ping)
 	}
 
 	if cs.leakProtection, err = csipv.NewLeakProtectionController(kubeClient,
