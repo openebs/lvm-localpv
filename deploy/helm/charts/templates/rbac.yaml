@@ -15,9 +15,6 @@ metadata:
     {{- include "lvmlocalpv.lvmController.labels" . | nindent 4 }}
 rules:
   - apiGroups: [""]
-    resources: ["secrets"]
-    verbs: ["get", "list"]
-  - apiGroups: [""]
     resources: ["namespaces"]
     verbs: ["get", "list", "watch"]
   - apiGroups: [""]
@@ -123,7 +120,8 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 ---
 {{- end }}
-{{- if .Values.serviceAccount.lvmNode.create -}}
+
+{{- if .Values.serviceAccount.lvmNode.create }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
