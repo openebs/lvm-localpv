@@ -879,9 +879,6 @@ metadata:
   name: openebs-lvm-provisioner-role
 rules:
   - apiGroups: [""]
-    resources: ["secrets"]
-    verbs: ["get", "list"]
-  - apiGroups: [""]
     resources: ["namespaces"]
     verbs: ["get", "list", "watch"]
   - apiGroups: [""]
