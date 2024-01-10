@@ -61,6 +61,8 @@ lvmNode:
     # Configure the maximum number of queries allowed after
     # accounting for rolled over qps from previous seconds.
     burst: 0
+  # Disable or enable the use of hostNetwork for the lvm node daemonset.
+  hostNetwork: false
 
 
 # lvmController contains the configurables for
