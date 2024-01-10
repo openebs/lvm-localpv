@@ -10,7 +10,7 @@ spec:
   allowPrivilegeEscalation: true
   allowedCapabilities: ['*']
   volumes: ['*']
-  hostNetwork: true
+  hostNetwork: {{ .Values.lvmNode.hostNetwork}}
   hostIPC: true
   hostPID: true
   runAsUser:

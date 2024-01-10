@@ -30,7 +30,7 @@ spec:
       priorityClassName: {{ template "lvmlocalpv.lvmNode.priorityClassName" . }}
 {{- end }}
       serviceAccountName: {{ .Values.serviceAccount.lvmNode.name }}
-      hostNetwork: true
+      hostNetwork: {{ .Values.lvmNode.hostNetwork }}
       containers:
         - name: {{ .Values.lvmNode.driverRegistrar.name }}
           image: "{{ .Values.lvmNode.driverRegistrar.image.registry }}{{ .Values.lvmNode.driverRegistrar.image.repository }}:{{ .Values.lvmNode.driverRegistrar.image.tag }}"

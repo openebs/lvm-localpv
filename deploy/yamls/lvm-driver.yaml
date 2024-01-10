@@ -1197,7 +1197,6 @@ spec:
     spec:
       priorityClassName: openebs-lvm-localpv-csi-node-critical
       serviceAccountName: openebs-lvm-node-sa
-      hostNetwork: true
       containers:
         - name: csi-node-driver-registrar
           image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.8.0
