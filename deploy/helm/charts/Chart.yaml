@@ -1,8 +1,8 @@
 apiVersion: v2
 name: lvm-localpv
 description: CSI Driver for dynamic provisioning of LVM Persistent Local Volumes.
-version: 1.4.0
-appVersion: 1.4.0
+version: 1.5.0
+appVersion: 1.5.0
 icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/openebs/icon/color/openebs-icon-color.png
 home: https://openebs.io/
 keywords:
@@ -14,6 +14,10 @@ keywords:
   - storage
 sources:
 - https://github.com/openebs/lvm-localpv
+dependencies:
+  - name: crds
+    version: "1.5.0"
+    condition: crds.enabled
 maintainers:
   - name: prateekpandey14
     email: prateek.pandey@mayadata.io

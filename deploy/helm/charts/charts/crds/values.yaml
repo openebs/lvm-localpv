@@ -1,0 +1,21 @@
+lvmNodes:
+  # -- Install ZfsNode CRD
+  enabled: true
+
+lvmSnapshots:
+  # -- Install ZfsSnapshot CRD
+  enabled: true
+
+lvmVolumes:
+  # -- Install ZfsVolume CRD
+  enabled: true
+
+volumeSnapshots:
+  # -- Install Volume Snapshot CRDs
+  enabled: true
+  # -- Install volumesnapshots.snapshot.storage.k8s.io CRD
+  snapshotsEnabled: true
+  # -- Install volumesnapshotclasses.snapshot.storage.k8s.io CRD
+  snapshotClassesEnabled: true
+  # -- Install volumesnapshotcontents.snapshot.storage.k8s.io CRD
+  snapshotContentsEnabled: true
