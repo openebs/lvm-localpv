@@ -161,7 +161,7 @@ set +e
 
 echo "running ginkgo test case"
 
-if ! ginkgo -v ; then
+if ! ginkgo -v -coverprofile=bdd_coverage.txt -covermode=atomic; then
 
 sudo pvscan --cache
 

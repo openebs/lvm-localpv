@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Copyright © 2020 The OpenEBS Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,12 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#!/usr/bin/env bash
-
 set -e
 echo "" > coverage.txt
 
-for d in $(go list ./... | grep -v 'vendor\|pkg/apis\|pkg/generated\|tests'); do
+for d in $(go list ./... | grep -v "pkg/generated\|tests"); do
     #TODO - Include -race while creating the coverage profile.
     go test -coverprofile=profile.out -covermode=atomic $d
     if [ -f profile.out ]; then

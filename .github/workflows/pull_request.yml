@@ -62,18 +62,28 @@ jobs:
           path: '.'
           pattern: '*.sh'
 
-
   unit-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Set up Go 1.19
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.19.9
+          cache: false
+
       - name: Unit test
         run: make test
 
       - name: Upload Coverage Report
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3  
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.txt
+          name: coverage-$(date +%s)
+          flags: unittests
 
   bdd-test:
     needs: ['unit-test']
@@ -110,6 +120,14 @@ jobs:
 
       - name: Running tests
         run: ./ci/ci-test.sh
+
+      - name: Upload Coverage Report
+        uses: codecov/codecov-action@v3  
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./tests/bdd_coverage.txt
+          name: coverage-bdd_coverage-$(date +%s)
+          flags: bddtests
 
   csi-driver:
     runs-on: ubuntu-latest
