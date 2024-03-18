@@ -15,7 +15,7 @@
 # list only csi source code directories
 PACKAGES = $(shell go list ./... | grep -v 'pkg/generated')
 
-UNIT_TEST_PACKAGES = $(shell go list ./... | grep -v 'pkg/generated\|tests')
+# UNIT_TEST_PACKAGES = $(shell go list ./... | grep -v 'pkg/generated\|tests')
 
 # Lint our code. Reference: https://golang.org/cmd/vet/
 VETARGS?=-asmdecl -atomic -bool -buildtags -copylocks -methods \
@@ -110,7 +110,7 @@ format:
 .PHONY: test
 test: format
 	@echo "--> Running go test" ;
-	@go test $(UNIT_TEST_PACKAGES) -cover  -coverpkg=./... -covermode=atomic -coverprofile=coverage.txt
+	@./buildscripts/test-cov.sh
 
 
 .PHONY: deps
