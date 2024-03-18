@@ -121,6 +121,14 @@ jobs:
       - name: Running tests
         run: ./ci/ci-test.sh
 
+      - name: Upload Coverage Report
+        uses: codecov/codecov-action@v3  
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./tests/bdd_coverage.txt
+          name: coverage-bdd_coverage-$(date +%s)
+          flags: bddtests
+
   csi-driver:
     runs-on: ubuntu-latest
     needs: ['lint', 'unit-test', 'bdd-test']
