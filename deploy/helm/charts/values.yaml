@@ -164,11 +164,6 @@ lvmPlugin:
 
 role: openebs-lvm
 
-crd:
-  # Specify installation of the kubernetes-csi volume snapshot CRDs if your Kubernetes distribution
-  # or another storage operator already manages them.
-  volumeSnapshot: true
-
 serviceAccount:
   lvmController:
     # Specifies whether a service account should be created
