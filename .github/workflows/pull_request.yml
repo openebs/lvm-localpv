@@ -81,7 +81,7 @@ jobs:
         run: make test
 
       - name: Upload Coverage Report
-        uses: codecov/codecov-action@v3  
+        uses: codecov/codecov-action@v4  
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage.txt
@@ -125,7 +125,7 @@ jobs:
         run: ./ci/ci-test.sh
 
       - name: Upload Coverage Report
-        uses: codecov/codecov-action@v3  
+        uses: codecov/codecov-action@v4  
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./tests/bdd_coverage.txt
