@@ -3,7 +3,7 @@
 Please do not provision/deprovision any volumes during the upgrade, if we can not control it, then we can scale down the openebs-lvm-controller stateful set to zero replica which will pause all the provisioning/deprovisioning request. And once upgrade is done, we can scale up the controller pod and then volume provisioning/deprovisioning will resume on the upgraded system.
 
 ```
-$ kubectl edit sts openebs-lvm-controller -n kube-system
+$ kubectl edit deploy openebs-lvm-controller -n kube-system
 
 ```
 And set replicas to zero :
