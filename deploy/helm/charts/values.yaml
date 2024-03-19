@@ -184,17 +184,10 @@ analytics:
   enabled: true
 
 crds:
-  # Enable/Disable all CRDs
-  enabled: true
-  lvmNodes:
-    # -- Install ZfsNode CRD
+  lvmLocalPv:
+    # Install lvm-localpv CRDs
     enabled: true
-  lvmSnapshots:
-    # -- Install ZfsSnapshot CRD
-    enabled: true
-  lvmVolumes:
-    # -- Install ZfsVolume CRD
-    enabled: true
-  volumeSnapshots:
-    # -- Install Volume Snapshot CRDs
-    enabled: true
+  csi:
+    volumeSnapshots:
+      # Install Volume Snapshot CRDs
+      enabled: true

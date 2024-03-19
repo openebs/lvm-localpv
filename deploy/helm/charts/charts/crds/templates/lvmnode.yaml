@@ -1,4 +1,4 @@
-{{- if .Values.lvmNodes.enabled -}}
+{{- if .Values.lvmLocalPv.enabled -}}
 {{- $crdName := "lvmnodes.local.openebs.io" -}}
 {{- if (include "crdIsAbsent" (list $crdName)) -}}
 ##############################################

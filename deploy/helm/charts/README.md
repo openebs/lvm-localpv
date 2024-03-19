@@ -96,7 +96,8 @@ helm install openebs-lvmlocalpv openebs-lvmlocalpv/lvm-localpv --namespace opene
 
 | Parameter                                           | Description                                                                      | Default                                 |
 |-----------------------------------------------------|----------------------------------------------------------------------------------|-----------------------------------------|
-| `imagePullSecrets`                                  | Provides image pull secrect                                                      | `""`                                    |
+| `crds.csi.volumeSnapshots.enabled`                  | Enable/Disable installation of VolumeSnapshot-related CRDs                       | `true`                                   |
+| `imagePullSecrets`                                  | Provides image pull secret                                                       | `""`                                    |
 | `lvmPlugin.image.registry`                          | Registry for openebs-lvm-plugin image                                            | `""`                                    |
 | `lvmPlugin.image.repository`                        | Image repository for openebs-lvm-plugin                                          | `openebs/lvm-driver`                    |
 | `lvmPlugin.image.pullPolicy`                        | Image pull policy for openebs-lvm-plugin                                         | `IfNotPresent`                          |

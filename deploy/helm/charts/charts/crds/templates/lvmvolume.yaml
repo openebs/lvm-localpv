@@ -1,4 +1,4 @@
-{{- if .Values.lvmVolumes.enabled -}}
+{{- if .Values.lvmLocalPv.enabled -}}
 {{- $crdName := "lvmvolumes.local.openebs.io" -}}
 {{- if (include "crdIsAbsent" (list $crdName)) -}}
 ##############################################
