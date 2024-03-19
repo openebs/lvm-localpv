@@ -940,7 +940,7 @@ description: "This priority class should be used for the OpenEBS LVM localPV CSI
 
 ---
 
-kind: StatefulSet
+kind: Deployment
 apiVersion: apps/v1
 metadata:
   name: openebs-lvm-controller
@@ -953,7 +953,6 @@ spec:
     matchLabels:
       app: openebs-lvm-controller
       role: openebs-lvm
-  serviceName: "openebs-lvm"
   replicas: 1
   template:
     metadata:
@@ -1197,7 +1196,6 @@ spec:
     spec:
       priorityClassName: openebs-lvm-localpv-csi-node-critical
       serviceAccountName: openebs-lvm-node-sa
-      hostNetwork: true
       containers:
         - name: csi-node-driver-registrar
           image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.8.0
