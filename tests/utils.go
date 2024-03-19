@@ -612,34 +612,34 @@ func WaitForLVMVolumeReady() {
 }
 
 func scaleControllerPlugin(num int32) int32 {
-	ginkgo.By(fmt.Sprintf("scaling controller plugin statefulset %v to size %v", controllerStatefulSet, num))
+	ginkgo.By(fmt.Sprintf("scaling controller plugin deployment %v to size %v", controllerDeployment, num))
 
-	scale, err := K8sClient.AppsV1().StatefulSets(metav1.NamespaceSystem).
-		GetScale(context.Background(), controllerStatefulSet, metav1.GetOptions{})
+	scale, err := K8sClient.AppsV1().Deployments(metav1.NamespaceSystem).
+		GetScale(context.Background(), controllerDeployment, metav1.GetOptions{})
 	gomega.Expect(err).To(
 		gomega.BeNil(),
-		"fetch current replica of stateful set %v", controllerStatefulSet)
+		"fetch current replica of deployment %v", controllerDeployment)
 	existingReplicas := scale.Spec.Replicas
 
 	if scale.Spec.Replicas == num {
 		return existingReplicas
 	}
 	scale.Spec.Replicas = num
-	scale, err = K8sClient.AppsV1().StatefulSets(metav1.NamespaceSystem).
-		UpdateScale(context.Background(), controllerStatefulSet, scale, metav1.UpdateOptions{})
+	scale, err = K8sClient.AppsV1().Deployments(metav1.NamespaceSystem).
+		UpdateScale(context.Background(), controllerDeployment, scale, metav1.UpdateOptions{})
 	gomega.Expect(err).To(
 		gomega.BeNil(),
-		"update replicas of stateful set %v to %v", controllerStatefulSet, num)
+		"update replicas of deployment %v to %v", controllerDeployment, num)
 
 	scaled := gomega.Eventually(func() bool {
-		scale, err = K8sClient.AppsV1().StatefulSets(metav1.NamespaceSystem).
-			GetScale(context.Background(), controllerStatefulSet, metav1.GetOptions{})
+		scale, err = K8sClient.AppsV1().Deployments(metav1.NamespaceSystem).
+			GetScale(context.Background(), controllerDeployment, metav1.GetOptions{})
 		gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
 		return scale.Spec.Replicas == num
 	}, 120, 10).
 		Should(gomega.BeTrue())
 	gomega.Expect(scaled).To(gomega.BeTrue(),
-		"failed to scale up stateful set %v to size %v", controllerStatefulSet, num)
+		"failed to scale up deployment %v to size %v", controllerDeployment, num)
 	return existingReplicas
 }
 

@@ -63,7 +63,7 @@ var (
 	appName          = "busybox-lvmpv"
 
 	nodeDaemonSet         = "openebs-lvm-node"
-	controllerStatefulSet = "openebs-lvm-controller"
+	controllerDeployment = "openebs-lvm-controller"
 
 	nsObj            *corev1.Namespace
 	scObj            *storagev1.StorageClass
