@@ -47,10 +47,10 @@ $ helm install [RELEASE_NAME] openebs-lvmlocalpv/lvm-localpv --namespace [NAMESP
 
 
 **Note:** If moving from the operator to helm
-- Make sure the namespace provided in the helm install command is same as `LVM_NAMESPACE` (by default it is `openebs`) env in the controller statefulset.
-- Before installing, clean up the stale statefulset and daemonset from `kube-system` namespace using the below commands
+- Make sure the namespace provided in the helm install command is same as `LVM_NAMESPACE` (by default it is `openebs`) env in the controller deployment.
+- Before installing, clean up the stale deployment and daemonset from `kube-system` namespace using the below commands
 ```sh
-kubectl delete sts openebs-lvm-controller -n kube-system
+kubectl delete deployment openebs-lvm-controller -n kube-system
 kubectl delete ds openebs-lvm-node -n kube-system
 ```
 
@@ -96,7 +96,8 @@ helm install openebs-lvmlocalpv openebs-lvmlocalpv/lvm-localpv --namespace opene
 
 | Parameter                                           | Description                                                                      | Default                                 |
 |-----------------------------------------------------|----------------------------------------------------------------------------------|-----------------------------------------|
-| `imagePullSecrets`                                  | Provides image pull secrect                                                      | `""`                                    |
+| `crds.csi.volumeSnapshots.enabled`                  | Enable/Disable installation of VolumeSnapshot-related CRDs                       | `true`                                   |
+| `imagePullSecrets`                                  | Provides image pull secret                                                       | `""`                                    |
 | `lvmPlugin.image.registry`                          | Registry for openebs-lvm-plugin image                                            | `""`                                    |
 | `lvmPlugin.image.repository`                        | Image repository for openebs-lvm-plugin                                          | `openebs/lvm-driver`                    |
 | `lvmPlugin.image.pullPolicy`                        | Image pull policy for openebs-lvm-plugin                                         | `IfNotPresent`                          |
@@ -133,15 +134,16 @@ helm install openebs-lvmlocalpv openebs-lvmlocalpv/lvm-localpv --namespace opene
 | `lvmController.provisioner.image.repository`        | Image repository for csi-provisioner                                             | `sig-storage/csi-provisioner`           |
 | `lvmController.provisioner.image.pullPolicy`        | Image pull policy for csi-provisioner                                            | `IfNotPresent`                          |
 | `lvmController.provisioner.image.tag`               | Image tag for csi-provisioner                                                    | `v3.5.0`                                |
-| `lvmController.updateStrategy.type`                 | Update strategy for lvm localpv controller statefulset                           | `RollingUpdate`                         |
-| `lvmController.annotations`                         | Annotations for lvm localpv controller statefulset metadata                      | `""`                                    |
-| `lvmController.podAnnotations`                      | Annotations for lvm localpv controller statefulset's pods metadata               | `""`                                    |
-| `lvmController.resources`                           | Resource and request and limit for lvm localpv controller statefulset containers | `""`                                    |
-| `lvmController.labels`                              | Labels for lvm localpv controller statefulset metadata                           | `""`                                    |
-| `lvmController.podLabels`                           | Appends labels to the lvm localpv controller statefulset pods                    | `""`                                    |
-| `lvmController.nodeSelector`                        | Nodeselector for lvm localpv controller statefulset pods                         | `""`                                    |
-| `lvmController.tolerations`                         | lvm localpv controller statefulset's pod toleration values                       | `""`                                    |
-| `lvmController.securityContext`                     | Seurity context for lvm localpv controller statefulset container                 | `""`                                    |
+| `lvmController.updateStrategy.type`                 | Update strategy for lvm localpv controller deployment                            | `RollingUpdate`                         |
+| `lvmController.annotations`                         | Annotations for lvm localpv controller deployment metadata                       | `""`                                    |
+| `lvmController.podAnnotations`                      | Annotations for lvm localpv controller deployment's pods metadata                | `""`                                    |
+| `lvmController.resources`                           | Resource and request and limit for lvm localpv controller deployment containers  | `""`                                    |
+| `lvmController.labels`                              | Labels for lvm localpv controller deployment metadata                            | `""`                                    |
+| `lvmController.podLabels`                           | Appends labels to the lvm localpv controller deployment pods                     | `""`                                    |
+| `lvmController.nodeSelector`                        | Nodeselector for lvm localpv controller deployment pods                          | `""`                                    |
+| `lvmController.tolerations`                         | lvm localpv controller deployment's pod toleration values                        | `""`                                    |
+| `lvmController.topologySpreadConstraints`           | lvm localpv controller deployment's pod topologySpreadConstraints values         | `""`                                    |
+| `lvmController.securityContext`                     | Security context for lvm localpv controller deployment container                 | `""`                                    |
 | `rbac.pspEnabled`                                   | Enable PodSecurityPolicy                                                         | `false`                                 |
 | `serviceAccount.lvmNode.create`                     | Create a service account for lvmnode or not                                      | `true`                                  |
 | `serviceAccount.lvmNode.name`                       | Name for the lvmnode service account                                             | `openebs-lvm-node-sa`                   |

@@ -1,0 +1,8 @@
+lvmLocalPv:
+  # Install lvm-localpv CRDs
+  enabled: true
+
+csi:
+  volumeSnapshots:
+    # Install Volume Snapshot CRDs
+    enabled: true

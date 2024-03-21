@@ -1,5 +1,6 @@
-
-
+{{- if .Values.lvmLocalPv.enabled -}}
+{{- $crdName := "lvmnodes.local.openebs.io" -}}
+{{- if (include "crdIsAbsent" (list $crdName)) -}}
 ##############################################
 ###########                       ############
 ###########     LVMNode CRD       ############
@@ -175,3 +176,5 @@ status:
     plural: ""
   conditions: []
   storedVersions: []
+{{- end -}}
+{{- end -}}
