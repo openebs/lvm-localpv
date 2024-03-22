@@ -1,6 +1,6 @@
 ## About this experiment
 
-This functional experiment scale up the lvm-controller replicas to use it in high availability mode and then verify the lvm-localpv behaviour when one of the replicas go down. This experiment checks the initial number of replicas of lvm-controller and scale it by one if a free node is present which should be able to schedule the pods. Default value for lvm-controller statefulset replica is one.
+This functional experiment scale up the lvm-controller replicas to use it in high availability mode and then verify the lvm-localpv behaviour when one of the replicas go down. This experiment checks the initial number of replicas of lvm-controller and scale it by one if a free node is present which should be able to schedule the pods. Default value for lvm-controller deployment replica is one.
 
 ## Supported platforms:
 
@@ -17,10 +17,10 @@ LVM version: LVM 2
 
 ## Exit-Criteria
 
-- lvm-controller statefulset should be scaled up by one replica.
+- lvm-controller deployment should be scaled up by one replica.
 - All the replias should be in running state.
 - lvm-localpv volumes should be healthy and data after scaling up controller should not be impacted.
-- This experiment makes one of the lvm-controller statefulset replica to go down, as a result active/master replica of lvm-controller prior to the experiment will be changed to some other remaining replica after the experiment completes. This happens because of the lease mechanism, which is being used to decide which replica will be serving as master. At a time only one replica will be master and other replica will follow the anti-affinity rules so that these replica pods will be present on different nodes only.
+- This experiment makes one of the lvm-controller deployment replica to go down, as a result active/master replica of lvm-controller prior to the experiment will be changed to some other remaining replica after the experiment completes. This happens because of the lease mechanism, which is being used to decide which replica will be serving as master. At a time only one replica will be master and other replica will follow the anti-affinity rules so that these replica pods will be present on different nodes only.
 - Volumes provisioning / deprovisioning should not be impacted if any one replica goes down.
 
 ## How to run

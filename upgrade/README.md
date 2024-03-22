@@ -34,7 +34,7 @@ wget https://raw.githubusercontent.com/openebs/lvm-localpv/v0.7.x/deploy/lvm-ope
 
 2. Update the lvm-driver image tag. We have to update this at two places,
 
-one at `openebs-lvm-plugin` container image in lvm-controller statefulset
+one at `openebs-lvm-plugin` container image in lvm-controller deployment
 ```
         - name: openebs-lvm-plugin
           image: openebs/lvm-driver:ci  // update it to openebs/lvm-driver:0.7.0
@@ -62,7 +62,7 @@ and other one at `openebs-lvm-plugin` container in lvm-node daemonset.
             - "--listen-address=$(METRICS_LISTEN_ADDRESS)"
 ```
 
-3. If you were using lvm-controller in high-availability (HA) mode, make sure to update statefulset replicas. By default it is set to one (1).
+3. If you were using lvm-controller in high-availability (HA) mode, make sure to update deployment replicas. By default it is set to one (1).
 
 ```
 spec:

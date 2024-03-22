@@ -43,9 +43,9 @@
             executable: /bin/bash
           register: lvm_driver_tag
 
-        - name: Get the replica count for lvm-controller statefulset
+        - name: Get the replica count for lvm-controller deployment
           shell: >
-            kubectl get sts openebs-lvm-controller -n kube-system -o jsonpath='{.status.replicas}'
+            kubectl get deploy openebs-lvm-controller -n kube-system -o jsonpath='{.status.replicas}'
           args: 
             executable: /bin/bash
           register: no_of_lvm_ctrl_replicas
@@ -92,7 +92,7 @@
           failed_when: "update_status.rc != 0"
           when: "lvm_operator_ns != 'openebs'"
 
-        - name: Update the number of lvm-controller statefulset replicas
+        - name: Update the number of lvm-controller deployment replicas
           replace:
             path: ./new_lvm_operator.yml
             regexp: "replicas: 1"
@@ -158,9 +158,9 @@
           delay: 5
           retries: 20
 
-        - name: Verify that lvm-driver version from the lvm-controller statefulset image is upgraded
+        - name: Verify that lvm-driver version from the lvm-controller deployment image is upgraded
           shell: >
-            kubectl get sts openebs-lvm-controller -n kube-system
+            kubectl get deploy openebs-lvm-controller -n kube-system
             -o jsonpath='{.spec.template.spec.containers[?(@.name=="openebs-lvm-plugin")].image}'
           args:
             executable: /bin/bash

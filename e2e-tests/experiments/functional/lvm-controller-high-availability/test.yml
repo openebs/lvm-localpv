@@ -16,9 +16,9 @@
           vars:
             status: 'SOT'
         
-        - name: Get the no of replicas in lvm-controller statefulset 
+        - name: Get the no of replicas in lvm-controller deployment 
           shell: >
-            kubectl get sts openebs-lvm-controller -n kube-system -o jsonpath='{.status.replicas}'
+            kubectl get deploy openebs-lvm-controller -n kube-system -o jsonpath='{.status.replicas}'
           args:
             executable: /bin/bash
           register: lvm_ctrl_replicas
@@ -38,9 +38,9 @@
             executable: /bin/bash
           register: no_of_Schedulable_nodes
 
-        - name: scale down the replicas to zero of lvm-controller statefulset
+        - name: scale down the replicas to zero of lvm-controller deployment
           shell: >
-            kubectl scale sts openebs-lvm-controller -n kube-system --replicas=0
+            kubectl scale deploy openebs-lvm-controller -n kube-system --replicas=0
           args:
             executable: /bin/bash
           register: status
@@ -81,15 +81,15 @@
           register: pvc_status
           failed_when: "'Pending' not in pvc_status.stdout"
         
-        - name: scale up the lvm-controller statefulset replica
+        - name: scale up the lvm-controller deployment replica
           shell: >
-            kubectl scale sts openebs-lvm-controller -n kube-system
+            kubectl scale deploy openebs-lvm-controller -n kube-system
             --replicas="{{ lvm_ctrl_replicas.stdout|int + 1 }}"
           args:
             executable: /bin/bash
           failed_when: "{{ lvm_ctrl_replicas.stdout|int + 1 }} > {{no_of_Schedulable_nodes.stdout|int}}"
 
-        - name: check that lvm-controller statefulset replicas are up and running
+        - name: check that lvm-controller deployment replicas are up and running
           shell: >
             kubectl get pods -n kube-system -l app=openebs-lvm-controller --no-headers 
             -o custom-columns=:.status.phase | grep Running | wc -l

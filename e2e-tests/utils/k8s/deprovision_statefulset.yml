@@ -1,7 +1,7 @@
 ---
 - block:
 
-    - name: Check if the statefulset application exists.
+    - name: Check if the deployment application exists.
       shell: kubectl get pods -n {{ app_ns }} -l {{ app_label }}
       register: pods
       failed_when: "'No resources found' in pods.stdout"
