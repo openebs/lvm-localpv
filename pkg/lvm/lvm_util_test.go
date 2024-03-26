@@ -19,6 +19,9 @@ package lvm
 import (
 	"reflect"
 	"testing"
+
+	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -106,5 +109,112 @@ func Test_parseLogicalVolume(t *testing.T) {
 				t.Errorf("parseLogicalVolume() got = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func Test_buildLVMCreateArgs(t *testing.T) {
+	type ValidationPair struct {
+		name string
+		spec apis.VolumeInfo
+		args []string
+	}
+
+	tests := []ValidationPair{
+		{
+			name: "simple",
+			spec: apis.VolumeInfo{
+				VolGroup: "dddd",
+			},
+			args: []string{
+				"-n", "simple",
+				"dddd",
+				"-y",
+			},
+		},
+		{
+			name: "more-complex",
+			spec: apis.VolumeInfo{
+				VolGroup: "ffff",
+				Capacity: "256Mi",
+			},
+			args: []string{
+				"-L", "256Mib",
+				"-n", "more-complex",
+				"ffff",
+				"-y",
+			},
+		},
+		{
+			name: "thin-provision",
+			spec: apis.VolumeInfo{
+				VolGroup:      "eeee",
+				ThinProvision: "yes",
+			},
+			args: []string{
+				"-T", "eeee/eeee_thinpool",
+				"-V", "b", // This is because setting a capacity causes lvm_util to actually call LVM...
+				"-n", "thin-provision",
+				"-y",
+			},
+		},
+		{
+			name: "vol-r1",
+			spec: apis.VolumeInfo{
+				VolGroup: "aaaa",
+				RaidType: "raid1",
+				Mirrors:  8,
+				NoSync:   "yes",
+			},
+			args: []string{
+				"--type", "raid1",
+				"--mirrors", "8", "--nosync",
+				"-n", "vol-r1",
+				"aaaa",
+				"-y",
+			},
+		},
+		{
+			name: "vol-r10",
+			spec: apis.VolumeInfo{
+				VolGroup:    "bbbb",
+				RaidType:    "raid10",
+				Integrity:   "yes",
+				Mirrors:     2,
+				StripeCount: 3,
+				StripeSize:  32768,
+			},
+			args: []string{
+				"--type", "raid10",
+				"--mirrors", "2",
+				"--stripes", "3", "--stripesize", "32768b",
+				"--raidintegrity", "y",
+				"-n", "vol-r10",
+				"bbbb",
+				"-y",
+			},
+		},
+		{
+			name: "vol-custom",
+			spec: apis.VolumeInfo{
+				VolGroup:        "cccc",
+				Capacity:        "1G",
+				LvCreateOptions: "--vdo;--readahead;auto",
+			},
+			args: []string{
+				"-L", "1Gb",
+				"-n", "vol-custom",
+				"cccc",
+				"--vdo", "--readahead", "auto",
+				"-y",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		got := buildLVMCreateArgs(&apis.LVMVolume{ObjectMeta: v1.ObjectMeta{Name: tt.name}, Spec: tt.spec})
+
+		if !reflect.DeepEqual(got, tt.args) {
+			t.Errorf("buildLVMCreateArgs() got = %v, want %v", got, tt.args)
+		}
 	}
 }

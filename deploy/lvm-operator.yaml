@@ -95,11 +95,46 @@ spec:
                 description: Capacity of the volume
                 minLength: 1
                 type: string
+              integrity:
+                description: Integrity specifies whether logical volumes should be
+                  checked for integrity. If it is set to "yes", then the LVM LocalPV
+                  Driver will enable DM integrity for the logical volume
+                enum:
+                - "yes"
+                - "no"
+                type: string
+              lvcreateoptions:
+                description: LvCreateOptions are extra options for creating a volume.
+                  Options should be separated by ; e.g. "--vdo;--readahead;auto"
+                type: string
+              mirrors:
+                description: Mirrors specifies the mirror count for a RAID configuration.
+                minimum: 0
+                type: integer
+              nosync:
+                description: NoSync enables the `--nosync` option of a RAID volume.
+                  If it is set to "yes", then LVM will skip drive sync when creating
+                  the mirrors. Defaults to "no"
+                enum:
+                - "yes"
+                - "no"
+                type: string
               ownerNodeID:
                 description: OwnerNodeID is the Node ID where the volume group is
                   present which is where the volume has been provisioned. OwnerNodeID
                   can not be edited after the volume has been provisioned.
                 minLength: 1
+                type: string
+              raidtype:
+                description: RaidType specifies the type of RAID for the logical volume.
+                  Defaults to linear, if unspecified.
+                enum:
+                - linear
+                - raid0
+                - raid1
+                - raid5
+                - raid6
+                - raid10
                 type: string
               shared:
                 description: Shared specifies whether the volume can be shared among
@@ -109,6 +144,18 @@ spec:
                 - "yes"
                 - "no"
                 type: string
+              stripecount:
+                description: StripeCount specifies the stripe count for a RAID configuration.
+                  This is equal to the number of physical volumes to scatter the logical
+                  volume
+                minimum: 0
+                type: integer
+              stripesize:
+                description: StripeSize specifies the size of a stripe for a RAID
+                  configuration. Must be a power of 2 but must not exceed the physical
+                  extent size
+                minimum: 0
+                type: integer
               thinProvision:
                 description: ThinProvision specifies whether logical volumes can be
                   thinly provisioned. If it is set to "yes", then the LVM LocalPV
@@ -129,6 +176,7 @@ spec:
             required:
             - capacity
             - ownerNodeID
+            - raidtype
             - vgPattern
             - volGroup
             type: object

@@ -43,6 +43,9 @@ import (
 const (
 	// volume group name where volume provisioning will happen
 	VOLGROUP = "lvmvg"
+
+	// volume group name where RAID volume provisioning will happen
+	RAIDGROUP = "raidvg"
 )
 
 var (

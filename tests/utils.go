@@ -166,6 +166,26 @@ func createThinStorageClass() {
 	gomega.Expect(err).To(gomega.BeNil(), "while creating a thinProvision storageclass {%s}", scName)
 }
 
+func createRaidStorageClass(raidArgs map[string]string) {
+	var (
+		err error
+	)
+
+	// Add in the volume group to the args
+	raidArgs["volgroup"] = RAIDGROUP
+
+	ginkgo.By("building a RAID storage class")
+	scObj, err = sc.NewBuilder().
+		WithGenerateName(scName).
+		WithParametersNew(raidArgs).
+		WithProvisioner(LocalProvisioner).Build()
+	gomega.Expect(err).ShouldNot(gomega.HaveOccurred(),
+		"while building RAID storageclass obj with prefix {%s}", scName)
+
+	scObj, err = SCClient.Create(scObj)
+	gomega.Expect(err).To(gomega.BeNil(), "while creating a RAID storageclass {%s}", scName)
+}
+
 // VerifyLVMVolume verify the properties of a lvm-volume
 func VerifyLVMVolume() {
 	ginkgo.By("fetching lvm volume")

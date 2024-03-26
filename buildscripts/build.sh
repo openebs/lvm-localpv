@@ -96,12 +96,13 @@ output_name="bin/${PNAME}/"$GOOS"_"$GOARCH"/"$CTLNAME
 if [ $GOOS = "windows" ]; then
     output_name+='.exe'
 fi
-env GOOS=$GOOS GOARCH=$GOARCH go build -ldflags \
+env GOOS=$GOOS GOARCH=$GOARCH CGO_ENABLED=0 go build -ldflags \
     "-X github.com/openebs/lvm-localpv/pkg/version.GitCommit=${GIT_COMMIT} \
     -X main.CtlName='${CTLNAME}' \
     -X github.com/openebs/lvm-localpv/pkg/version.Version=${VERSION} \
     -X github.com/openebs/lvm-localpv/pkg/version.VersionMeta=${VERSION_META}"\
     -o $output_name\
+    -installsuffix cgo \
     ./cmd
 
 echo ""

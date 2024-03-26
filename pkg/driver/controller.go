@@ -321,7 +321,15 @@ func CreateLVMVolume(ctx context.Context, req *csi.CreateVolumeRequest,
 		WithOwnerNode(owner).
 		WithVolumeStatus(lvm.LVMStatusPending).
 		WithShared(params.Shared).
-		WithThinProvision(params.ThinProvision).Build()
+		WithThinProvision(params.ThinProvision).
+		WithRaidType(params.RaidType).
+		WithIntegrity(params.Integrity).
+		WithMirrors(params.Mirrors).
+		WithNoSync(params.NoSync).
+		WithStripeCount(params.StripeCount).
+		WithStripeSize(params.StripeSize).
+		WithLvCreateOptions(params.LvCreateOptions).
+		Build()
 
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())

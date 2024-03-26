@@ -17,8 +17,11 @@ limitations under the License.
 package volbuilder
 
 import (
+	"strconv"
+
 	"github.com/openebs/lib-csi/pkg/common/errors"
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 // Builder is the builder object for LVMVolume
@@ -136,6 +139,85 @@ func (b *Builder) WithShared(shared string) *Builder {
 // WithThinProvision sets where thinProvision is enable or not
 func (b *Builder) WithThinProvision(thinProvision string) *Builder {
 	b.volume.Object.Spec.ThinProvision = thinProvision
+	return b
+}
+
+// WithRaidType sets the RAID type for all logical volumes in the volume group
+func (b *Builder) WithRaidType(raidType string) *Builder {
+	b.volume.Object.Spec.RaidType = raidType
+	return b
+}
+
+// WithIntegrity sets where integrity is enable or not
+func (b *Builder) WithIntegrity(integrity string) *Builder {
+	b.volume.Object.Spec.Integrity = integrity
+	return b
+}
+
+// WithMirrors sets the RAID mirror count
+func (b *Builder) WithMirrors(mirrors string) *Builder {
+	mirrorCount, err := strconv.ParseUint(mirrors, 10, 32)
+	if err != nil {
+		b.errs = append(
+			b.errs,
+			errors.New(
+				"invalid mirror count: must be a positive 32-bit integer",
+			),
+			err,
+		)
+	}
+
+	b.volume.Object.Spec.Mirrors = uint(mirrorCount)
+	return b
+}
+
+// WithNoSync sets the `nosync` RAID option
+func (b *Builder) WithNoSync(nosync string) *Builder {
+	b.volume.Object.Spec.NoSync = nosync
+	return b
+}
+
+func (b *Builder) WithStripeCount(stripes string) *Builder {
+	stripeCount, err := strconv.ParseUint(stripes, 10, 32)
+	if err != nil {
+		b.errs = append(
+			b.errs,
+			errors.New(
+				"invalid stripe count: must be a positive 32-bit integer",
+			),
+			err,
+		)
+	}
+
+	b.volume.Object.Spec.StripeCount = uint(stripeCount)
+	return b
+}
+
+// WithStripeSize sets the size of each stripe for a RAID volume
+func (b *Builder) WithStripeSize(size string) *Builder {
+	stripeSize, err := resource.ParseQuantity(size)
+	if err != nil {
+		b.errs = append(
+			b.errs,
+			errors.New(
+				"invalid stripe size",
+			),
+			err,
+		)
+	}
+
+	value := stripeSize.Value()
+	if value < 0 {
+		b.errs = append(b.errs, errors.New("invalid stripe size: value must be positive"))
+	}
+
+	b.volume.Object.Spec.StripeSize = uint(value)
+	return b
+}
+
+// WithLvCreateOptions sets any additional LVM options used when creating a volume
+func (b *Builder) WithLvCreateOptions(options string) *Builder {
+	b.volume.Object.Spec.LvCreateOptions = options
 	return b
 }
 

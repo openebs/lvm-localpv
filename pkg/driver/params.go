@@ -42,6 +42,15 @@ type VolumeParams struct {
 	PVCName      string
 	PVCNamespace string
 	PVName       string
+
+	// Raid specific options
+	RaidType        string
+	Integrity       string
+	Mirrors         string
+	NoSync          string
+	StripeCount     string
+	StripeSize      string
+	LvCreateOptions string
 }
 
 // SnapshotParams holds collection of supported settings that can
@@ -57,6 +66,12 @@ func NewVolumeParams(m map[string]string) (*VolumeParams, error) {
 		Scheduler:     SpaceWeighted,
 		Shared:        "no",
 		ThinProvision: "no",
+		RaidType:      "linear",
+		Integrity:     "no",
+		Mirrors:       "0",
+		NoSync:        "no",
+		StripeCount:   "0",
+		StripeSize:    "0",
 	}
 	// parameter keys may be mistyped from the CRD specification when declaring
 	// the storageclass, which kubectl validation will not catch. Because
@@ -83,6 +98,15 @@ func NewVolumeParams(m map[string]string) (*VolumeParams, error) {
 		"scheduler":     &params.Scheduler,
 		"shared":        &params.Shared,
 		"thinprovision": &params.ThinProvision,
+
+		// Raid options
+		"raidtype":        &params.RaidType,
+		"integrity":       &params.Integrity,
+		"mirrors":         &params.Mirrors,
+		"nosync":          &params.NoSync,
+		"stripecount":     &params.StripeCount,
+		"stripesize":      &params.StripeSize,
+		"lvcreateoptions": &params.LvCreateOptions,
 	}
 	for key, param := range stringParams {
 		value, ok := m[key]
