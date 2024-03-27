@@ -2,7 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 release:
-  version: "1.5.0"
+  version: "1.5.1"
 
 imagePullSecrets:
 # - name: "image-pull-secret"
@@ -187,7 +187,11 @@ crds:
   lvmLocalPv:
     # Install lvm-localpv CRDs
     enabled: true
+    # Keep CRDs on chart uninstall
+    keep: true
   csi:
     volumeSnapshots:
       # Install Volume Snapshot CRDs
       enabled: true
+      # Keep CRDs on chart uninstall
+      keep: true
