@@ -13,6 +13,6 @@ spec:
       targetPort: {{ .Values.lvmPlugin.metricsPort }}
   selector:
     {{- with .Values.lvmNode.podLabels }}
-    {{ toYaml . }}
+    {{ toYaml . | nindent 4 }}
     {{- end }}
 {{- end }}
