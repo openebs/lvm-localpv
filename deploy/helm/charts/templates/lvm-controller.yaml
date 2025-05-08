@@ -22,6 +22,9 @@ spec:
         {{- with .Values.lvmController.podLabels}}
         {{ toYaml . | nindent 8 }}
         {{- end}}
+        {{- with .Values.loggingLabels}}
+        {{ toYaml . | nindent 8 }}
+        {{- end}}
     spec:
 {{- if .Values.lvmController.priorityClass.create }}
       priorityClassName: {{ template "lvmlocalpv.lvmController.priorityClassName" . }}
