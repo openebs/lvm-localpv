@@ -12,6 +12,7 @@ pkgs.mkShell {
     kubectl
     kubernetes-helm
     gnumake
+    helm-docs
     minikube
     semver-tool
     yq-go
