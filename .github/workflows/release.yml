@@ -7,7 +7,7 @@ on:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,10 +28,16 @@ jobs:
           ct lint --config ct.yaml
   
   unit-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up Go 1.19
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.19.9
+          cache: false
 
       - name: Unit test
         run: make test
@@ -96,7 +102,7 @@ jobs:
   
   csi-driver:
     if: contains(github.ref, 'tags/v')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: ["lint", "bdd-tests"]
     steps:
       - name: Checkout
@@ -195,7 +201,7 @@ jobs:
             BRANCH=${{ env.BRANCH }}
 
   release-chart:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: ["csi-driver"]
     steps:
       - uses: actions/checkout@v4
