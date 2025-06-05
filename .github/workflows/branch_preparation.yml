@@ -25,8 +25,8 @@ jobs:
             nix-shell --pure --run "./scripts/test-update-chart-version.sh" ./shell.nix
       - name: Modify the chart version based on the tag
         run: |
-          nix-shell --pure ./shell.nix --run "./scripts/update-chart-version.sh --tag ${{ github.ref_name }} > /tmp/file"
-          echo "BASE=$(cat /tmp/file)" >> $GITHUB_ENV
+          nix-shell --pure ./shell.nix --run "./scripts/update-chart-version.sh --tag ${{ github.ref_name }} > /tmp/openebs-file"
+          echo "BASE=$(cat /tmp/openebs-file)" >> $GITHUB_ENV
       - name: Create Pull Request to release
         if:  ${{ env.BASE }}
         id: cpr
