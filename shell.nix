@@ -18,6 +18,7 @@ pkgs.mkShell {
     yq-go
     which
     curl
+    crane
     cacert
     util-linux
     jq
