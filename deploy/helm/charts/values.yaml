@@ -64,7 +64,11 @@ lvmNode:
     burst: 0
   # Disable or enable the use of hostNetwork for the lvm node daemonset.
   hostNetwork: false
-
+  serviceMonitor:
+    enabled: false
+    # add labels to the serviceMonitor if you make use of serviceMonitorSelector in prometheus operator
+#   labels:
+#     release: prometheus
 
 # lvmController contains the configurables for
 # the lvm controller deployment
