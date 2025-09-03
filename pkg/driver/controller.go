@@ -19,6 +19,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -471,6 +472,28 @@ func (cs *controller) DeleteVolume(
 	return csipayload.NewDeleteVolumeResponseBuilder().Build(), nil
 }
 
+// Checks if k8s node is present. If the check fails with any other reason then NotFound.
+// We will return true and assume node is present.
+func isNodePresent(nodeId string) bool {
+	cfg, err := k8sapi.Config().Get()
+	if err != nil {
+		return true
+	}
+
+	kubeClient, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return true
+	}
+
+	_, err = kubeClient.CoreV1().Nodes().Get(context.TODO(), nodeId, metav1.GetOptions{})
+	if err != nil {
+		if k8serror.IsNotFound(err) {
+			return false
+		}
+	}
+	return true
+}
+
 func (cs *controller) deleteVolume(ctx context.Context, volumeID string) error {
 	klog.Infof("received request to delete volume %q", volumeID)
 	vol, err := lvm.GetLVMVolume(volumeID)
@@ -481,7 +504,6 @@ func (cs *controller) deleteVolume(ctx context.Context, volumeID string) error {
 		return errors.Wrapf(err,
 			"failed to get volume for {%s}", volumeID)
 	}
-
 	// if volume is not already triggered for deletion, delete the volume.
 	// otherwise, just wait for the existing deletion operation to complete.
 	if vol.GetDeletionTimestamp() == nil {
@@ -489,6 +511,17 @@ func (cs *controller) deleteVolume(ctx context.Context, volumeID string) error {
 			return errors.Wrapf(err,
 				"failed to handle delete volume request for {%s}", volumeID)
 		}
+	}
+	present := isNodePresent(vol.Spec.OwnerNodeID)
+	if !present {
+		klog.Warningf("Removing finalizer as node %s is not present in cluster", vol.Spec.OwnerNodeID)
+		if err = lvm.RemoveVolFinalizer(vol); err != nil {
+			return err
+		}
+		if err = lvm.VerifyLVMVolumeDestroy(volumeID); err != nil {
+			return err
+		}
+		return nil
 	}
 	if err = lvm.WaitForLVMVolumeDestroy(ctx, volumeID); err != nil {
 		return err
