@@ -104,7 +104,7 @@ func ProvisionVolume(vol *apis.LVMVolume) (*apis.LVMVolume, error) {
 func DeleteVolume(volumeID string) (err error) {
 	err = volbuilder.NewKubeclient().WithNamespace(LvmNamespace).Delete(volumeID)
 	if err == nil {
-		klog.Infof("deprovisioned volume %s", volumeID)
+		klog.Infof("deprovisioning volume %s", volumeID)
 	}
 
 	return
@@ -162,6 +162,23 @@ func WaitForLVMVolumeDestroy(ctx context.Context, volumeID string) error {
 		}
 		timer.Reset(1 * time.Second)
 	}
+}
+
+// Verifies if lvmvolume CR got removed after removing finaliser.
+func VerifyLVMVolumeDestroy(volumeID string) error {
+	for i := 0; i < 10; i++ {
+		_, err := GetLVMVolume(volumeID)
+		if err != nil {
+			if k8serror.IsNotFound(err) {
+				return nil
+			}
+			return status.Errorf(codes.Internal,
+				"lvmvolume: destroy wait failed, not able to get the volume %s %s", volumeID, err.Error())
+		}
+		time.Sleep(time.Duration(100 * time.Millisecond))
+	}
+	return status.Errorf(codes.DeadlineExceeded,
+		"lvmvolume: %s not removed after removing finaliser", volumeID)
 }
 
 // GetLVMVolumeState returns LVMVolume OwnerNode and State for
