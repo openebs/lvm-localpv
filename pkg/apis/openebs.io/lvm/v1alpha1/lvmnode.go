@@ -112,6 +112,22 @@ type VolumeGroup struct {
 	// int and string for its value:
 	// [-1: "", 0: "normal", 1: "contiguous", 2: "cling", 3: "anywhere", 4: "inherited"]
 	AllocationPolicy int `json:"allocationPolicy"`
+
+	// ThinPools hosted by the volume group.
+	ThinPools []ThinPool `json:"thinPools,omitempty"`
+}
+
+// ThinPool LV present on VG.
+type ThinPool struct {
+	// Name of the thinpool lv.
+	// +kubebuilder:validation:Required
+	Name string `json:"name"`
+	// Size of the thinpool lv. In bytes, if no unit specified.
+	// +kubebuilder:validation:Required
+	Size resource.Quantity `json:"size"`
+	// Free capacity of thinpool. In bytes, if no unit specified.
+	// +kubebuilder:validation:Required
+	Free resource.Quantity `json:"free"`
 }
 
 // LVMNodeList is a collection of LVMNode resources

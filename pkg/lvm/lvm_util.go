@@ -970,7 +970,7 @@ func parseVolumeGroup(m map[string]string) (apis.VolumeGroup, error) {
 	for key, value := range int32Map {
 		count, err = strconv.Atoi(m[key])
 		if err != nil {
-			err = fmt.Errorf("invalid format of %v=%v for vg %v: %v", key, m[key], vg.Name, err)
+			return vg, fmt.Errorf("invalid format of %v=%v for vg %v: %v", key, m[key], vg.Name, err)
 		}
 		*value = int32(count)
 	}
@@ -987,7 +987,7 @@ func parseVolumeGroup(m map[string]string) (apis.VolumeGroup, error) {
 			strings.TrimSuffix(strings.ToLower(m[key]), "b"),
 			10, 64)
 		if err != nil {
-			err = fmt.Errorf("invalid format of %v=%v for vg %v: %v", key, m[key], vg.Name, err)
+			return vg, fmt.Errorf("invalid format of %v=%v for vg %v: %v", key, m[key], vg.Name, err)
 		}
 		quantity := resource.NewQuantity(sizeBytes, resource.BinarySI)
 		*value = *quantity //
@@ -995,8 +995,80 @@ func parseVolumeGroup(m map[string]string) (apis.VolumeGroup, error) {
 
 	vg.Permission = getIntFieldValue(VGPermissions, m[VGPermissions])
 	vg.AllocationPolicy = getIntFieldValue(VGAllocationPolicy, m[VGAllocationPolicy])
+	vg.ThinPools, err = getThinPools(vg.Name)
+	if err != nil {
+		return vg, fmt.Errorf("%s", err)
+	}
+	return vg, nil
+}
 
-	return vg, err
+// Returns thinpools present on the VG.
+func getThinPools(vg string) ([]apis.ThinPool, error) {
+	var thinpools []apis.ThinPool
+	var err error
+
+	args := []string{
+		"--reportformat", "json",
+		"--units", "b", "--no-suffix",
+	}
+	output, _, err := RunCommandSplit(LVList, args...)
+	if err != nil {
+		klog.Errorf("lvm: error while running command %s %v: %v", LVList, args, err)
+		return nil, err
+	}
+
+	var lvsReport struct {
+		Report []struct {
+			Lv []struct {
+				LvName      string `json:"lv_name"`
+				VgName      string `json:"vg_name"`
+				LvAttr      string `json:"lv_attr"`
+				LvSize      string `json:"lv_size"`
+				DataPercent string `json:"data_percent"`
+			} `json:"lv"`
+		} `json:"report"`
+	}
+
+	if err := json.Unmarshal(output, &lvsReport); err != nil {
+		fmt.Println("error in unmarshal")
+		return nil, fmt.Errorf("couldn't unmarshal lvs resonse: %s", vg)
+	}
+
+	for _, report := range lvsReport.Report {
+		for _, lv := range report.Lv {
+			if strings.HasPrefix(lv.LvAttr, "t") && lv.VgName == vg {
+				size, err := strconv.ParseInt(lv.LvSize, 10, 64)
+				size_quantity := resource.NewQuantity(size, resource.BinarySI)
+				if err != nil {
+					return nil, fmt.Errorf("couldn't convert size %s into integer", lv.LvSize)
+				}
+				free, err := getThinPoolFree(size, lv.DataPercent)
+				if err != nil {
+					return nil, fmt.Errorf("couldn't get free size for vg %s, err %v", lv.LvName, err)
+				}
+				free_quantity := resource.NewQuantity(free, resource.BinarySI)
+
+				thinpools = append(thinpools, apis.ThinPool{
+					Name: lv.LvName,
+					Size: *size_quantity,
+					Free: *free_quantity,
+				})
+			}
+		}
+	}
+	return thinpools, nil
+}
+
+// Returns thinpool free space in bytes.
+func getThinPoolFree(size int64, usedPercent string) (int64, error) {
+	usedFloat, err := strconv.ParseFloat(usedPercent, 32)
+	if err != nil {
+		return 0, fmt.Errorf("couldn't convert data_percent %s into float", usedPercent)
+	}
+	usedFraction := usedFloat / 100
+	used := float64(size) * usedFraction
+	free := size - int64(used)
+	return free, nil
 }
 
 // This function returns the integer equivalent for different string values for the LVM component(vg,lv) field.

@@ -1,8 +1,6 @@
-
-
 ##############################################
 ###########                       ############
-###########     LVMNode CRD       ############
+###########   LVMNode CRD     ############
 ###########                       ############
 ##############################################
 
@@ -158,6 +156,34 @@ spec:
                   description: SnapCount denotes number of snapshots in volume group.
                   format: int32
                   type: integer
+                thinPools:
+                  description: ThinPools hosted by the volume group.
+                  items:
+                    description: ThinPool LV present on VG.
+                    properties:
+                      free:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: Free capacity of the thinpool lv. In bytes, if no unit specified.
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      name:
+                        description: Name of the thinpool lv.
+                        type: string
+                      size:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: Size of the thinpool lv. In bytes, if no unit specified.
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                    required:
+                    - free
+                    - name
+                    - size
+                    type: object
+                  type: array
                 uuid:
                   description: UUID denotes a unique identity of a lvm volume group.
                   minLength: 1

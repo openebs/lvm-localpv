@@ -436,6 +436,30 @@ spec:
                   description: SnapCount denotes number of snapshots in volume group.
                   format: int32
                   type: integer
+                thinPools:
+                  description: ThinPools hosted by the volume group.
+                  items:
+                    properties:
+                      data_percent:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: Used capacity of thinpool, in percent.
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      lv:
+                        description: Name of the thinpool lv.
+                        minLength: 1
+                        type: string
+                      size:
+                        description: 'Size of the thinpool lv. Example: "10737418240B"'
+                        type: string
+                    required:
+                    - data_percent
+                    - lv
+                    - size
+                    type: object
+                  type: array
                 uuid:
                   description: UUID denotes a unique identity of a lvm volume group.
                   minLength: 1
@@ -456,6 +480,7 @@ spec:
               - pvCount
               - size
               - snapCount
+              - thinPools
               - uuid
               type: object
             type: array
