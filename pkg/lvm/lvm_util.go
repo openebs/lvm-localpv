@@ -57,6 +57,7 @@ const (
 	LVCreate = "lvcreate"
 	LVRemove = "lvremove"
 	LVExtend = "lvextend"
+	LVChange = "lvchange"
 	LVList   = "lvs"
 
 	PVList = "pvs"
@@ -265,6 +266,38 @@ func buildLVMDestroyArgs(vol *apis.LVMVolume) []string {
 	return LVMVolArg
 }
 
+// buildLVMRestoreThinSnapshotArgs returns lvcreate command for the retore volume from thin snapshot
+func buildLVMRestoreThinSnapshotArgs(vol *apis.LVMVolume) []string {
+	var LVMRestoreThinVolArg []string
+
+	// command to create restored thin volume from thin snapshot
+	// `lvcreate -s -n <restore-volume-name>  lvmvg/<thin-snapshot-id>`
+	LVMRestoreThinVolArg = append(LVMRestoreThinVolArg, "-s", "-n", vol.Name)
+
+	if len(vol.Spec.VolGroup) != 0 {
+		LVMRestoreThinVolArg = append(LVMRestoreThinVolArg, vol.Spec.VolGroup+"/"+getLVMSnapName(vol.Spec.Source))
+	}
+
+	// -y is used to wipe the signatures before creating LVM volume
+	LVMRestoreThinVolArg = append(LVMRestoreThinVolArg, "-y")
+	return LVMRestoreThinVolArg
+}
+
+// buildLVMVolumeActivateArgs returns lvchnage command to activate the volume
+func buildLVMVolumeActivateArgs(vol *apis.LVMVolume) []string {
+	var LVMActivateVolArg []string
+
+	// command to activate volume
+	// `lvchange -kn -ay  lvmvg/<volume-name>`
+	LVMActivateVolArg = append(LVMActivateVolArg, "-kn", "-ay")
+
+	if len(vol.Spec.VolGroup) != 0 {
+		LVMActivateVolArg = append(LVMActivateVolArg, vol.Spec.VolGroup+"/"+vol.Name)
+	}
+
+	return LVMActivateVolArg
+}
+
 // RunCommandSplit is a wrapper function to run a command and receive its
 // STDERR and STDOUT streams in separate []byte vars.
 func RunCommandSplit(command string, args ...string) ([]byte, []byte, error) {
@@ -299,6 +332,45 @@ func CreateVolume(vol *apis.LVMVolume) error {
 		return nil
 	}
 
+	// Handle volume creation based on source
+	if vol.Spec.Source != "" {
+		// check if the source is snapshot
+		if !strings.HasPrefix(vol.Spec.Source, "snapshot-") {
+			return fmt.Errorf("unsupported source %s; only snapshot source is supported", vol.Spec.Source)
+		}
+
+		snapName := getLVMSnapName(vol.Spec.Source)
+		if exists, err := isSnapshotExists(vol.Spec.VolGroup, snapName); err != nil {
+			return fmt.Errorf("failed to check snapshot existence: %w", err)
+		} else if !exists {
+			return fmt.Errorf("snapshot %s does not exist in volume group %s", snapName, vol.Spec.VolGroup)
+		}
+
+		// Create volume from thin snapshot
+		args := buildLVMRestoreThinSnapshotArgs(vol)
+		out, _, err := RunCommandSplit(LVCreate, args...)
+		if err != nil {
+			err = newExecError(out, err)
+			klog.Errorf(
+				"lvm: could not create snapshot %v cmd %v error: %s", volume, args, string(out),
+			)
+			return err
+		}
+
+		// Activate the restored thin volume
+		activateArgs := buildLVMVolumeActivateArgs(vol)
+		out, _, err = RunCommandSplit(LVChange, activateArgs...)
+		if err != nil {
+			err = newExecError(out, err)
+			klog.Errorf(
+				"lvm: could not activate volume %v cmd %v error: %s", volume, args, string(out),
+			)
+			return err
+		}
+
+		klog.Infof("lvm: created restored volume %s from thin snapshot %s as source", volume, snapName)
+		return nil
+	}
 	args := buildLVMCreateArgs(vol)
 	out, _, err := RunCommandSplit(LVCreate, args...)
 
