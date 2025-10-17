@@ -18,6 +18,7 @@ package tests
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -37,6 +38,11 @@ func createPV(size int) string {
 		"openebs_lvm_localpv_disk_XXXXX",
 		"--dry-run",
 	}
+
+	if dataDir := os.Getenv("DATA_DIR"); dataDir != "" {
+		back_file_args = append(back_file_args, "-p", dataDir)
+	}
+
 	file, _, _ := execAtLocal("sudo", nil, back_file_args...)
 
 	file_str := strings.TrimSpace(string(file[:]))

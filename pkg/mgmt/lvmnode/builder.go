@@ -32,7 +32,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
-	"k8s.io/klog/v2"
+	klog "k8s.io/klog/v2"
 )
 
 const (
@@ -68,7 +68,7 @@ type NodeController struct {
 	// means we can ensure we only process a fixed amount of resources at a
 	// time, and makes it easy to ensure we are never processing the same item
 	// simultaneously in two different workers.
-	workqueue workqueue.RateLimitingInterface
+	workqueue workqueue.TypedRateLimitingInterface[any]
 
 	// recorder is an event recorder for recording Event resources to the
 	// Kubernetes API.
@@ -98,8 +98,8 @@ func newNodeController(kubeClient kubernetes.Interface, client dynamic.Interface
 		clientset:     client,
 		NodeLister:    dynamiclister.New(nodeInformer.GetIndexer(), noderesource),
 		NodeSynced:    nodeInformer.HasSynced,
-		workqueue: workqueue.NewRateLimitingQueueWithConfig(workqueue.DefaultControllerRateLimiter(),
-			workqueue.RateLimitingQueueConfig{
+		workqueue: workqueue.NewTypedRateLimitingQueueWithConfig(workqueue.DefaultTypedControllerRateLimiter[any](),
+			workqueue.TypedRateLimitingQueueConfig[any]{
 				Name: "Node",
 			}),
 		recorder:     recorder,

@@ -18,6 +18,7 @@ package tests
 
 import (
 	"bytes"
+	"fmt"
 	"os/exec"
 	"strings"
 
@@ -60,6 +61,22 @@ func execAtLocal(cmd string, input []byte, args ...string) ([]byte, []byte, erro
 	}
 
 	err := command.Run()
+
+	if err == nil {
+		if stderr.Len() > 0 {
+			cmdParts := append([]string{cmd}, args...)
+			fmt.Printf("Command '%s' succeeded with stderr output:\n%s\n", strings.Join(cmdParts, " "), stderr.String())
+		}
+	} else {
+		cmdParts := append([]string{cmd}, args...)
+
+		if stderr.Len() > 0 {
+			fmt.Printf("Command '%s' failed with error %s, stderr output:\n%s\n", strings.Join(cmdParts, " "), err.Error(), stderr.String())
+		} else {
+			fmt.Printf("Command '%s' failed with error %s\n", strings.Join(cmdParts, " "), err.Error())
+		}
+	}
+
 	return stdout.Bytes(), stderr.Bytes(), err
 }
 

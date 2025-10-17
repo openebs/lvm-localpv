@@ -19,10 +19,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
+	lvmv1alpha1 "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // LVMSnapshotLister helps list LVMSnapshots.
@@ -30,7 +30,7 @@ import (
 type LVMSnapshotLister interface {
 	// List lists all LVMSnapshots in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.LVMSnapshot, err error)
+	List(selector labels.Selector) (ret []*lvmv1alpha1.LVMSnapshot, err error)
 	// LVMSnapshots returns an object that can list and get LVMSnapshots.
 	LVMSnapshots(namespace string) LVMSnapshotNamespaceLister
 	LVMSnapshotListerExpansion
@@ -38,25 +38,17 @@ type LVMSnapshotLister interface {
 
 // lVMSnapshotLister implements the LVMSnapshotLister interface.
 type lVMSnapshotLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*lvmv1alpha1.LVMSnapshot]
 }
 
 // NewLVMSnapshotLister returns a new LVMSnapshotLister.
 func NewLVMSnapshotLister(indexer cache.Indexer) LVMSnapshotLister {
-	return &lVMSnapshotLister{indexer: indexer}
-}
-
-// List lists all LVMSnapshots in the indexer.
-func (s *lVMSnapshotLister) List(selector labels.Selector) (ret []*v1alpha1.LVMSnapshot, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.LVMSnapshot))
-	})
-	return ret, err
+	return &lVMSnapshotLister{listers.New[*lvmv1alpha1.LVMSnapshot](indexer, lvmv1alpha1.Resource("lvmsnapshot"))}
 }
 
 // LVMSnapshots returns an object that can list and get LVMSnapshots.
 func (s *lVMSnapshotLister) LVMSnapshots(namespace string) LVMSnapshotNamespaceLister {
-	return lVMSnapshotNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return lVMSnapshotNamespaceLister{listers.NewNamespaced[*lvmv1alpha1.LVMSnapshot](s.ResourceIndexer, namespace)}
 }
 
 // LVMSnapshotNamespaceLister helps list and get LVMSnapshots.
@@ -64,36 +56,15 @@ func (s *lVMSnapshotLister) LVMSnapshots(namespace string) LVMSnapshotNamespaceL
 type LVMSnapshotNamespaceLister interface {
 	// List lists all LVMSnapshots in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.LVMSnapshot, err error)
+	List(selector labels.Selector) (ret []*lvmv1alpha1.LVMSnapshot, err error)
 	// Get retrieves the LVMSnapshot from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.LVMSnapshot, error)
+	Get(name string) (*lvmv1alpha1.LVMSnapshot, error)
 	LVMSnapshotNamespaceListerExpansion
 }
 
 // lVMSnapshotNamespaceLister implements the LVMSnapshotNamespaceLister
 // interface.
 type lVMSnapshotNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all LVMSnapshots in the indexer for a given namespace.
-func (s lVMSnapshotNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.LVMSnapshot, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.LVMSnapshot))
-	})
-	return ret, err
-}
-
-// Get retrieves the LVMSnapshot from the indexer for a given namespace and name.
-func (s lVMSnapshotNamespaceLister) Get(name string) (*v1alpha1.LVMSnapshot, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("lvmsnapshot"), name)
-	}
-	return obj.(*v1alpha1.LVMSnapshot), nil
+	listers.ResourceIndexer[*lvmv1alpha1.LVMSnapshot]
 }

@@ -30,7 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/klog/v2"
+	klog "k8s.io/klog/v2"
 
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	"github.com/openebs/lvm-localpv/pkg/builder/nodebuilder"
@@ -136,7 +136,7 @@ func (c *NodeController) getStructuredObject(obj interface{}) (*apis.LVMNode, bo
 	node := &apis.LVMNode{}
 	err := runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredInterface.UnstructuredContent(), &node)
 	if err != nil {
-		runtime.HandleError(fmt.Errorf("err %s, While converting unstructured obj to typed object\n", err.Error()))
+		runtime.HandleError(fmt.Errorf("err %s, while converting unstructured obj to typed object", err.Error()))
 		return nil, false
 	}
 	return node, true
@@ -146,7 +146,7 @@ func (c *NodeController) getStructuredObject(obj interface{}) (*apis.LVMNode, bo
 func (c *NodeController) addNode(obj interface{}) {
 	node, ok := c.getStructuredObject(obj)
 	if !ok {
-		runtime.HandleError(fmt.Errorf("Couldn't get node object %#v", obj))
+		runtime.HandleError(fmt.Errorf("couldn't get node object %#v", obj))
 		return
 	}
 
@@ -158,7 +158,7 @@ func (c *NodeController) addNode(obj interface{}) {
 func (c *NodeController) updateNode(oldObj, newObj interface{}) {
 	newNode, ok := c.getStructuredObject(newObj)
 	if !ok {
-		runtime.HandleError(fmt.Errorf("Couldn't get node object %#v", newNode))
+		runtime.HandleError(fmt.Errorf("couldn't get node object %#v", newNode))
 		return
 	}
 

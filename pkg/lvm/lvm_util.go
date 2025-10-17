@@ -572,9 +572,9 @@ func CheckVolumeExists(vol *apis.LVMVolume) (bool, error) {
 func GetVolumeDevPath(vol *apis.LVMVolume) (string, error) {
 	// LVM doubles the hiphen for the mapper device name
 	// and uses single hiphen to separate volume group from volume
-	vg := strings.Replace(vol.Spec.VolGroup, "-", "--", -1)
+	vg := strings.ReplaceAll(vol.Spec.VolGroup, "-", "--")
 
-	lv := strings.Replace(vol.Name, "-", "--", -1)
+	lv := strings.ReplaceAll(vol.Name, "-", "--")
 	dev := DevMapperPath + vg + "-" + lv
 
 	return dev, nil
@@ -589,14 +589,14 @@ func needsLvResize(vol *apis.LVMVolume, desiredSizeBytes uint64) bool {
 	// 1. Get LV Size in bytes, without the unit suffix.
 	lvSizeBytes, _, err := RunCommandSplit(LVList, "-o", "lv_size", "--noheadings", "--nosuffix", "--units", "b", lvPath)
 	if err != nil {
-		klog.Warningf("failed to get LV size for %s: %w", lvPath, err)
+		klog.Warningf("failed to get LV size for %s: %v", lvPath, err)
 		return true
 	}
 
 	lvSizeBytesStr := strings.TrimSpace(string(lvSizeBytes))
 	lvSize, err := strconv.ParseUint(lvSizeBytesStr, 10, 64) // Parse as int64
 	if err != nil {
-		klog.Warningf("failed to parse LV size %v for %s: %w", lvSizeBytesStr, lvPath, err)
+		klog.Warningf("failed to parse LV size %v for %s: %v", lvSizeBytesStr, lvPath, err)
 		return true
 	}
 
@@ -604,14 +604,14 @@ func needsLvResize(vol *apis.LVMVolume, desiredSizeBytes uint64) bool {
 	// Similar to LV size, get VG extent size in bytes without suffix.
 	vgExtentSizeBytes, _, err := RunCommandSplit(VGList, "-o", "vg_extent_size", "--noheadings", "--nosuffix", "--units", "b", vgName)
 	if err != nil {
-		klog.Warningf("failed to get VG extent size for %s: %w", vgName, err)
+		klog.Warningf("failed to get VG extent size for %s: %v", vgName, err)
 		return true
 	}
 
 	vgExtentSizeStr := strings.TrimSpace(string(vgExtentSizeBytes))
 	vgExtentSize, err := strconv.ParseUint(vgExtentSizeStr, 10, 64) // Parse as int64
 	if err != nil {
-		klog.Warningf("failed to parse VG extent size '%s' to integer: %w", vgExtentSizeStr, err)
+		klog.Warningf("failed to parse VG extent size '%s' to integer: %v", vgExtentSizeStr, err)
 		return true
 	}
 

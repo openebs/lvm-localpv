@@ -43,11 +43,9 @@ type LVMSnapshotSpec struct {
 	OwnerNodeID string `json:"ownerNodeID"`
 
 	// VolGroup specifies the name of the volume group where the snapshot has been created.
-	// +kubebuilder:validation:Required
 	VolGroup string `json:"volGroup"`
 
 	// SnapSize specifies the space reserved for the snapshot
-	// +kubebuilder:validation:Required
 	SnapSize string `json:"snapSize,omitempty"`
 }
 

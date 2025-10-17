@@ -66,7 +66,7 @@ type VolController struct {
 	// means we can ensure we only process a fixed amount of resources at a
 	// time, and makes it easy to ensure we are never processing the same item
 	// simultaneously in two different workers.
-	workqueue workqueue.RateLimitingInterface
+	workqueue workqueue.TypedRateLimitingInterface[any]
 
 	// recorder is an event recorder for recording Event resources to the
 	// Kubernetes API.
@@ -79,7 +79,7 @@ func newVolController(kubeClient kubernetes.Interface, client dynamic.Interface,
 	//Creating informer for lvmvolume resource
 	volInformer := dynInformer.ForResource(volresource).Informer()
 	//This ratelimiter requeues failed items after 5 secs for first 12 attempts. Then objects are requeued after 30 secs.
-	rateLimiter := workqueue.NewItemFastSlowRateLimiter(5*time.Second, 30*time.Second, 12)
+	rateLimiter := workqueue.NewTypedItemFastSlowRateLimiter[any](5*time.Second, 30*time.Second, 12)
 
 	klog.Infof("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
@@ -93,8 +93,8 @@ func newVolController(kubeClient kubernetes.Interface, client dynamic.Interface,
 		clientset:     client,
 		VolLister:     dynamiclister.New(volInformer.GetIndexer(), volresource),
 		VolSynced:     volInformer.HasSynced,
-		workqueue: workqueue.NewRateLimitingQueueWithConfig(rateLimiter,
-			workqueue.RateLimitingQueueConfig{Name: "Vol"}),
+		workqueue: workqueue.NewTypedRateLimitingQueueWithConfig(rateLimiter,
+			workqueue.TypedRateLimitingQueueConfig[any]{Name: "Vol"}),
 		recorder: recorder,
 	}
 

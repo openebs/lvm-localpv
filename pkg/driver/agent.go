@@ -470,12 +470,9 @@ func (ns *node) NodeExpandVolume(
 	isBlockMode := req.GetVolumeCapability().GetBlock() != nil
 	fsType := req.GetVolumeCapability().GetMount().GetFsType()
 
-	resizeFS := true
-	if isBlockMode || fsType == "btrfs" {
-		// In case of volume block mode (or) btrfs filesystem mode
-		// lvm doesn't expand the fs natively
-		resizeFS = false
-	}
+	// In case of volume block mode (or) btrfs filesystem mode
+	// lvm doesn't expand the fs natively
+	resizeFS := !isBlockMode && fsType != "btrfs"
 
 	err = lvm.ResizeLVMVolume(vol, resizeFS)
 	if err != nil {

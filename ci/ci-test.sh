@@ -7,6 +7,15 @@
 set -e
 
 SCRIPT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]:-"$0"}")")"
+DATA_DIR="${DATA_DIR:-/tmp}"
+
+# Default Kubernetes provider (check legacy environment variable)
+if [ "${CI_K3S:-}" = "true" ]; then
+  PROVIDER="k3s"
+else
+  PROVIDER="none"
+fi
+
 SNAP_CLASS="$(realpath deploy/sample/lvmsnapclass.yaml)"
 export OPENEBS_NAMESPACE=${OPENEBS_NAMESPACE:-openebs}
 export TEST_DIR="$SCRIPT_DIR"/../tests
@@ -32,6 +41,8 @@ Options for run:
   -r, --reset                  Clean before running the tests.
   -x, --no-cleanup             Don't cleanup after running the tests.
   -b, --build-always           Build and load the images before running the tests. [ By default image is built if not present only ]
+  -p, --provider <provider>    Kubernetes provider to use: none, minikube, k3s (default: none, or k3s if CI_K3S is set)
+  -d, --datadir <path>         Directory for data files (default: \$DATA_DIR id set, else '/tmp')
 
 Examples:
   $(basename "${0}") run -rxb
@@ -55,7 +66,7 @@ die() {
 
 # Clean up generated resources for successive tests.
 cleanup_loopdev() {
-  losetup -l | grep '(deleted)' | awk '{print $1}' \
+  sudo losetup -l | grep '(deleted)' | awk '{print $1}' \
     | while IFS= read -r disk
       do
         sudo losetup -d "${disk}"
@@ -63,17 +74,17 @@ cleanup_loopdev() {
 }
 
 cleanup_foreign_lvmvg() {
-  if [ -f /tmp/openebs_ci_foreign_disk.img ]
+  if [ -f "${DATA_DIR}/openebs_ci_foreign_disk.img" ]
   then
     sudo vgremove foreign_lvmvg --config="${FOREIGN_LVM_CONFIG}" -y || true
-    sudo rm /tmp/openebs_ci_foreign_disk.img
+    sudo rm "${DATA_DIR}/openebs_ci_foreign_disk.img"
   fi
   cleanup_loopdev
 }
 
 # Clean up loop devices and vgs created by the ginkgo lvm_utils.go
 cleanup_ginkgo_loop_lvm() {
-  for device in $(losetup -l -J | jq -r '.loopdevices[]|select(."back-file" | startswith("/tmp/openebs_lvm_localpv_disk_")) | .name'); do
+  for device in $(sudo losetup -l -J | jq -r '.loopdevices[]|select(."back-file" | startswith("/tmp/openebs_lvm_localpv_disk_")) | .name'); do
     echo "Found stale loop device: $device"
 
     sudo "$(which vgremove)" -y --select="pv_name=$device" || :
@@ -196,8 +207,8 @@ waitForLVMDriver() {
 run() {
   # setup a foreign lvm to test
   cleanup_foreign_lvmvg
-  truncate -s 100G /tmp/openebs_ci_foreign_disk.img
-  foreign_disk="$(sudo losetup -f /tmp/openebs_ci_foreign_disk.img --show)"
+  truncate -s 100G "${DATA_DIR}/openebs_ci_foreign_disk.img"
+  foreign_disk="$(sudo losetup -f "${DATA_DIR}/openebs_ci_foreign_disk.img" --show)"
   sudo pvcreate "${foreign_disk}"
   sudo vgcreate foreign_lvmvg "${foreign_disk}" --config="${FOREIGN_LVM_CONFIG}"
 
@@ -233,7 +244,7 @@ run() {
 }
 
 load_k3s() {
-  if [ "${CI_K3S:-}" = "true" ]; then
+  if [ "$PROVIDER" = "k3s" ]; then
     local img="${1:-}"
     if [ -z "${1:-}" ]; then
       repo="$(make image-repo -s -C "$SCRIPT_DIR"/.. 2>/dev/null)"
@@ -245,7 +256,7 @@ load_k3s() {
 }
 
 load_image() {
-  make lvm-driver-image
+  make lvm-driver-image fio-image
   load_k3s "${1:-}"
 }
 
@@ -263,10 +274,10 @@ maybe_load_image() {
 
   did="$(docker image ls --no-trunc --format json | jq -r --arg repo "$repo" --arg tag "$tag" 'select(.Repository == $repo and .Tag == $tag)|.ID')"
   if [ -z "$did" ]; then
-    make lvm-driver-image
+    make lvm-driver-image fio-image
   fi
 
-  if ! [ "${CI_K3S:-}" = "true" ]; then
+  if ! [ "$PROVIDER" = "k3s" ]; then
     return 0
   fi
 
@@ -307,6 +318,32 @@ while test $# -gt 0; do
     -b | --build-always)
       BUILD_ALWAYS="true"
       ;;
+    -p | --provider)
+      shift
+      if [ -z "$1" ]; then
+        needs_help "Missing argument for --provider"
+      fi
+      case "$1" in
+        none|minikube|k3s)
+          PROVIDER="$1"
+          ;;
+        *)
+          die "Invalid provider '$1'. Valid options are: none, minikube, k3s"
+          ;;
+      esac
+      ;;
+    -d | --datadir)
+      shift
+      if [ -z "$1" ]; then
+        needs_help "Missing argument for --datadir"
+      fi
+
+      if [ ! -d "$1" ]; then
+        die "'$1' is not a directory"
+      fi
+
+      DATA_DIR="$1"
+      ;;
     -h | --help)
       needs_help
       ;;
@@ -323,6 +360,12 @@ while test $# -gt 0; do
           b)
             BUILD_ALWAYS="true"
             ;;
+          p)
+            needs_help "Option -p requires an argument, use --provider <provider>"
+            ;;
+          d)
+            needs_help "Option -d requires an argument, use --datadir <path>"
+            ;;
           *)
             needs_help "Unrecognized argument $singleLetterOpts"
             ;;
@@ -336,6 +379,16 @@ while test $# -gt 0; do
   esac
   shift
 done
+
+# Convert DATA_DIR to absolute path and export it
+DATA_DIR=$(realpath "$DATA_DIR")
+export DATA_DIR="${DATA_DIR}"
+
+# Copy kubeconfig if needed
+if [ "$PROVIDER" = "minikube" ] && [ "$(whoami)" != "root" ]; then
+  mkdir -p ~/.kube
+  printf "%s\n" "$(sudo kubectl config view --minify --flatten --context=minikube)" >~/.kube/config
+fi
 
 case "$COMMAND" in
   clean)

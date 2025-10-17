@@ -34,7 +34,7 @@ import (
 
 // isDeletionCandidate checks if a lvm snapshot is a deletion candidate.
 func (c *SnapController) isDeletionCandidate(snap *apis.LVMSnapshot) bool {
-	return snap.ObjectMeta.DeletionTimestamp != nil
+	return snap.DeletionTimestamp != nil
 }
 
 // syncHandler compares the actual state with the desired, and attempts to
@@ -106,7 +106,7 @@ func (c *SnapController) syncSnap(snap *apis.LVMSnapshot) error {
 func (c *SnapController) addSnap(obj interface{}) {
 	snap, ok := c.getStructuredObject(obj)
 	if !ok {
-		runtime.HandleError(fmt.Errorf("Couldn't get snaphot object %#v", obj))
+		runtime.HandleError(fmt.Errorf("couldn't get snapshot object %#v", obj))
 		return
 	}
 
@@ -121,7 +121,7 @@ func (c *SnapController) addSnap(obj interface{}) {
 func (c *SnapController) updateSnap(oldObj, newObj interface{}) {
 	newSnap, ok := c.getStructuredObject(newObj)
 	if !ok {
-		runtime.HandleError(fmt.Errorf("Couldn't get snap object %#v", newSnap))
+		runtime.HandleError(fmt.Errorf("couldn't get snap object %#v", newSnap))
 		return
 	}
 
@@ -176,7 +176,7 @@ func (c *SnapController) getStructuredObject(obj interface{}) (*apis.LVMSnapshot
 	snap := &apis.LVMSnapshot{}
 	err := runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredInterface.UnstructuredContent(), &snap)
 	if err != nil {
-		runtime.HandleError(fmt.Errorf("err %s, While converting unstructured obj to typed object\n", err.Error()))
+		runtime.HandleError(fmt.Errorf("err %s, while converting unstructured obj to typed object", err.Error()))
 		return nil, false
 	}
 	return snap, true

@@ -77,14 +77,12 @@ type VolumeInfo struct {
 	// Shared specifies whether the volume can be shared among multiple pods.
 	// If it is not set to "yes", then the LVM LocalPV Driver will not allow
 	// the volumes to be mounted by more than one pods.
-	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=yes;no
 	Shared string `json:"shared,omitempty"`
 
 	// ThinProvision specifies whether logical volumes can be thinly provisioned.
 	// If it is set to "yes", then the LVM LocalPV Driver will create
 	// thinProvision i.e. logical volumes that are larger than the available extents.
-	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=yes;no
 	ThinProvision string `json:"thinProvision,omitempty"`
 }

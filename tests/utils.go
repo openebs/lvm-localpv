@@ -496,7 +496,7 @@ func createAndDeployAppPod(appnames []string) {
 					WithLabelsNew(labels).
 					WithContainerBuilders(
 						container.NewBuilder().
-							WithImage("xridge/fio").
+							WithImage("openebs/fio").
 							WithName("fio").
 							WithImagePullPolicy(corev1.PullIfNotPresent).
 							WithCommandNew(
@@ -554,7 +554,7 @@ func createAndDeployBlockAppPod() {
 					WithLabelsNew(labels).
 					WithContainerBuilders(
 						container.NewBuilder().
-							WithImage("xridge/fio").
+							WithImage("openebs/fio").
 							WithName("fio").
 							WithImagePullPolicy(corev1.PullIfNotPresent).
 							WithCommandNew(

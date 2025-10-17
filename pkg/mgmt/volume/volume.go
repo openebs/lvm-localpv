@@ -38,7 +38,7 @@ import (
 
 // isDeletionCandidate checks if a lvm volume is a deletion candidate.
 func (c *VolController) isDeletionCandidate(Vol *apis.LVMVolume) bool {
-	return Vol.ObjectMeta.DeletionTimestamp != nil
+	return Vol.DeletionTimestamp != nil
 }
 
 // syncHandler compares the actual state with the desired, and attempts to
@@ -75,7 +75,7 @@ func (c *VolController) syncHandler(key string) error {
 func (c *VolController) addVol(obj interface{}) {
 	Vol, ok := c.getStructuredObject(obj)
 	if !ok {
-		runtime.HandleError(fmt.Errorf("Couldn't get Vol object %#v", obj))
+		runtime.HandleError(fmt.Errorf("couldn't get Vol object %#v", obj))
 		return
 	}
 
@@ -91,7 +91,7 @@ func (c *VolController) addVol(obj interface{}) {
 func (c *VolController) updateVol(oldObj, newObj interface{}) {
 	newVol, ok := c.getStructuredObject(newObj)
 	if !ok {
-		runtime.HandleError(fmt.Errorf("Couldn't get Vol object %#v", newVol))
+		runtime.HandleError(fmt.Errorf("couldn't get Vol object %#v", newVol))
 		return
 	}
 
@@ -100,7 +100,7 @@ func (c *VolController) updateVol(oldObj, newObj interface{}) {
 	}
 
 	if c.isDeletionCandidate(newVol) {
-		klog.Infof("Got update event for deleted Vol %s, Deletion timestamp %s", newVol.Name, newVol.ObjectMeta.DeletionTimestamp)
+		klog.Infof("Got update event for deleted Vol %s, Deletion timestamp %s", newVol.Name, newVol.DeletionTimestamp)
 		c.enqueueVol(newVol)
 	}
 }
@@ -157,7 +157,7 @@ func (c *VolController) getStructuredObject(obj interface{}) (*apis.LVMVolume, b
 	vol := &apis.LVMVolume{}
 	err := runtimenew.DefaultUnstructuredConverter.FromUnstructured(unstructuredInterface.UnstructuredContent(), &vol)
 	if err != nil {
-		runtime.HandleError(fmt.Errorf("err %s, While converting unstructured obj to typed object\n", err.Error()))
+		runtime.HandleError(fmt.Errorf("err %s, while converting unstructured obj to typed object", err.Error()))
 		return nil, false
 	}
 	return vol, true

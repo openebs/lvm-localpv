@@ -19,123 +19,34 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	v1alpha1 "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	lvmv1alpha1 "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset/typed/lvm/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeLVMSnapshots implements LVMSnapshotInterface
-type FakeLVMSnapshots struct {
+// fakeLVMSnapshots implements LVMSnapshotInterface
+type fakeLVMSnapshots struct {
+	*gentype.FakeClientWithList[*v1alpha1.LVMSnapshot, *v1alpha1.LVMSnapshotList]
 	Fake *FakeLocalV1alpha1
-	ns   string
 }
 
-var lvmsnapshotsResource = v1alpha1.SchemeGroupVersion.WithResource("lvmsnapshots")
-
-var lvmsnapshotsKind = v1alpha1.SchemeGroupVersion.WithKind("LVMSnapshot")
-
-// Get takes name of the lVMSnapshot, and returns the corresponding lVMSnapshot object, and an error if there is any.
-func (c *FakeLVMSnapshots) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.LVMSnapshot, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(lvmsnapshotsResource, c.ns, name), &v1alpha1.LVMSnapshot{})
-
-	if obj == nil {
-		return nil, err
+func newFakeLVMSnapshots(fake *FakeLocalV1alpha1, namespace string) lvmv1alpha1.LVMSnapshotInterface {
+	return &fakeLVMSnapshots{
+		gentype.NewFakeClientWithList[*v1alpha1.LVMSnapshot, *v1alpha1.LVMSnapshotList](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("lvmsnapshots"),
+			v1alpha1.SchemeGroupVersion.WithKind("LVMSnapshot"),
+			func() *v1alpha1.LVMSnapshot { return &v1alpha1.LVMSnapshot{} },
+			func() *v1alpha1.LVMSnapshotList { return &v1alpha1.LVMSnapshotList{} },
+			func(dst, src *v1alpha1.LVMSnapshotList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.LVMSnapshotList) []*v1alpha1.LVMSnapshot {
+				return gentype.ToPointerSlice(list.Items)
+			},
+			func(list *v1alpha1.LVMSnapshotList, items []*v1alpha1.LVMSnapshot) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.LVMSnapshot), err
-}
-
-// List takes label and field selectors, and returns the list of LVMSnapshots that match those selectors.
-func (c *FakeLVMSnapshots) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.LVMSnapshotList, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewListAction(lvmsnapshotsResource, lvmsnapshotsKind, c.ns, opts), &v1alpha1.LVMSnapshotList{})
-
-	if obj == nil {
-		return nil, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.LVMSnapshotList{ListMeta: obj.(*v1alpha1.LVMSnapshotList).ListMeta}
-	for _, item := range obj.(*v1alpha1.LVMSnapshotList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested lVMSnapshots.
-func (c *FakeLVMSnapshots) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(lvmsnapshotsResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a lVMSnapshot and creates it.  Returns the server's representation of the lVMSnapshot, and an error, if there is any.
-func (c *FakeLVMSnapshots) Create(ctx context.Context, lVMSnapshot *v1alpha1.LVMSnapshot, opts v1.CreateOptions) (result *v1alpha1.LVMSnapshot, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(lvmsnapshotsResource, c.ns, lVMSnapshot), &v1alpha1.LVMSnapshot{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.LVMSnapshot), err
-}
-
-// Update takes the representation of a lVMSnapshot and updates it. Returns the server's representation of the lVMSnapshot, and an error, if there is any.
-func (c *FakeLVMSnapshots) Update(ctx context.Context, lVMSnapshot *v1alpha1.LVMSnapshot, opts v1.UpdateOptions) (result *v1alpha1.LVMSnapshot, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(lvmsnapshotsResource, c.ns, lVMSnapshot), &v1alpha1.LVMSnapshot{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.LVMSnapshot), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeLVMSnapshots) UpdateStatus(ctx context.Context, lVMSnapshot *v1alpha1.LVMSnapshot, opts v1.UpdateOptions) (*v1alpha1.LVMSnapshot, error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(lvmsnapshotsResource, "status", c.ns, lVMSnapshot), &v1alpha1.LVMSnapshot{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.LVMSnapshot), err
-}
-
-// Delete takes name of the lVMSnapshot and deletes it. Returns an error if one occurs.
-func (c *FakeLVMSnapshots) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(lvmsnapshotsResource, c.ns, name, opts), &v1alpha1.LVMSnapshot{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeLVMSnapshots) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(lvmsnapshotsResource, c.ns, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.LVMSnapshotList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched lVMSnapshot.
-func (c *FakeLVMSnapshots) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.LVMSnapshot, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(lvmsnapshotsResource, c.ns, name, pt, data, subresources...), &v1alpha1.LVMSnapshot{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.LVMSnapshot), err
 }

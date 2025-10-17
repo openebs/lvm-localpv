@@ -19,10 +19,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
+	lvmv1alpha1 "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // LVMNodeLister helps list LVMNodes.
@@ -30,7 +30,7 @@ import (
 type LVMNodeLister interface {
 	// List lists all LVMNodes in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.LVMNode, err error)
+	List(selector labels.Selector) (ret []*lvmv1alpha1.LVMNode, err error)
 	// LVMNodes returns an object that can list and get LVMNodes.
 	LVMNodes(namespace string) LVMNodeNamespaceLister
 	LVMNodeListerExpansion
@@ -38,25 +38,17 @@ type LVMNodeLister interface {
 
 // lVMNodeLister implements the LVMNodeLister interface.
 type lVMNodeLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*lvmv1alpha1.LVMNode]
 }
 
 // NewLVMNodeLister returns a new LVMNodeLister.
 func NewLVMNodeLister(indexer cache.Indexer) LVMNodeLister {
-	return &lVMNodeLister{indexer: indexer}
-}
-
-// List lists all LVMNodes in the indexer.
-func (s *lVMNodeLister) List(selector labels.Selector) (ret []*v1alpha1.LVMNode, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.LVMNode))
-	})
-	return ret, err
+	return &lVMNodeLister{listers.New[*lvmv1alpha1.LVMNode](indexer, lvmv1alpha1.Resource("lvmnode"))}
 }
 
 // LVMNodes returns an object that can list and get LVMNodes.
 func (s *lVMNodeLister) LVMNodes(namespace string) LVMNodeNamespaceLister {
-	return lVMNodeNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return lVMNodeNamespaceLister{listers.NewNamespaced[*lvmv1alpha1.LVMNode](s.ResourceIndexer, namespace)}
 }
 
 // LVMNodeNamespaceLister helps list and get LVMNodes.
@@ -64,36 +56,15 @@ func (s *lVMNodeLister) LVMNodes(namespace string) LVMNodeNamespaceLister {
 type LVMNodeNamespaceLister interface {
 	// List lists all LVMNodes in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.LVMNode, err error)
+	List(selector labels.Selector) (ret []*lvmv1alpha1.LVMNode, err error)
 	// Get retrieves the LVMNode from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.LVMNode, error)
+	Get(name string) (*lvmv1alpha1.LVMNode, error)
 	LVMNodeNamespaceListerExpansion
 }
 
 // lVMNodeNamespaceLister implements the LVMNodeNamespaceLister
 // interface.
 type lVMNodeNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all LVMNodes in the indexer for a given namespace.
-func (s lVMNodeNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.LVMNode, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.LVMNode))
-	})
-	return ret, err
-}
-
-// Get retrieves the LVMNode from the indexer for a given namespace and name.
-func (s lVMNodeNamespaceLister) Get(name string) (*v1alpha1.LVMNode, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("lvmnode"), name)
-	}
-	return obj.(*v1alpha1.LVMNode), nil
+	listers.ResourceIndexer[*lvmv1alpha1.LVMNode]
 }

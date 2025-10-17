@@ -19,123 +19,32 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	v1alpha1 "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	lvmv1alpha1 "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset/typed/lvm/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeLVMVolumes implements LVMVolumeInterface
-type FakeLVMVolumes struct {
+// fakeLVMVolumes implements LVMVolumeInterface
+type fakeLVMVolumes struct {
+	*gentype.FakeClientWithList[*v1alpha1.LVMVolume, *v1alpha1.LVMVolumeList]
 	Fake *FakeLocalV1alpha1
-	ns   string
 }
 
-var lvmvolumesResource = v1alpha1.SchemeGroupVersion.WithResource("lvmvolumes")
-
-var lvmvolumesKind = v1alpha1.SchemeGroupVersion.WithKind("LVMVolume")
-
-// Get takes name of the lVMVolume, and returns the corresponding lVMVolume object, and an error if there is any.
-func (c *FakeLVMVolumes) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.LVMVolume, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(lvmvolumesResource, c.ns, name), &v1alpha1.LVMVolume{})
-
-	if obj == nil {
-		return nil, err
+func newFakeLVMVolumes(fake *FakeLocalV1alpha1, namespace string) lvmv1alpha1.LVMVolumeInterface {
+	return &fakeLVMVolumes{
+		gentype.NewFakeClientWithList[*v1alpha1.LVMVolume, *v1alpha1.LVMVolumeList](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("lvmvolumes"),
+			v1alpha1.SchemeGroupVersion.WithKind("LVMVolume"),
+			func() *v1alpha1.LVMVolume { return &v1alpha1.LVMVolume{} },
+			func() *v1alpha1.LVMVolumeList { return &v1alpha1.LVMVolumeList{} },
+			func(dst, src *v1alpha1.LVMVolumeList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.LVMVolumeList) []*v1alpha1.LVMVolume { return gentype.ToPointerSlice(list.Items) },
+			func(list *v1alpha1.LVMVolumeList, items []*v1alpha1.LVMVolume) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.LVMVolume), err
-}
-
-// List takes label and field selectors, and returns the list of LVMVolumes that match those selectors.
-func (c *FakeLVMVolumes) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.LVMVolumeList, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewListAction(lvmvolumesResource, lvmvolumesKind, c.ns, opts), &v1alpha1.LVMVolumeList{})
-
-	if obj == nil {
-		return nil, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.LVMVolumeList{ListMeta: obj.(*v1alpha1.LVMVolumeList).ListMeta}
-	for _, item := range obj.(*v1alpha1.LVMVolumeList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested lVMVolumes.
-func (c *FakeLVMVolumes) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(lvmvolumesResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a lVMVolume and creates it.  Returns the server's representation of the lVMVolume, and an error, if there is any.
-func (c *FakeLVMVolumes) Create(ctx context.Context, lVMVolume *v1alpha1.LVMVolume, opts v1.CreateOptions) (result *v1alpha1.LVMVolume, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(lvmvolumesResource, c.ns, lVMVolume), &v1alpha1.LVMVolume{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.LVMVolume), err
-}
-
-// Update takes the representation of a lVMVolume and updates it. Returns the server's representation of the lVMVolume, and an error, if there is any.
-func (c *FakeLVMVolumes) Update(ctx context.Context, lVMVolume *v1alpha1.LVMVolume, opts v1.UpdateOptions) (result *v1alpha1.LVMVolume, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(lvmvolumesResource, c.ns, lVMVolume), &v1alpha1.LVMVolume{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.LVMVolume), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeLVMVolumes) UpdateStatus(ctx context.Context, lVMVolume *v1alpha1.LVMVolume, opts v1.UpdateOptions) (*v1alpha1.LVMVolume, error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(lvmvolumesResource, "status", c.ns, lVMVolume), &v1alpha1.LVMVolume{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.LVMVolume), err
-}
-
-// Delete takes name of the lVMVolume and deletes it. Returns an error if one occurs.
-func (c *FakeLVMVolumes) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(lvmvolumesResource, c.ns, name, opts), &v1alpha1.LVMVolume{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeLVMVolumes) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(lvmvolumesResource, c.ns, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.LVMVolumeList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched lVMVolume.
-func (c *FakeLVMVolumes) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.LVMVolume, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(lvmvolumesResource, c.ns, name, pt, data, subresources...), &v1alpha1.LVMVolume{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.LVMVolume), err
 }

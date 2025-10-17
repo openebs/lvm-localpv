@@ -19,13 +19,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	lvmv1alpha1 "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
+	openebsiolvmv1alpha1 "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	internalclientset "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset"
 	internalinterfaces "github.com/openebs/lvm-localpv/pkg/generated/informer/externalversions/internalinterfaces"
-	v1alpha1 "github.com/openebs/lvm-localpv/pkg/generated/lister/lvm/v1alpha1"
+	lvmv1alpha1 "github.com/openebs/lvm-localpv/pkg/generated/lister/lvm/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -36,7 +36,7 @@ import (
 // LVMNodes.
 type LVMNodeInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.LVMNodeLister
+	Lister() lvmv1alpha1.LVMNodeLister
 }
 
 type lVMNodeInformer struct {
@@ -62,16 +62,28 @@ func NewFilteredLVMNodeInformer(client internalclientset.Interface, namespace st
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.LocalV1alpha1().LVMNodes(namespace).List(context.TODO(), options)
+				return client.LocalV1alpha1().LVMNodes(namespace).List(context.Background(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.LocalV1alpha1().LVMNodes(namespace).Watch(context.TODO(), options)
+				return client.LocalV1alpha1().LVMNodes(namespace).Watch(context.Background(), options)
+			},
+			ListWithContextFunc: func(ctx context.Context, options v1.ListOptions) (runtime.Object, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.LocalV1alpha1().LVMNodes(namespace).List(ctx, options)
+			},
+			WatchFuncWithContext: func(ctx context.Context, options v1.ListOptions) (watch.Interface, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.LocalV1alpha1().LVMNodes(namespace).Watch(ctx, options)
 			},
 		},
-		&lvmv1alpha1.LVMNode{},
+		&openebsiolvmv1alpha1.LVMNode{},
 		resyncPeriod,
 		indexers,
 	)
@@ -82,9 +94,9 @@ func (f *lVMNodeInformer) defaultInformer(client internalclientset.Interface, re
 }
 
 func (f *lVMNodeInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&lvmv1alpha1.LVMNode{}, f.defaultInformer)
+	return f.factory.InformerFor(&openebsiolvmv1alpha1.LVMNode{}, f.defaultInformer)
 }
 
-func (f *lVMNodeInformer) Lister() v1alpha1.LVMNodeLister {
-	return v1alpha1.NewLVMNodeLister(f.Informer().GetIndexer())
+func (f *lVMNodeInformer) Lister() lvmv1alpha1.LVMNodeLister {
+	return lvmv1alpha1.NewLVMNodeLister(f.Informer().GetIndexer())
 }

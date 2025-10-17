@@ -1,0 +1,27 @@
+{
+    "terminal.integrated.scrollback": 500000,
+    "[shellscript]": {
+        "editor.tabSize": 2,
+        "editor.insertSpaces": true
+    },
+    "[bash]": {
+        "editor.tabSize": 2,
+        "editor.insertSpaces": true
+    },
+    "[zsh]": {
+        "editor.tabSize": 2,
+        "editor.insertSpaces": true
+    },
+    "[sh]": {
+        "editor.tabSize": 2,
+        "editor.insertSpaces": true
+    },
+    "[ruby]": {
+        "editor.tabSize": 2,
+        "editor.insertSpaces": true
+    },
+    "[nix]": {
+        "editor.tabSize": 2,
+        "editor.insertSpaces": true
+    }
+}

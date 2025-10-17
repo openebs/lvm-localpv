@@ -345,6 +345,7 @@ func (cs *controller) CreateVolume(
 		// mark volume for leak protection if pvc gets deleted
 		// before the creation of pv.
 		var finishCreateVolume func()
+
 		if finishCreateVolume, err = cs.leakProtection.BeginCreateVolume(volName,
 			params.PVCNamespace, params.PVCName); err != nil {
 			return nil, err
@@ -352,11 +353,11 @@ func (cs *controller) CreateVolume(
 		defer finishCreateVolume()
 
 		vol, err = CreateLVMVolume(ctx, req, params)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	if err != nil {
-		return nil, err
-	}
 	sendEventOrIgnore(params.PVCName, volName,
 		strconv.FormatInt(int64(size), 10),
 		analytics.VolumeProvision)

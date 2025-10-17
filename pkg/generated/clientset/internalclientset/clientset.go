@@ -19,8 +19,8 @@ limitations under the License.
 package internalclientset
 
 import (
-	"fmt"
-	"net/http"
+	fmt "fmt"
+	http "net/http"
 
 	localv1alpha1 "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset/typed/lvm/v1alpha1"
 	discovery "k8s.io/client-go/discovery"

@@ -64,10 +64,18 @@ in
 
   environment = {
     variables = {
-      KUBECONFIG = "/etc/rancher/k3s/k3s.yaml";
+      CGO_ENABLED = "0";
       CI_K3S = "true";
       EDITOR = "vim";
-      GOPATH = "/lvm/nix/.go";
+      GOCACHE = "/var/cache/go/cache";
+      GOENV = "off";
+      GOMODCACHE="/var/cache/go/modcache";
+      GOPATH = "/usr/share/go";
+      GOPROXY = "direct";
+      GOTMPDIR="/tmp";
+      GOTELEMETRY="off";
+      GOTOOLCHAIN = "local";
+      KUBECONFIG = "/etc/rancher/k3s/k3s.yaml";
     };
 
     shellAliases = {
@@ -90,6 +98,6 @@ in
       cd /lvm
     '';
 
-    systemPackages = with pkgs; [ vim docker-client k9s e2fsprogs ] ++ [ thin-provisioning-tools lvm2_dmeventd ];
+    systemPackages = with pkgs; [ vim docker-client k9s e2fsprogs go_1_24 ] ++ [ thin-provisioning-tools lvm2_dmeventd ];
   };
 }

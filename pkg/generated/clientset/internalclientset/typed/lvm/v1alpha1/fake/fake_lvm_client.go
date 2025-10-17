@@ -29,15 +29,15 @@ type FakeLocalV1alpha1 struct {
 }
 
 func (c *FakeLocalV1alpha1) LVMNodes(namespace string) v1alpha1.LVMNodeInterface {
-	return &FakeLVMNodes{c, namespace}
+	return newFakeLVMNodes(c, namespace)
 }
 
 func (c *FakeLocalV1alpha1) LVMSnapshots(namespace string) v1alpha1.LVMSnapshotInterface {
-	return &FakeLVMSnapshots{c, namespace}
+	return newFakeLVMSnapshots(c, namespace)
 }
 
 func (c *FakeLocalV1alpha1) LVMVolumes(namespace string) v1alpha1.LVMVolumeInterface {
-	return &FakeLVMVolumes{c, namespace}
+	return newFakeLVMVolumes(c, namespace)
 }
 
 // RESTClient returns a RESTClient that is used to communicate

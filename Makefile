@@ -5,6 +5,8 @@ PACKAGES = $(shell go list ./... | grep -v 'pkg/generated')
 VETARGS?=-asmdecl -atomic -bool -buildtags -copylocks -methods \
          -nilfunc -printf -rangeloops -shift -structtags -unsafeptr
 
+GOLANGCI_LINT_VERSION = 2.5.0
+
 # Tools required for different make
 # targets or for development purposes
 EXTERNAL_TOOLS=\
@@ -12,7 +14,7 @@ EXTERNAL_TOOLS=\
 	golang.org/x/lint/golint \
 	github.com/axw/gocov/gocov@v1.1 \
 	github.com/matm/gocov-html/cmd/gocov-html \
-	github.com/onsi/ginkgo/ginkgo \
+	github.com/onsi/ginkgo/ginkgo@v1.16.5 \
 	github.com/onsi/gomega/...@v1.35
 
 # The images can be pushed to any docker/image registeries
@@ -78,8 +80,10 @@ export DBUILD_ARGS=--build-arg DBUILD_DATE=${DBUILD_DATE} --build-arg DBUILD_REP
 # Specify the name for the binary
 CSI_DRIVER=lvm-driver
 
+GEN_SRC=openebs.io/lvm/v1alpha1 
+
 .PHONY: all
-all: golint test manifests lvm-driver-image
+all: golint test manifests lvm-driver-image fio-image
 
 .PHONY: clean
 clean:
@@ -136,11 +140,11 @@ bootstrap: controller-gen install-golangci-lint
 ## Install golangci-lint only if tool doesn't exist in system
 .PHONY: install-golangci-lint
 install-golangci-lint:
-	$(if $(shell which golangci-lint), echo "golangci-lint already exist in system", (curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b "${GOPATH}/bin" v1.56.2))
+	$(if $(shell which golangci-lint), echo "golangci-lint already exist in system", (curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b "${GOPATH}/bin" v$(GOLANGCI_LINT_VERSION)))
 
 .PHONY: controller-gen
 controller-gen:
-	@go install -mod=mod sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.0
+	@go install -mod=mod sigs.k8s.io/controller-tools/cmd/controller-gen@v0.19.0
 
 # SRC_PKG is the path of code files
 SRC_PKG := github.com/openebs/lvm-localpv/pkg
@@ -148,7 +152,7 @@ SRC_PKG := github.com/openebs/lvm-localpv/pkg
 # code generation for custom resources
 .PHONY: kubegen
 kubegen: kubegendelete deepcopy-install clientset-install lister-install informer-install
-	@GEN_SRC=openebs.io/lvm/v1alpha1 make deepcopy clientset lister informer
+	make deepcopy clientset lister informer
 
 # deletes generated code by codegen
 .PHONY: kubegendelete
@@ -159,15 +163,15 @@ kubegendelete:
 
 .PHONY: deepcopy-install
 deepcopy-install:
-	@go install k8s.io/code-generator/cmd/deepcopy-gen
+	@go install k8s.io/code-generator/cmd/deepcopy-gen 
 
 .PHONY: deepcopy
 deepcopy:
 	@echo "+ Generating deepcopy funcs for $(GEN_SRC)"
 	@deepcopy-gen \
-		--input-dirs $(SRC_PKG)/apis/$(GEN_SRC) \
-		--output-file-base zz_generated.deepcopy \
-		--go-header-file ./buildscripts/custom-boilerplate.go.txt
+		--output-file zz_generated.deepcopy.go \
+ 		--go-header-file ./buildscripts/custom-boilerplate.go.txt \
+		$(SRC_PKG)/apis/$(GEN_SRC)
 
 .PHONY: clientset-install
 clientset-install:
@@ -177,11 +181,12 @@ clientset-install:
 clientset:
 	@echo "+ Generating clientsets for $(GEN_SRC)"
 	@client-gen \
-		--fake-clientset=true \
-		--input $(GEN_SRC) \
+		--fake-clientset \
 		--input-base $(SRC_PKG)/apis \
-		--clientset-path $(SRC_PKG)/generated/clientset \
-		--go-header-file ./buildscripts/custom-boilerplate.go.txt
+		--output-dir pkg/generated/clientset \
+		--output-pkg $(SRC_PKG)/generated/clientset \
+		--go-header-file ./buildscripts/custom-boilerplate.go.txt \
+		--input $(GEN_SRC)
 
 .PHONY: lister-install
 lister-install:
@@ -191,9 +196,10 @@ lister-install:
 lister:
 	@echo "+ Generating lister for $(GEN_SRC)"
 	@lister-gen \
-		--input-dirs $(SRC_PKG)/apis/$(GEN_SRC) \
-		--output-package $(SRC_PKG)/generated/lister \
-		--go-header-file ./buildscripts/custom-boilerplate.go.txt
+		--output-dir pkg/generated/lister \
+		--output-pkg $(SRC_PKG)/generated/lister \
+		--go-header-file ./buildscripts/custom-boilerplate.go.txt \
+		$(SRC_PKG)/apis/$(GEN_SRC)
 
 .PHONY: informer-install
 informer-install:
@@ -203,11 +209,12 @@ informer-install:
 informer:
 	@echo "+ Generating informer for $(GEN_SRC)"
 	@informer-gen \
-		--input-dirs $(SRC_PKG)/apis/$(GEN_SRC) \
 		--versioned-clientset-package $(SRC_PKG)/generated/clientset/internalclientset \
 		--listers-package $(SRC_PKG)/generated/lister \
-		--output-package $(SRC_PKG)/generated/informer \
-		--go-header-file ./buildscripts/custom-boilerplate.go.txt
+		--output-dir pkg/generated/informer \
+		--output-pkg $(SRC_PKG)/generated/informer \
+		--go-header-file ./buildscripts/custom-boilerplate.go.txt \
+		$(SRC_PKG)/apis/$(GEN_SRC)
 
 manifests:
 	@echo "--------------------------------"
@@ -231,6 +238,13 @@ lvm-driver-image: lvm-driver
 	cd buildscripts/${CSI_DRIVER} && docker build -t ${IMAGE_ORG}/${CSI_DRIVER}:${IMAGE_TAG} ${DBUILD_ARGS} . && docker tag ${IMAGE_ORG}/${CSI_DRIVER}:${IMAGE_TAG} quay.io/${IMAGE_ORG}/${CSI_DRIVER}:${IMAGE_TAG}
 	@rm buildscripts/${CSI_DRIVER}/${CSI_DRIVER}
 
+.PHONY: fio-image
+fio-image:
+	@echo "--------------------------------"
+	@echo "+ Generating fio image"
+	@echo "--------------------------------"
+	cd buildscripts/fio && docker build -t ${IMAGE_ORG}/fio:latest ${DBUILD_ARGS} .
+
 .PHONY: image-tag
 image-tag:
 	@echo ${IMAGE_TAG}
@@ -239,6 +253,10 @@ image-tag:
 image-repo:
 	@echo ${IMAGE_ORG}/${CSI_DRIVER}
 
+.PHONY: fio-image-repo
+fio-image-repo:
+	@echo ${IMAGE_ORG}/fio
+
 .PHONY: image-ref
 image-ref:
 	@echo docker.io/${IMAGE_ORG}/${CSI_DRIVER}:${IMAGE_TAG}
@@ -246,7 +264,18 @@ image-ref:
 .PHONY: ci
 ci:
 	@echo "--> Running ci test";
-	./ci/ci-test.sh run
+	TEST_ARGS=""; \
+	if [ "${PROVIDER}" = minikube ]; then \
+		TEST_ARGS="${TEST_ARGS} --provider minikube"; \
+	elif [ -n "${DATADIR}" ]; then \
+		TEST_ARGS="${TEST_ARGS} --datadir ${DATADIR}"; \
+	fi; \
+	./ci/ci-test.sh$$TEST_ARGS run
+
+.PHONY: minikube-ci
+minikube-ci:
+	@echo "--> Running ci test";
+	./ci/ci-test.sh --provider minikube --reset --datadir .tmp run
 
 # Push lvm-driver images
 deploy-images:
@@ -258,20 +287,16 @@ deploy-e2e-images:
 
 ## Currently we are running with Default options + other options
 ## Explanation for explicitly mentioned linters:
-## exportloopref: checks for pointers to enclosing loop variables
 ## dupl: Tool for code clone detection within repo
 ## revive: Drop-in replacement of golint. It allows to enable or disable
 ##         rules using configuration file.
 ## bodyclose: checks whether HTTP response body is closed successfully
 ## goconst: Find repeated strings that could be replaced by a constant
 ## misspell: Finds commonly misspelled English words in comments
-##
-## NOTE: Disabling structcheck since it is reporting false positive cases
-##       for more information look at https://github.com/golangci/golangci-lint/issues/537
 .PHONY: golint
 golint:
 	@echo "--> Running golint"
-	golangci-lint run -E exportloopref,dupl,revive,bodyclose,goconst,misspell -D structcheck --timeout 5m0s
+	CGO_ENABLED=0 golangci-lint run -E dupl,revive,bodyclose,goconst,misspell --timeout 5m0s
 	@echo "Completed golangci-lint no recommendations !!"
 	@echo "--------------------------------"
 	@echo ""

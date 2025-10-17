@@ -19,13 +19,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	lvmv1alpha1 "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
+	openebsiolvmv1alpha1 "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	internalclientset "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset"
 	internalinterfaces "github.com/openebs/lvm-localpv/pkg/generated/informer/externalversions/internalinterfaces"
-	v1alpha1 "github.com/openebs/lvm-localpv/pkg/generated/lister/lvm/v1alpha1"
+	lvmv1alpha1 "github.com/openebs/lvm-localpv/pkg/generated/lister/lvm/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -36,7 +36,7 @@ import (
 // LVMSnapshots.
 type LVMSnapshotInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.LVMSnapshotLister
+	Lister() lvmv1alpha1.LVMSnapshotLister
 }
 
 type lVMSnapshotInformer struct {
@@ -62,16 +62,28 @@ func NewFilteredLVMSnapshotInformer(client internalclientset.Interface, namespac
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.LocalV1alpha1().LVMSnapshots(namespace).List(context.TODO(), options)
+				return client.LocalV1alpha1().LVMSnapshots(namespace).List(context.Background(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.LocalV1alpha1().LVMSnapshots(namespace).Watch(context.TODO(), options)
+				return client.LocalV1alpha1().LVMSnapshots(namespace).Watch(context.Background(), options)
+			},
+			ListWithContextFunc: func(ctx context.Context, options v1.ListOptions) (runtime.Object, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.LocalV1alpha1().LVMSnapshots(namespace).List(ctx, options)
+			},
+			WatchFuncWithContext: func(ctx context.Context, options v1.ListOptions) (watch.Interface, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.LocalV1alpha1().LVMSnapshots(namespace).Watch(ctx, options)
 			},
 		},
-		&lvmv1alpha1.LVMSnapshot{},
+		&openebsiolvmv1alpha1.LVMSnapshot{},
 		resyncPeriod,
 		indexers,
 	)
@@ -82,9 +94,9 @@ func (f *lVMSnapshotInformer) defaultInformer(client internalclientset.Interface
 }
 
 func (f *lVMSnapshotInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&lvmv1alpha1.LVMSnapshot{}, f.defaultInformer)
+	return f.factory.InformerFor(&openebsiolvmv1alpha1.LVMSnapshot{}, f.defaultInformer)
 }
 
-func (f *lVMSnapshotInformer) Lister() v1alpha1.LVMSnapshotLister {
-	return v1alpha1.NewLVMSnapshotLister(f.Informer().GetIndexer())
+func (f *lVMSnapshotInformer) Lister() lvmv1alpha1.LVMSnapshotLister {
+	return lvmv1alpha1.NewLVMSnapshotLister(f.Informer().GetIndexer())
 }

@@ -19,13 +19,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	lvmv1alpha1 "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
+	openebsiolvmv1alpha1 "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	internalclientset "github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset"
 	internalinterfaces "github.com/openebs/lvm-localpv/pkg/generated/informer/externalversions/internalinterfaces"
-	v1alpha1 "github.com/openebs/lvm-localpv/pkg/generated/lister/lvm/v1alpha1"
+	lvmv1alpha1 "github.com/openebs/lvm-localpv/pkg/generated/lister/lvm/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -36,7 +36,7 @@ import (
 // LVMVolumes.
 type LVMVolumeInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.LVMVolumeLister
+	Lister() lvmv1alpha1.LVMVolumeLister
 }
 
 type lVMVolumeInformer struct {
@@ -62,16 +62,28 @@ func NewFilteredLVMVolumeInformer(client internalclientset.Interface, namespace 
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.LocalV1alpha1().LVMVolumes(namespace).List(context.TODO(), options)
+				return client.LocalV1alpha1().LVMVolumes(namespace).List(context.Background(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.LocalV1alpha1().LVMVolumes(namespace).Watch(context.TODO(), options)
+				return client.LocalV1alpha1().LVMVolumes(namespace).Watch(context.Background(), options)
+			},
+			ListWithContextFunc: func(ctx context.Context, options v1.ListOptions) (runtime.Object, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.LocalV1alpha1().LVMVolumes(namespace).List(ctx, options)
+			},
+			WatchFuncWithContext: func(ctx context.Context, options v1.ListOptions) (watch.Interface, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.LocalV1alpha1().LVMVolumes(namespace).Watch(ctx, options)
 			},
 		},
-		&lvmv1alpha1.LVMVolume{},
+		&openebsiolvmv1alpha1.LVMVolume{},
 		resyncPeriod,
 		indexers,
 	)
@@ -82,9 +94,9 @@ func (f *lVMVolumeInformer) defaultInformer(client internalclientset.Interface, 
 }
 
 func (f *lVMVolumeInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&lvmv1alpha1.LVMVolume{}, f.defaultInformer)
+	return f.factory.InformerFor(&openebsiolvmv1alpha1.LVMVolume{}, f.defaultInformer)
 }
 
-func (f *lVMVolumeInformer) Lister() v1alpha1.LVMVolumeLister {
-	return v1alpha1.NewLVMVolumeLister(f.Informer().GetIndexer())
+func (f *lVMVolumeInformer) Lister() lvmv1alpha1.LVMVolumeLister {
+	return lvmv1alpha1.NewLVMVolumeLister(f.Informer().GetIndexer())
 }

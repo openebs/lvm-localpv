@@ -19,10 +19,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
+	lvmv1alpha1 "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // LVMVolumeLister helps list LVMVolumes.
@@ -30,7 +30,7 @@ import (
 type LVMVolumeLister interface {
 	// List lists all LVMVolumes in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.LVMVolume, err error)
+	List(selector labels.Selector) (ret []*lvmv1alpha1.LVMVolume, err error)
 	// LVMVolumes returns an object that can list and get LVMVolumes.
 	LVMVolumes(namespace string) LVMVolumeNamespaceLister
 	LVMVolumeListerExpansion
@@ -38,25 +38,17 @@ type LVMVolumeLister interface {
 
 // lVMVolumeLister implements the LVMVolumeLister interface.
 type lVMVolumeLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*lvmv1alpha1.LVMVolume]
 }
 
 // NewLVMVolumeLister returns a new LVMVolumeLister.
 func NewLVMVolumeLister(indexer cache.Indexer) LVMVolumeLister {
-	return &lVMVolumeLister{indexer: indexer}
-}
-
-// List lists all LVMVolumes in the indexer.
-func (s *lVMVolumeLister) List(selector labels.Selector) (ret []*v1alpha1.LVMVolume, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.LVMVolume))
-	})
-	return ret, err
+	return &lVMVolumeLister{listers.New[*lvmv1alpha1.LVMVolume](indexer, lvmv1alpha1.Resource("lvmvolume"))}
 }
 
 // LVMVolumes returns an object that can list and get LVMVolumes.
 func (s *lVMVolumeLister) LVMVolumes(namespace string) LVMVolumeNamespaceLister {
-	return lVMVolumeNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return lVMVolumeNamespaceLister{listers.NewNamespaced[*lvmv1alpha1.LVMVolume](s.ResourceIndexer, namespace)}
 }
 
 // LVMVolumeNamespaceLister helps list and get LVMVolumes.
@@ -64,36 +56,15 @@ func (s *lVMVolumeLister) LVMVolumes(namespace string) LVMVolumeNamespaceLister 
 type LVMVolumeNamespaceLister interface {
 	// List lists all LVMVolumes in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.LVMVolume, err error)
+	List(selector labels.Selector) (ret []*lvmv1alpha1.LVMVolume, err error)
 	// Get retrieves the LVMVolume from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.LVMVolume, error)
+	Get(name string) (*lvmv1alpha1.LVMVolume, error)
 	LVMVolumeNamespaceListerExpansion
 }
 
 // lVMVolumeNamespaceLister implements the LVMVolumeNamespaceLister
 // interface.
 type lVMVolumeNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all LVMVolumes in the indexer for a given namespace.
-func (s lVMVolumeNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.LVMVolume, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.LVMVolume))
-	})
-	return ret, err
-}
-
-// Get retrieves the LVMVolume from the indexer for a given namespace and name.
-func (s lVMVolumeNamespaceLister) Get(name string) (*v1alpha1.LVMVolume, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("lvmvolume"), name)
-	}
-	return obj.(*v1alpha1.LVMVolume), nil
+	listers.ResourceIndexer[*lvmv1alpha1.LVMVolume]
 }

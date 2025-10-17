@@ -19,7 +19,7 @@ set -o nounset
 set -o pipefail
 
 ## find or download controller-gen
-CONTROLLER_GEN=$(which controller-gen)
+CONTROLLER_GEN=$(which controller-gen || true)
 
 if [ "$CONTROLLER_GEN" = "" ]
 then
@@ -27,7 +27,7 @@ then
   exit 1;
 fi
 
-$CONTROLLER_GEN crd:trivialVersions=false,preserveUnknownFields=false paths=./pkg/apis/... output:crd:artifacts:config=deploy/yamls
+$CONTROLLER_GEN crd paths=./pkg/apis/... output:crd:artifacts:config=deploy/yamls
 
 ## create the the crd yamls
 
