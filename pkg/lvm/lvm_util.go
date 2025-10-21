@@ -736,7 +736,7 @@ func ResizeLVMVolume(vol *apis.LVMVolume, resizefs bool) error {
 			return err
 		}
 
-		curVolSize, err := getLVSize(vol)
+		curVolSize, err := getLVSize(vol.Name, vol.Spec.VolGroup)
 		if err != nil {
 			return err
 		}
@@ -768,8 +768,8 @@ func ResizeLVMVolume(vol *apis.LVMVolume, resizefs bool) error {
 }
 
 // getLVSize will return current LVM volume size in bytes
-func getLVSize(vol *apis.LVMVolume) (uint64, error) {
-	lvmVolumeName := vol.Spec.VolGroup + "/" + vol.Name
+func getLVSize(lvName, volGroup string) (uint64, error) {
+	lvmVolumeName := volGroup + "/" + lvName
 
 	args := []string{
 		lvmVolumeName,
