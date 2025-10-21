@@ -19,6 +19,7 @@ package snapbuilder
 import (
 	"github.com/openebs/lib-csi/pkg/common/errors"
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 // Builder is the builder object for LVMSnapshot
@@ -141,6 +142,18 @@ func (b *Builder) WithVolGroup(vg string) *Builder {
 		return b
 	}
 	b.snap.Object.Spec.VolGroup = vg
+	return b
+}
+
+// WithLvSize sets the snapshot LV size at the time the snapshot was created
+func (b *Builder) WithLvSize(size resource.Quantity) *Builder {
+	b.snap.Object.Status.LvSize = size
+	return b
+}
+
+// WithThinProvision sets whether the snapshot is thin-provisioned or not
+func (b *Builder) WithThinProvision(thin bool) *Builder {
+	b.snap.Object.Spec.ThinProvision = thin
 	return b
 }
 

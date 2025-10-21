@@ -114,6 +114,13 @@ spec:
                 - "yes"
                 - "no"
                 type: string
+              source:
+                description: |-
+                  Source defines the data source from which the volume should be created.
+                  It can reference either a snapshot or an existing volume.
+                  If not specified, a standard LVM volume will be created.
+                  If specified, the new volume will be created using the defined data source.
+                type: string
               thinProvision:
                 description: |-
                   ThinProvision specifies whether logical volumes can be thinly provisioned.
@@ -236,6 +243,10 @@ spec:
               snapSize:
                 description: SnapSize specifies the space reserved for the snapshot
                 type: string
+              thinProvision:
+                description: ThinProvision specifies whether the snapshot is thin-provisioned
+                  or not.
+                type: boolean
               volGroup:
                 description: VolGroup specifies the name of the volume group where
                   the snapshot has been created.
@@ -248,6 +259,14 @@ spec:
             description: SnapStatus string that reflects if the snapshot was created
               successfully
             properties:
+              lvSize:
+                anyOf:
+                - type: integer
+                - type: string
+                description: LvSize specifies the size allocated for the snapshot
+                  in the VG
+                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                x-kubernetes-int-or-string: true
               state:
                 type: string
             type: object

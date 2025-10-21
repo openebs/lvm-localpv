@@ -32,7 +32,7 @@ import (
 	"github.com/creack/pty"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/klog/v2"
+	klog "k8s.io/klog/v2"
 
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 )

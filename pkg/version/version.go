@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"k8s.io/klog/v2"
+	klog "k8s.io/klog/v2"
 )
 
 var (

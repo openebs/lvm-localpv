@@ -21,7 +21,7 @@ import (
 	"strings"
 	"sync"
 
-	"k8s.io/klog/v2"
+	klog "k8s.io/klog/v2"
 
 	"github.com/openebs/lvm-localpv/pkg/driver/config"
 )
