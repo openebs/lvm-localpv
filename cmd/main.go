@@ -23,7 +23,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"k8s.io/klog/v2"
+	klog "k8s.io/klog/v2"
 
 	"github.com/openebs/lvm-localpv/pkg/driver"
 	"github.com/openebs/lvm-localpv/pkg/driver/config"

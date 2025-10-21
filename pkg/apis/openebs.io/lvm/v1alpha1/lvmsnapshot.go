@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -47,6 +48,9 @@ type LVMSnapshotSpec struct {
 
 	// SnapSize specifies the space reserved for the snapshot
 	SnapSize string `json:"snapSize,omitempty"`
+
+	// ThinProvision specifies whether the snapshot is thin-provisioned or not.
+	ThinProvision bool `json:"thinProvision,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -63,4 +67,7 @@ type LVMSnapshotList struct {
 // SnapStatus string that reflects if the snapshot was created successfully
 type SnapStatus struct {
 	State string `json:"state,omitempty"`
+
+	// LvSize specifies the size allocated for the snapshot in the VG
+	LvSize resource.Quantity `json:"lvSize,omitempty"`
 }

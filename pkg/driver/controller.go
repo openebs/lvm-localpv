@@ -22,7 +22,7 @@ import (
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/klog/v2"
+	klog "k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
 	lvmapi "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
@@ -243,6 +243,42 @@ func (cs *controller) init() error {
 	return nil
 }
 
+func validateRestoreRequestFromSnapshot(lvmSnapCr *lvmapi.LVMSnapshot,
+	req *csi.CreateVolumeRequest,
+	params *VolumeParams,
+) error {
+	// verify that the snapshot is of thin type
+	// only thin snapshot can be used to restore a volume
+	// also verify that the new volume to be created from snapshot
+	// is also thin provisioned
+	if !lvmSnapCr.Spec.ThinProvision {
+		return status.Errorf(codes.InvalidArgument, "snapshot %s is not of thin type", lvmSnapCr.Name)
+	} else if params.ThinProvision != lvm.YES {
+		return status.Errorf(codes.InvalidArgument, "only thin restores supported today.")
+	}
+
+	vgPattern := fmt.Sprintf("^%v$", lvmSnapCr.Spec.VolGroup)
+
+	// verify that the volume group of the new volume to be created
+	// from snapshot is same as that of the snapshot
+	if params.VgPattern.String() != vgPattern {
+		return status.Errorf(codes.InvalidArgument, "volume group of the restore volume can't be different from that of source (snapshot %s)",
+			lvmSnapCr.Name)
+	}
+
+	reqCapacity := getRoundedCapacity(
+		req.GetCapacityRange().RequiredBytes)
+
+	// verify that the capacity of the restore volume to be created
+	// from snapshot should equal to the snapshot LV size
+	if lvmSnapCr.Status.LvSize.Value() != reqCapacity {
+		return status.Errorf(codes.OutOfRange, "capacity of the restore volume %v to be created from snapshot must be equal to snapshot LV size %d",
+			reqCapacity,
+			lvmSnapCr.Status.LvSize.Value())
+	}
+	return nil
+}
+
 // CreateLVMVolume create new lvm volume for csi volume request
 func CreateLVMVolume(ctx context.Context, req *csi.CreateVolumeRequest,
 	params *VolumeParams) (*lvmapi.LVMVolume, error) {
@@ -278,22 +314,50 @@ func CreateLVMVolume(ctx context.Context, req *csi.CreateVolumeRequest,
 			}
 		}
 	}
+	var owner string             // owner node where volume is to be created
+	var lvmSnapshotCrName string // snapshot name if volume is to be created from snapshot
+	var volGroup string          // volume group where volume is to be created
+	// if volume is to be created from snapshot, verify request with snapshot values
+	if req.GetVolumeContentSource() != nil && req.GetVolumeContentSource().GetSnapshot() != nil {
+		snapId := req.GetVolumeContentSource().GetSnapshot().GetSnapshotId()
+		// snapshot ID is of the form <volume-name>@<snapshot-name>
+		parts := strings.Split(snapId, "@")
+		if len(parts) != 2 {
+			return nil, status.Errorf(codes.Internal,
+				"invalid snapshot ID %s", snapId)
+		}
+		lvmSnapCr, err := lvm.GetLVMSnapshot(parts[1])
+		if err != nil {
+			return nil, status.Errorf(codes.NotFound, "snapshot %s not found: %s", parts[1], err.Error())
+		}
+		// verify snapshot values like thinSnapshot,owner node, thinprovision and volume group and capacity for the new volume
+		if err = validateRestoreRequestFromSnapshot(lvmSnapCr, req, params); err != nil {
+			return nil, err
+		}
 
-	nmap, err := getNodeMap(params.Scheduler, params.VgPattern)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "get node map failed : %s", err.Error())
+		owner = lvmSnapCr.Spec.OwnerNodeID
+		lvmSnapshotCrName = lvmSnapCr.Name
+		volGroup = lvmSnapCr.Spec.VolGroup
 	}
 
-	// run the scheduler
-	selected := schd.Scheduler(req, nmap)
+	// if owner is not already set from snapshot, run the scheduler
+	// to select the owner node for the volume
+	if owner == "" {
+		nmap, err := getNodeMap(params.Scheduler, params.VgPattern)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "get node map failed : %s", err.Error())
+		}
 
-	if len(selected) == 0 {
-		return nil, status.Error(codes.Internal, "scheduler failed, not able to select a node to create the PV")
+		// run the scheduler
+		selected := schd.Scheduler(req, nmap)
+		if len(selected) == 0 {
+			return nil, status.Error(codes.Internal, "scheduler failed, not able to select a node to create the PV")
+		}
+
+		owner = selected[0]
+		klog.Infof("scheduling the volume %s/%s on node %s",
+			params.VgPattern.String(), volName, owner)
 	}
-
-	owner := selected[0]
-	klog.Infof("scheduling the volume %s/%s on node %s",
-		params.VgPattern.String(), volName, owner)
 
 	volObj, err := volbuilder.NewBuilder().
 		WithName(volName).
@@ -305,7 +369,20 @@ func CreateLVMVolume(ctx context.Context, req *csi.CreateVolumeRequest,
 		WithThinProvision(params.ThinProvision).Build()
 
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal,
+			"failed to build lvm volume object for %s: {%s}",
+			volName, err.Error())
+	}
+
+	if lvmSnapshotCrName != "" {
+		volObj, err = volbuilder.BuildFrom(volObj).
+			WithSource(lvmSnapshotCrName).
+			WithVolGroup(volGroup).Build()
+		if err != nil {
+			return nil, status.Errorf(codes.Internal,
+				"failed to update lvm volume object with source and volgroup for %s: {%s}",
+				volName, err.Error())
+		}
 	}
 
 	vol, err = lvm.ProvisionVolume(volObj)
@@ -336,26 +413,20 @@ func (cs *controller) CreateVolume(
 	size := getRoundedCapacity(req.GetCapacityRange().GetRequiredBytes())
 	contentSource := req.GetVolumeContentSource()
 
-	var vol *lvmapi.LVMVolume
-	if contentSource != nil && contentSource.GetSnapshot() != nil {
+	if contentSource != nil && contentSource.GetVolume() != nil {
 		return nil, status.Error(codes.Unimplemented, "")
-	} else if contentSource != nil && contentSource.GetVolume() != nil {
-		return nil, status.Error(codes.Unimplemented, "")
-	} else {
-		// mark volume for leak protection if pvc gets deleted
-		// before the creation of pv.
-		var finishCreateVolume func()
-
-		if finishCreateVolume, err = cs.leakProtection.BeginCreateVolume(volName,
-			params.PVCNamespace, params.PVCName); err != nil {
-			return nil, err
-		}
-		defer finishCreateVolume()
-
-		vol, err = CreateLVMVolume(ctx, req, params)
-		if err != nil {
-			return nil, err
-		}
+	}
+	// mark volume for leak protection if pvc gets deleted
+	// before the creation of pv.
+	var finishCreateVolume func()
+	if finishCreateVolume, err = cs.leakProtection.BeginCreateVolume(volName,
+		params.PVCNamespace, params.PVCName); err != nil {
+		return nil, err
+	}
+	defer finishCreateVolume()
+	vol, err := CreateLVMVolume(ctx, req, params)
+	if err != nil {
+		return nil, err
 	}
 
 	sendEventOrIgnore(params.PVCName, volName,
@@ -628,6 +699,15 @@ func (cs *controller) CreateSnapshot(
 		WithVolGroup(vol.Spec.VolGroup).
 		Build()
 
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Internal,
+			"failed to create snapshotobject for %s: %s, {%s}",
+			req.SourceVolumeId, req.Name,
+			err.Error(),
+		)
+	}
+
 	// the capacity of the snapshot will be set according to the params
 	// defined in the snapshot class
 	if snapSize > 0 {
@@ -637,6 +717,10 @@ func (cs *controller) CreateSnapshot(
 	} else if vol.Spec.ThinProvision != lvm.YES {
 		snapObj, err = snapbuilder.BuildFrom(snapObj).
 			WithSnapSize(vol.Spec.Capacity).
+			Build()
+	} else {
+		snapObj, err = snapbuilder.BuildFrom(snapObj).
+			WithThinProvision(true).
 			Build()
 	}
 

@@ -27,7 +27,7 @@ import (
 	mnt "github.com/openebs/lib-csi/pkg/mount"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/klog/v2"
+	klog "k8s.io/klog/v2"
 	mount "k8s.io/mount-utils"
 	utilexec "k8s.io/utils/exec"
 

@@ -28,7 +28,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/kubernetes-csi/csi-lib-utils/protosanitizer"
-	"k8s.io/klog/v2"
+	klog "k8s.io/klog/v2"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 )

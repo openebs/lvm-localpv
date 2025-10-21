@@ -85,6 +85,12 @@ type VolumeInfo struct {
 	// thinProvision i.e. logical volumes that are larger than the available extents.
 	// +kubebuilder:validation:Enum=yes;no
 	ThinProvision string `json:"thinProvision,omitempty"`
+
+	// Source defines the data source from which the volume should be created.
+	// It can reference either a snapshot or an existing volume.
+	// If not specified, a standard LVM volume will be created.
+	// If specified, the new volume will be created using the defined data source.
+	Source string `json:"source,omitempty"`
 }
 
 // VolStatus string that specifies the current state of the volume provisioning request.

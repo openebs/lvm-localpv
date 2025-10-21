@@ -38,7 +38,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/klog/v2"
+	klog "k8s.io/klog/v2"
 
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	"github.com/openebs/lvm-localpv/pkg/builder/volbuilder"

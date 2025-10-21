@@ -207,6 +207,12 @@ func (b *Builder) WithFinalizer(finalizer []string) *Builder {
 	return b
 }
 
+// WithSource sets the source from which the volume should be created
+func (b *Builder) WithSource(source string) *Builder {
+	b.volume.Object.Spec.Source = source
+	return b
+}
+
 // Build returns LVMVolume API object
 func (b *Builder) Build() (*apis.LVMVolume, error) {
 	if len(b.errs) > 0 {
