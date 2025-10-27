@@ -259,7 +259,7 @@ func createFormatOptionsStorageClass(formatOptions string) {
 // VerifyLVMVolume verify the properties of a lvm-volume
 // expected_vg is supposed to be passed only when vgpatten was used for scheduling.
 // If its volgroup in sc then we can just match volgroup with lvmvolume's vg field.
-func VerifyLVMVolume(expect_ready bool, expected_vg string) {
+func VerifyLVMVolume(expect_ready bool, expected_vg string, pvcObject *corev1.PersistentVolumeClaim) {
 	ginkgo.By("fetching lvm volume")
 	vol_name := ""
 	if !expect_ready {
@@ -334,6 +334,45 @@ func createAndVerifyPVC(expect_bound bool) {
 		gomega.BeNil(),
 		"while retrieving pvc {%s} in namespace {%s}",
 		pvcName,
+		OpenEBSNamespace,
+	)
+}
+
+func createAndVerifySnapshotRestorePVC(expect_bound bool) {
+	var err error
+
+	ginkgo.By("building a pvc from snapshot as source")
+	restorePvcObj, err = pvc.NewBuilder().
+		WithName(restoreSnapPvcName).
+		WithNamespace(OpenEBSNamespace).
+		WithStorageClass(scObj.Name).
+		WithAccessModes(accessModes).
+		WithSnapshotSource(snapName).
+		WithCapacity(capacity).Build()
+	gomega.Expect(err).ShouldNot(
+		gomega.HaveOccurred(),
+		"while building pvc {%s} from snapshot {%s} as source in namespace {%s}",
+		restoreSnapPvcName,
+		snapName,
+		OpenEBSNamespace,
+	)
+
+	ginkgo.By("creating above pvc from snapshot as source")
+	restorePvcObj, err = PVCClient.WithNamespace(OpenEBSNamespace).Create(restorePvcObj)
+	gomega.Expect(err).To(
+		gomega.BeNil(),
+		"while creating pvc {%s} from snapshot {%s} as source in namespace {%s}",
+		restoreSnapPvcName,
+		snapName,
+		OpenEBSNamespace,
+	)
+	verifyPVCStatus(restoreSnapPvcName, expect_bound)
+
+	restorePvcObj, err = PVCClient.WithNamespace(OpenEBSNamespace).Get(restorePvcObj.Name, metav1.GetOptions{})
+	gomega.Expect(err).To(
+		gomega.BeNil(),
+		"while retrieving pvc {%s} in namespace {%s}",
+		restoreSnapPvcName,
 		OpenEBSNamespace,
 	)
 }
@@ -467,13 +506,14 @@ func resizeAndVerifyPVC(shouldPass bool, size string) {
 		OpenEBSNamespace,
 	)
 }
-func createDeployVerifyApp() {
+func createDeployVerifyApp(appNames []string, pvcObj *corev1.PersistentVolumeClaim) {
 	ginkgo.By("creating and deploying app pod")
-	createAndDeployAppPod(appNames)
-	ginkgo.By("verifying app pods are running", verifyAppPodRunning)
+	createAndDeployAppPod(appNames, pvcObj)
+	ginkgo.By("verifying app pods are running")
+	verifyAppPodRunning(appNames)
 }
 
-func createAndDeployAppPod(appnames []string) {
+func createAndDeployAppPod(appnames []string, pvcObj *corev1.PersistentVolumeClaim) {
 	var err error
 	rwmode := "write"
 	for index, appname := range appnames {
@@ -699,10 +739,11 @@ func verifyFormatOptionsVerifierPodRunning() {
 
 func createDeployVerifyBlockApp() {
 	ginkgo.By("creating and deploying app pod", createAndDeployBlockAppPod)
-	ginkgo.By("verifying app pod is running", verifyAppPodRunning)
+	ginkgo.By("verifying app pod is running")
+	verifyAppPodRunning(appNames)
 }
 
-func verifyAppPodRunning() {
+func verifyAppPodRunning(appNames []string) {
 	var err error
 	for _, appName := range appNames {
 		labelValue := fmt.Sprintf("role=test,app=%s", appName)

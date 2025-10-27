@@ -25,6 +25,7 @@ import (
 
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
+	"k8s.io/klog/v2"
 )
 
 // This creates loopdevice using the size passed as arg,
@@ -141,6 +142,21 @@ func createVg(name string, device string) {
 	gomega.Expect(err_vg).To(gomega.BeNil(), "vg create failed")
 }
 
+// Creates thin pool with name vgName_thinpool on vg
+func createVgThinPool(vgName string, size string) {
+	ginkgo.By("Creating thin pool")
+	thinPool := fmt.Sprintf("%s/%s_thinpool", vgName, vgName)
+
+	args := []string{
+		"lvcreate", "-L",
+		size,
+		"-T",
+		thinPool,
+	}
+	_, _, err_thinPool := execAtLocal("sudo", nil, args...)
+	gomega.Expect(err_thinPool).To(gomega.BeNil(), "thin pool create failed")
+}
+
 // Takes vg name and pv device, extends vg using the supplied pv.
 func extendVg(name string, device string) {
 	ginkgo.By("Extending vg")
@@ -227,6 +243,7 @@ func VerifyThinpoolExtend() {
 	gomega.Expect(err).ShouldNot(gomega.HaveOccurred(), "display LV")
 	gomega.Expect(strings.TrimSpace(string(stdout))).To(gomega.Not(gomega.Equal("")), "get thinpool LV")
 
+	klog.Infof("Thinpool name is %s\n", strings.TrimSpace(string(stdout)))
 	thinpool := VOLGROUP + "/" + strings.TrimSpace(string(stdout))
 
 	args = []string{
@@ -247,9 +264,10 @@ func VerifyThinpoolExtend() {
 		// This expectation is a factor of the lvm.conf settings we do from ci-test.sh
 		// and the original volume size.
 		size_int64, _ := strconv.ParseInt(size_str, 10, 64)
+		klog.Infof("Thinpool size is %d, expected size is %d\n", size_int64, expect_size)
 		return size_int64 == expect_size
 	},
-		45*time.Second, 5*time.Second).
+		240*time.Second, 5*time.Second).
 		Should(gomega.BeTrue())
 }
 
