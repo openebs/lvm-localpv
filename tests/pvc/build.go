@@ -189,3 +189,15 @@ func (b *Builder) WithVolumeMode(volumemode *corev1.PersistentVolumeMode) *Build
 	b.pvc.object.Spec.VolumeMode = volumemode
 	return b
 }
+
+// WithSnapshotSource sets the snapshot sopurce field in PVC with provided arguments
+func (b *Builder) WithSnapshotSource(snapshot string) *Builder {
+	apiGroup := "snapshot.storage.k8s.io"
+	snapSource := &corev1.TypedLocalObjectReference{
+		APIGroup: &apiGroup,
+		Kind:     "VolumeSnapshot",
+		Name:     snapshot,
+	}
+	b.pvc.object.Spec.DataSource = snapSource
+	return b
+}

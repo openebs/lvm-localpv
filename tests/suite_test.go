@@ -63,22 +63,25 @@ var (
 	pvcName          = "lvmpv-pvc"
 	snapName         = "lvmpv-snap"
 	// default one fio app for most tests.
-	appNames = []string{"fio-ci-0"}
+	appNames        = []string{"fio-ci-0"}
+	restoreAppNames = []string{"fio-ci-restore-0"}
 
 	nodeDaemonSet        = "lvm-localpv-node"
 	controllerDeployment = "lvm-localpv-controller"
 	vgPattern            = "lvmvg1.*"
 
-	nsObj             *corev1.Namespace
-	scObj             *storagev1.StorageClass
-	deployObj         *appsv1.Deployment
-	pvcObj            *corev1.PersistentVolumeClaim
-	appPod            *corev1.PodList
-	accessModes       = []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce}
-	capacity          = "5368709120" // 5Gi
-	expanded_capacity = "6442450944" // 6Gi
-	KubeConfigPath    string
-	OpenEBSNamespace  string
+	nsObj              *corev1.Namespace
+	scObj              *storagev1.StorageClass
+	deployObj          *appsv1.Deployment
+	pvcObj             *corev1.PersistentVolumeClaim
+	restorePvcObj      *corev1.PersistentVolumeClaim
+	appPod             *corev1.PodList
+	accessModes        = []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce}
+	capacity           = "5368709120" // 5Gi
+	expanded_capacity  = "6442450944" // 6Gi
+	KubeConfigPath     string
+	OpenEBSNamespace   string
+	restoreSnapPvcName = "lvmpv-snap-restore-pvc"
 )
 
 func init() {
