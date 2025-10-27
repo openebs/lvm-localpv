@@ -271,14 +271,15 @@ func buildLVMRestoreThinSnapshotArgs(vol *apis.LVMVolume) []string {
 	var LVMRestoreThinVolArg []string
 
 	// command to create restored thin volume from thin snapshot
-	// `lvcreate -s -n <restore-volume-name>  lvmvg/<thin-snapshot-id>`
+	// `lvcreate -s -n <restore-volume-name>  lvmvg/<thin-snapshot-id> -y`
 	LVMRestoreThinVolArg = append(LVMRestoreThinVolArg, "-s", "-n", vol.Name)
 
 	if len(vol.Spec.VolGroup) != 0 {
 		LVMRestoreThinVolArg = append(LVMRestoreThinVolArg, vol.Spec.VolGroup+"/"+getLVMSnapName(vol.Spec.Source))
 	}
 
-	// -y is used to wipe the signatures before creating LVM volume
+	// -y option automatically answers "yes" to any prompts, which may include prompts related to wiping
+	// signatures if LVM detects existing filesystem or other signatures on the underlying storage
 	LVMRestoreThinVolArg = append(LVMRestoreThinVolArg, "-y")
 	return LVMRestoreThinVolArg
 }
