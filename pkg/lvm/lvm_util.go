@@ -266,25 +266,25 @@ func buildLVMDestroyArgs(vol *apis.LVMVolume) []string {
 	return LVMVolArg
 }
 
-// buildLVMRestoreThinSnapshotArgs returns lvcreate command for the retore volume from thin snapshot
+// buildLVMRestoreThinSnapshotArgs returns lvcreate command for the restore volume from thin snapshot
 func buildLVMRestoreThinSnapshotArgs(vol *apis.LVMVolume) []string {
 	var LVMRestoreThinVolArg []string
 
 	// command to create restored thin volume from thin snapshot
-	// `lvcreate -s -n <restore-volume-name>  lvmvg/<thin-snapshot-id> -y`
+	// `lvcreate -s -n <restore-volume-name>  lvmvg/<thin-snapshot-name> -y --wipesignatures n`
 	LVMRestoreThinVolArg = append(LVMRestoreThinVolArg, "-s", "-n", vol.Name)
 
 	if len(vol.Spec.VolGroup) != 0 {
 		LVMRestoreThinVolArg = append(LVMRestoreThinVolArg, vol.Spec.VolGroup+"/"+getLVMSnapName(vol.Spec.Source))
 	}
 
-	// -y option automatically answers "yes" to any prompts, which may include prompts related to wiping
-	// signatures if LVM detects existing filesystem or other signatures on the underlying storage
-	LVMRestoreThinVolArg = append(LVMRestoreThinVolArg, "-y")
+	// -y to automatically answer "yes" to all non-signature prompts and
+	// --wipesignatures n explicitly prevent wiping any detected filesystem or metadata signatures.
+	LVMRestoreThinVolArg = append(LVMRestoreThinVolArg, "-y", "--wipesignatures", "n")
 	return LVMRestoreThinVolArg
 }
 
-// buildLVMVolumeActivateArgs returns lvchnage command to activate the volume
+// buildLVMVolumeActivateArgs returns lvchange command to activate the volume
 func buildLVMVolumeActivateArgs(vol *apis.LVMVolume) []string {
 	var LVMActivateVolArg []string
 
