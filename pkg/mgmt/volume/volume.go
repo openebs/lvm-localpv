@@ -194,6 +194,11 @@ func (c *VolController) syncVol(vol *apis.LVMVolume) error {
 		if err == nil {
 			return lvm.UpdateVolInfo(vol, lvm.LVMStatusReady)
 		}
+		klog.Infof("lvm volume %v provisioning failed: %v", vol.Name, err)
+		// In case lvm.CreateVolume fails for given volume group,
+		// mark the volume provisioning failed.
+		vol.Status.Error = c.transformLVMError(err)
+		return lvm.UpdateVolInfo(vol, lvm.LVMStatusFailed)
 	}
 
 	vgs, err := c.getVgPriorityList(vol)

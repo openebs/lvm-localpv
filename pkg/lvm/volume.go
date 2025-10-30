@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	klog "k8s.io/klog/v2"
 
@@ -286,9 +287,16 @@ func UpdateSnapInfo(snap *apis.LVMSnapshot) error {
 	if snap.Finalizers != nil {
 		return nil
 	}
-
+	snapName := getLVMSnapName(snap.Name)
+	snapLvSizeBytes, err := getLVSize(snapName, snap.Spec.VolGroup)
+	if err != nil {
+		klog.Errorf("Failed to get snapshot LV size %s err: %s", snap.Name, err.Error())
+		return err
+	}
+	snapLvSize := *resource.NewQuantity(int64(snapLvSizeBytes), resource.BinarySI)
 	newSnap, err := snapbuilder.BuildFrom(snap).
 		WithFinalizer(finalizers).
+		WithLvSize(snapLvSize).
 		WithLabels(labels).Build()
 
 	newSnap.Status.State = LVMStatusReady

@@ -56,6 +56,10 @@ spec:
               snapSize:
                 description: SnapSize specifies the space reserved for the snapshot
                 type: string
+              thinProvision:
+                description: ThinProvision specifies whether the snapshot is thin-provisioned
+                  or not.
+                type: boolean
               volGroup:
                 description: VolGroup specifies the name of the volume group where
                   the snapshot has been created.
@@ -68,6 +72,14 @@ spec:
             description: SnapStatus string that reflects if the snapshot was created
               successfully
             properties:
+              lvSize:
+                anyOf:
+                - type: integer
+                - type: string
+                description: LvSize specifies the size allocated for the snapshot
+                  in the VG
+                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                x-kubernetes-int-or-string: true
               state:
                 type: string
             type: object
