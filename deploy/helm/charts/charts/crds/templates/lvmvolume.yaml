@@ -88,6 +88,13 @@ spec:
                 - "yes"
                 - "no"
                 type: string
+              source:
+                description: |-
+                  Source defines the data source from which the volume should be created.
+                  It can reference either a snapshot or an existing volume.
+                  If not specified, a standard LVM volume will be created.
+                  If specified, the new volume will be created using the defined data source.
+                type: string
               thinProvision:
                 description: ThinProvision specifies whether logical volumes can be
                   thinly provisioned. If it is set to "yes", then the LVM LocalPV
