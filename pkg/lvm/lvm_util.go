@@ -47,6 +47,13 @@ const (
 
 	// BlockCleanerCommand is the command used to clean filesystem on the device
 	BlockCleanerCommand = "wipefs"
+	// Block ID
+	BlockIdCommand = "blkid"
+
+	// btrfs tune command to change UUID
+	BtrfstuneCommand = "btrfstune"
+	// xfs admin command to change UUID
+	XFSAdminCommand = "xfs_admin"
 )
 
 // lvm command related constants
@@ -271,16 +278,14 @@ func buildLVMRestoreThinSnapshotArgs(vol *apis.LVMVolume) []string {
 	var LVMRestoreThinVolArg []string
 
 	// command to create restored thin volume from thin snapshot
-	// `lvcreate -s -n <restore-volume-name>  lvmvg/<thin-snapshot-name> -y --wipesignatures n`
+	// `lvcreate -s -n <restore-volume-name>  lvmvg/<thin-snapshot-name> -y`
 	LVMRestoreThinVolArg = append(LVMRestoreThinVolArg, "-s", "-n", vol.Name)
 
-	if len(vol.Spec.VolGroup) != 0 {
-		LVMRestoreThinVolArg = append(LVMRestoreThinVolArg, vol.Spec.VolGroup+"/"+getLVMSnapName(vol.Spec.Source))
-	}
+	// update args with <volgroup>/<thin-snapshot-name>
+	LVMRestoreThinVolArg = append(LVMRestoreThinVolArg, vol.Spec.VolGroup+"/"+getLVMSnapName(vol.Spec.Source))
 
-	// -y to automatically answer "yes" to all non-signature prompts and
-	// --wipesignatures n explicitly prevent wiping any detected filesystem or metadata signatures.
-	LVMRestoreThinVolArg = append(LVMRestoreThinVolArg, "-y", "--wipesignatures", "n")
+	// -y to automatically answer "yes" to all prompts
+	LVMRestoreThinVolArg = append(LVMRestoreThinVolArg, "-y")
 	return LVMRestoreThinVolArg
 }
 
@@ -292,9 +297,8 @@ func buildLVMVolumeActivateArgs(vol *apis.LVMVolume) []string {
 	// `lvchange -kn -ay  lvmvg/<volume-name>`
 	LVMActivateVolArg = append(LVMActivateVolArg, "-kn", "-ay")
 
-	if len(vol.Spec.VolGroup) != 0 {
-		LVMActivateVolArg = append(LVMActivateVolArg, vol.Spec.VolGroup+"/"+vol.Name)
-	}
+	// update args with <volgroup>/<volume-name>
+	LVMActivateVolArg = append(LVMActivateVolArg, vol.Spec.VolGroup+"/"+vol.Name)
 
 	return LVMActivateVolArg
 }
@@ -335,6 +339,10 @@ func CreateVolume(vol *apis.LVMVolume) error {
 
 	// Handle volume creation based on source
 	if vol.Spec.Source != "" {
+		if len(vol.Spec.VolGroup) == 0 {
+			return fmt.Errorf("volGroup should be set for lvm volume %s CR", vol.Name)
+		}
+
 		// check if the source is snapshot
 		if !strings.HasPrefix(vol.Spec.Source, "snapshot-") {
 			return fmt.Errorf("unsupported source %s; only snapshot source is supported", vol.Spec.Source)
@@ -353,7 +361,7 @@ func CreateVolume(vol *apis.LVMVolume) error {
 		if err != nil {
 			err = newExecError(out, err)
 			klog.Errorf(
-				"lvm: could not create snapshot %v cmd %v error: %s", volume, args, string(out),
+				"lvm restore: could not create snapshot %v cmd %v error: %s", volume, args, string(out),
 			)
 			return err
 		}
@@ -364,12 +372,32 @@ func CreateVolume(vol *apis.LVMVolume) error {
 		if err != nil {
 			err = newExecError(out, err)
 			klog.Errorf(
-				"lvm: could not activate volume %v cmd %v error: %s", volume, args, string(out),
+				"lvm restore: could not activate volume %v cmd %v error: %s", volume, args, string(out),
 			)
 			return err
 		}
 
-		klog.Infof("lvm: created restored volume %s from thin snapshot %s as source", volume, snapName)
+		// check volume exists after restore
+		volExists, err := CheckVolumeExists(vol)
+		if err != nil {
+			klog.Errorf("lvm restore: failed to check restored volume %s existence: %v", volume, err)
+			return err
+		}
+		if !volExists {
+			klog.Errorf("lvm restore: volume (%s) doesn't exists", volume)
+			return fmt.Errorf("restored volume %s doesn't exists", volume)
+		}
+
+		// change restored volume filesystem UUID to avoid conflicts
+		err = updateVolumeUuid(vol)
+		if err != nil {
+			klog.Errorf(
+				"lvm restore: failed to update UUID for restored volume %s: %v", volume, err,
+			)
+			return err
+		}
+
+		klog.Infof("lvm restore: created restored volume %s from thin snapshot %s as source", volume, snapName)
 		return nil
 	}
 	args := buildLVMCreateArgs(vol)
@@ -1427,5 +1455,103 @@ func removeVolumeFilesystem(lvmVolume *apis.LVMVolume) error {
 		)
 	}
 	klog.V(4).Infof("Successfully wiped filesystem on device path: %s", devicePath)
+	return nil
+}
+
+// updateVolumeUuid will update volume xfs and btrfs filesyetm UUID
+func updateVolumeUuid(lvmVolume *apis.LVMVolume) error {
+	devicePath := fmt.Sprintf("%s%s/%s", DevPath, lvmVolume.Spec.VolGroup, lvmVolume.Name)
+
+	// get volume filesystem type
+	fsType, err := detectFsType(devicePath)
+	if err != nil {
+		klog.Errorf("failed to detect filesystem type for device %s, error: %v", devicePath, err)
+		return err
+	}
+	klog.Infof("Detected filesystem type %s for device %s", fsType, devicePath)
+	// Skip UUID change for ext4/ext3 or block devices without filesystem
+	if fsType == "ext4" || fsType == "ext3" || fsType == "" {
+		klog.Infof("Skipping UUID update for %s (fs: %s)", devicePath, fsType)
+		return nil
+	}
+
+	// update volume UUID based on filesystem type
+	switch fsType {
+	case "btrfs":
+		err := updateBtrfsUUID(devicePath)
+		if err != nil {
+			klog.Errorf("failed to update device btrfs filesystem %s UUID, error: %v", devicePath, err)
+			return err
+		}
+		klog.Infof("Successfully updated btrfs filesystem UUID for device %s", devicePath)
+	case "xfs":
+		err := updateXfsUUID(devicePath)
+		if err != nil {
+			klog.Errorf("failed to update device xfs filesystem %s UUID, error: %v", devicePath, err)
+			return err
+		}
+		klog.Infof("Successfully updated xfs filesystem UUID for device %s", devicePath)
+	default:
+		klog.Errorf("unsupported filesystem type %s for device %s", fsType, devicePath)
+		return fmt.Errorf("unsupported filesystem type %s for device %s", fsType, devicePath)
+	}
+	return nil
+}
+
+// detectFsType will detect filesystem type for given device path
+func detectFsType(devicePath string) (string, error) {
+	// get only TYPE of the filesystem
+	// Command: blkid -s TYPE -o value /dev/lvmvg/pvc-14e7c929-db3f-4335-b492-485ac6e56454
+	out, _, err := RunCommandSplit(BlockIdCommand, "-s", "TYPE", "-o", "value", devicePath)
+	if err != nil {
+		klog.Errorf("failed to get device %s TYPE, error: %v ,out: %s", devicePath, err, string(out))
+		return "", err
+	}
+	klog.V(4).Infof("Successfully fetched device %s TYPE %s", devicePath, strings.TrimSpace(string(out)))
+	return strings.TrimSpace(string(out)), nil
+}
+
+// updateBtrfsUUID update UUID of btrfs filesystem for given device path
+// command: yes | btrfstune -u /dev/lvmvg/pvc-d16fa9be-806d-4eb2-ae80-fd35e67a3483
+func updateBtrfsUUID(devicePath string) error {
+	cmd := exec.Command(BtrfstuneCommand, "-u", devicePath)
+	// Get stdin pipe to send response
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return fmt.Errorf("failed to get stdin pipe: %w", err)
+	}
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &out
+	// Start the command
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start btrfstune: %w", err)
+	}
+	// Send EXACTLY "y" to stdin to confirm UUID change
+	_, err = stdin.Write([]byte("y"))
+	if err != nil {
+		_ = cmd.Process.Kill()
+		return fmt.Errorf("failed to send 'y': %v", err)
+	}
+	stdin.Close() // Critical: unblocks the process
+	// Wait for completion
+	if err := cmd.Wait(); err != nil {
+		return fmt.Errorf("btrfstune failed: %v\nOutput: %s", err, out.String())
+	}
+	klog.V(4).Infof("Btrfs UUID updated: %s", out.String())
+	return nil
+}
+
+// updateXfsUUID updates the UUID of an XFS filesystem using xfs_admin -U generate
+// command: xfs_admin -U generate: generates and applies a new UUID directly
+func updateXfsUUID(devicePath string) error {
+	cmd := exec.Command(XFSAdminCommand, "-U", "generate", devicePath)
+	// Capture both stdout and stderr
+	output, err := cmd.CombinedOutput()
+	outStr := strings.TrimSpace(string(output))
+	if err != nil {
+		return fmt.Errorf("xfs_admin failed on %s: %w\nOutput: %s", devicePath, err, outStr)
+	}
+	klog.V(4).Infof("XFS UUID updated: %s", outStr)
 	return nil
 }
