@@ -285,7 +285,6 @@ func CreateLVMVolume(ctx context.Context, req *csi.CreateVolumeRequest,
 	volName := strings.ToLower(req.GetName())
 	capacity := strconv.FormatInt(getRoundedCapacity(
 		req.GetCapacityRange().RequiredBytes), 10)
-
 	vol, err := lvm.GetLVMVolume(volName)
 	if err != nil {
 		if !k8serror.IsNotFound(err) {
@@ -338,25 +337,24 @@ func CreateLVMVolume(ctx context.Context, req *csi.CreateVolumeRequest,
 		owner = lvmSnapCr.Spec.OwnerNodeID
 		lvmSnapshotCrName = lvmSnapCr.Name
 		volGroup = lvmSnapCr.Spec.VolGroup
-	}
-
-	// if owner is not already set from snapshot, run the scheduler
-	// to select the owner node for the volume
-	if owner == "" {
-		nmap, err := getNodeMap(params.Scheduler, params.VgPattern)
+	} else {
+		nmap, err := getNodeMap(params, capacity)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "get node map failed : %s", err.Error())
 		}
 
+		if len(nmap) == 0 {
+			return nil, status.Error(codes.ResourceExhausted, "Could not find suitable node to schedule the PVC")
+		}
+
 		// run the scheduler
 		selected := schd.Scheduler(req, nmap)
+
 		if len(selected) == 0 {
-			return nil, status.Error(codes.Internal, "scheduler failed, not able to select a node to create the PV")
+			return nil, status.Error(codes.ResourceExhausted, "scheduler failed, not able to select a node to create the PV")
 		}
 
 		owner = selected[0]
-		klog.Infof("scheduling the volume %s/%s on node %s",
-			params.VgPattern.String(), volName, owner)
 	}
 
 	volObj, err := volbuilder.NewBuilder().

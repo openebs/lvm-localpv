@@ -22,9 +22,9 @@ import (
 	"strconv"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/strings/slices"
 
 	"github.com/openebs/lvm-localpv/pkg/builder/nodebuilder"
-	"github.com/openebs/lvm-localpv/pkg/builder/volbuilder"
 	"github.com/openebs/lvm-localpv/pkg/lvm"
 )
 
@@ -41,14 +41,14 @@ const (
 	SpaceWeighted = "SpaceWeighted"
 )
 
-// getVolumeWeightedMap goes through all the volumegroup on all the nodes
-// and creates the node mapping of the volume for all the nodes.
-// It returns a map which has nodes as key and volumes present
-// on the nodes as corresponding value.
-func getVolumeWeightedMap(re *regexp.Regexp) (map[string]int64, error) {
+// Goes through all the volumegroup on all the nodes
+// and returns a map which has nodes as key and number of volumes present
+// on the nodes as corresponding value. In case of thick volume, We discard node
+// in case it has no Volume group that can accommodate it.
+func getVolumeWeightedMap(params *VolumeParams, capacity string) (map[string]int64, error) {
 	nmap := map[string]int64{}
 
-	vollist, err := volbuilder.NewKubeclient().
+	nodeList, err := nodebuilder.NewKubeclient().
 		WithNamespace(lvm.LvmNamespace).
 		List(metav1.ListOptions{})
 
@@ -56,40 +56,19 @@ func getVolumeWeightedMap(re *regexp.Regexp) (map[string]int64, error) {
 		return nmap, err
 	}
 
-	// create the map of the volume count
-	// for the given vg
-	for _, vol := range vollist.Items {
-		if re.MatchString(vol.Spec.VolGroup) {
-			nmap[vol.Spec.OwnerNodeID]++
+	suitableNodes, err := getSuitableNodes(params.VgPattern, capacity)
+
+	if err != nil {
+		return nmap, err
+	}
+
+	for _, node := range nodeList.Items {
+		if !(params.ThinProvision == "yes") && !slices.Contains(suitableNodes, node.Name) {
+			continue
 		}
-	}
-
-	return nmap, nil
-}
-
-// getCapacityWeightedMap goes through all the volume groups on all the nodes
-// and creates the node mapping of the capacity for all the nodes.
-// It returns a map which has nodes as key and capacity provisioned
-// on the nodes as corresponding value. The scheduler will use this map
-// and picks the node which is less weighted.
-func getCapacityWeightedMap(re *regexp.Regexp) (map[string]int64, error) {
-	nmap := map[string]int64{}
-
-	volList, err := volbuilder.NewKubeclient().
-		WithNamespace(lvm.LvmNamespace).
-		List(metav1.ListOptions{})
-
-	if err != nil {
-		return nmap, err
-	}
-
-	// create the map of the volume capacity
-	// for the given volume group
-	for _, vol := range volList.Items {
-		if re.MatchString(vol.Spec.VolGroup) {
-			volSize, err := strconv.ParseInt(vol.Spec.Capacity, 10, 64)
-			if err == nil {
-				nmap[vol.Spec.OwnerNodeID] += volSize
+		for _, vg := range node.VolumeGroups {
+			if params.VgPattern.MatchString(vg.Name) {
+				nmap[node.Name] += int64(vg.LVCount)
 			}
 		}
 	}
@@ -97,10 +76,46 @@ func getCapacityWeightedMap(re *regexp.Regexp) (map[string]int64, error) {
 	return nmap, nil
 }
 
-// getSpaceWeightedMap returns how weighted a node is space wise.
-// The node which has max free space available is less loaded and
-// can accumulate more volumes.
-func getSpaceWeightedMap(re *regexp.Regexp) (map[string]int64, error) {
+// Goes through all the volume groups on all the nodes
+// and returns a map which has nodes as key and capacity provisioned
+// on the nodes as corresponding value. The scheduler will use this map
+// and picks the node which is less weighted. In case of thick volume, We discard node
+// in case it has no Volume group that can accommodate it.
+func getCapacityWeightedMap(params *VolumeParams, capacity string) (map[string]int64, error) {
+	nmap := map[string]int64{}
+
+	nodeList, err := nodebuilder.NewKubeclient().
+		WithNamespace(lvm.LvmNamespace).
+		List(metav1.ListOptions{})
+
+	if err != nil {
+		return nmap, err
+	}
+
+	suitableNodes, err := getSuitableNodes(params.VgPattern, capacity)
+
+	if err != nil {
+		return nmap, err
+	}
+
+	for _, node := range nodeList.Items {
+		if !(params.ThinProvision == "yes") && !slices.Contains(suitableNodes, node.Name) {
+			continue
+		}
+		for _, vg := range node.VolumeGroups {
+			if params.VgPattern.MatchString(vg.Name) {
+				nmap[node.Name] += vg.Size.Value() - vg.Free.Value()
+			}
+		}
+	}
+
+	return nmap, nil
+}
+
+// Goes through all volume groups in the node to determine vg with higest
+// free space. In case of thick volume, We discard node in case it has
+// no Volume group that can accommodate it.
+func getSpaceWeightedMap(params *VolumeParams, capacity string) (map[string]int64, error) {
 	nmap := map[string]int64{}
 
 	nodeList, err := nodebuilder.NewKubeclient().
@@ -114,7 +129,7 @@ func getSpaceWeightedMap(re *regexp.Regexp) (map[string]int64, error) {
 	for _, node := range nodeList.Items {
 		var maxFree int64 = 0
 		for _, vg := range node.VolumeGroups {
-			if re.MatchString(vg.Name) {
+			if params.VgPattern.MatchString(vg.Name) {
 				freeCapacity := vg.Free.Value()
 				if maxFree < freeCapacity {
 					maxFree = freeCapacity
@@ -122,8 +137,16 @@ func getSpaceWeightedMap(re *regexp.Regexp) (map[string]int64, error) {
 			}
 		}
 		if maxFree > 0 {
-			// converting to SpaceWeighted by subtracting it with MaxInt64
-			// as the node which has max free space available is less loaded.
+			pvcSize, err := strconv.ParseInt(capacity, 10, 64)
+			if err != nil {
+				return nmap, err
+			}
+			if !(params.ThinProvision == "yes") && pvcSize > maxFree {
+				continue
+			}
+			// To implement SpaceWeighted scheduling, we invert the free space metric by subtracting
+			// the node's free space from math.MaxInt64. This way, nodes with more free space will have
+			// lower weights, making them preferred by the scheduler as less loaded nodes.
 			nmap[node.Name] = math.MaxInt64 - maxFree
 		}
 	}
@@ -131,16 +154,44 @@ func getSpaceWeightedMap(re *regexp.Regexp) (map[string]int64, error) {
 	return nmap, nil
 }
 
+// Returns nodes which can accommodate a requested capacity.
+func getSuitableNodes(reg *regexp.Regexp, capacity string) ([]string, error) {
+	var nodes []string
+	nodeList, err := nodebuilder.NewKubeclient().
+		WithNamespace(lvm.LvmNamespace).
+		List(metav1.ListOptions{})
+
+	if err != nil {
+		return nodes, err
+	}
+	for _, node := range nodeList.Items {
+		var maxFree int64 = 0
+		for _, vg := range node.VolumeGroups {
+			if reg.MatchString(vg.Name) && vg.Free.Value() > maxFree {
+				maxFree = vg.Free.Value()
+			}
+		}
+		pvcSize, err := strconv.ParseInt(capacity, 10, 64)
+		if err != nil {
+			return nodes, err
+		}
+		if maxFree > pvcSize {
+			nodes = append(nodes, node.Name)
+		}
+	}
+	return nodes, nil
+}
+
 // getNodeMap returns the node mapping for the given scheduling algorithm
-func getNodeMap(schd string, vgPattern *regexp.Regexp) (map[string]int64, error) {
-	switch schd {
+func getNodeMap(params *VolumeParams, capacity string) (map[string]int64, error) {
+	switch params.Scheduler {
 	case VolumeWeighted:
-		return getVolumeWeightedMap(vgPattern)
+		return getVolumeWeightedMap(params, capacity)
 	case CapacityWeighted:
-		return getCapacityWeightedMap(vgPattern)
+		return getCapacityWeightedMap(params, capacity)
 	case SpaceWeighted:
-		return getSpaceWeightedMap(vgPattern)
+		return getSpaceWeightedMap(params, capacity)
 	}
 	// return getSpaceWeightedMap(default) if not specified
-	return getSpaceWeightedMap(vgPattern)
+	return getSpaceWeightedMap(params, capacity)
 }
