@@ -30,6 +30,8 @@ import (
 	"time"
 
 	"github.com/creack/pty"
+	"github.com/openebs/lib-csi/pkg/btrfs"
+	"github.com/openebs/lib-csi/pkg/xfs"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	klog "k8s.io/klog/v2"
@@ -49,7 +51,6 @@ const (
 	BlockCleanerCommand = "wipefs"
 	// Block ID
 	BlockIdCommand = "blkid"
-
 	// btrfs tune command to change UUID
 	BtrfstuneCommand = "btrfstune"
 	// xfs admin command to change UUID
@@ -285,6 +286,7 @@ func buildLVMRestoreThinSnapshotArgs(vol *apis.LVMVolume) []string {
 	LVMRestoreThinVolArg = append(LVMRestoreThinVolArg, vol.Spec.VolGroup+"/"+getLVMSnapName(vol.Spec.Source))
 
 	// -y to automatically answer "yes" to all prompts
+	// wipesignatures being skipped as it's not supported with snapshot
 	LVMRestoreThinVolArg = append(LVMRestoreThinVolArg, "-y")
 	return LVMRestoreThinVolArg
 }
@@ -1478,14 +1480,14 @@ func updateVolumeUuid(lvmVolume *apis.LVMVolume) error {
 	// update volume UUID based on filesystem type
 	switch fsType {
 	case "btrfs":
-		err := updateBtrfsUUID(devicePath)
+		err := btrfs.GenerateUUID(devicePath)
 		if err != nil {
 			klog.Errorf("failed to update device btrfs filesystem %s UUID, error: %v", devicePath, err)
 			return err
 		}
 		klog.Infof("Successfully updated btrfs filesystem UUID for device %s", devicePath)
 	case "xfs":
-		err := updateXfsUUID(devicePath)
+		err := xfs.GenerateUUID(devicePath)
 		if err != nil {
 			klog.Errorf("failed to update device xfs filesystem %s UUID, error: %v", devicePath, err)
 			return err
@@ -1509,49 +1511,4 @@ func detectFsType(devicePath string) (string, error) {
 	}
 	klog.V(4).Infof("Successfully fetched device %s TYPE %s", devicePath, strings.TrimSpace(string(out)))
 	return strings.TrimSpace(string(out)), nil
-}
-
-// updateBtrfsUUID update UUID of btrfs filesystem for given device path
-// command: yes | btrfstune -u /dev/lvmvg/pvc-d16fa9be-806d-4eb2-ae80-fd35e67a3483
-func updateBtrfsUUID(devicePath string) error {
-	cmd := exec.Command(BtrfstuneCommand, "-u", devicePath)
-	// Get stdin pipe to send response
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		return fmt.Errorf("failed to get stdin pipe: %w", err)
-	}
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &out
-	// Start the command
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("failed to start btrfstune: %w", err)
-	}
-	// Send EXACTLY "y" to stdin to confirm UUID change
-	_, err = stdin.Write([]byte("y"))
-	if err != nil {
-		_ = cmd.Process.Kill()
-		return fmt.Errorf("failed to send 'y': %v", err)
-	}
-	stdin.Close() // Critical: unblocks the process
-	// Wait for completion
-	if err := cmd.Wait(); err != nil {
-		return fmt.Errorf("btrfstune failed: %v\nOutput: %s", err, out.String())
-	}
-	klog.V(4).Infof("Btrfs UUID updated: %s", out.String())
-	return nil
-}
-
-// updateXfsUUID updates the UUID of an XFS filesystem using xfs_admin -U generate
-// command: xfs_admin -U generate: generates and applies a new UUID directly
-func updateXfsUUID(devicePath string) error {
-	cmd := exec.Command(XFSAdminCommand, "-U", "generate", devicePath)
-	// Capture both stdout and stderr
-	output, err := cmd.CombinedOutput()
-	outStr := strings.TrimSpace(string(output))
-	if err != nil {
-		return fmt.Errorf("xfs_admin failed on %s: %w\nOutput: %s", devicePath, err, outStr)
-	}
-	klog.V(4).Infof("XFS UUID updated: %s", outStr)
-	return nil
 }
