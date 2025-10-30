@@ -267,7 +267,7 @@ func VerifyThinpoolExtend() {
 		klog.Infof("Thinpool size is %d, expected size is %d\n", size_int64, expect_size)
 		return size_int64 == expect_size
 	},
-		240*time.Second, 5*time.Second).
+		45*time.Second, 5*time.Second).
 		Should(gomega.BeTrue())
 }
 
