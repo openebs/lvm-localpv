@@ -338,11 +338,11 @@ func createAndVerifyPVC(expect_bound bool) {
 	)
 }
 
-func createAndVerifySnapshotRestorePVC(expect_bound bool) {
+func createAndVerifySnapshotRestorePVC(expect_bound bool) *corev1.PersistentVolumeClaim {
 	var err error
 
 	ginkgo.By("building a pvc from snapshot as source")
-	restorePvcObj, err = pvc.NewBuilder().
+	restorePvcObj, err := pvc.NewBuilder().
 		WithName(restoreSnapPvcName).
 		WithNamespace(OpenEBSNamespace).
 		WithStorageClass(scObj.Name).
@@ -375,6 +375,7 @@ func createAndVerifySnapshotRestorePVC(expect_bound bool) {
 		restoreSnapPvcName,
 		OpenEBSNamespace,
 	)
+	return restorePvcObj
 }
 
 // Verifies state of already created pvc based on expect_bound.

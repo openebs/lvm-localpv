@@ -402,7 +402,7 @@ func thinSnapshotRestoreToNewThinVolume() {
 	By("verify snapshot")
 	verifySnapshotCreated(snapName)
 	By("creating and verifying PVC with thin snapshot as source")
-	createAndVerifySnapshotRestorePVC(true)
+	restorePvcObj := createAndVerifySnapshotRestorePVC(true)
 	By("verifying restored LVMVolume object")
 	VerifyLVMVolume(true, "", restorePvcObj)
 	By("Creating and deploying restore app pod")
@@ -412,6 +412,6 @@ func thinSnapshotRestoreToNewThinVolume() {
 	By("Delete origin app and pvc")
 	deleteAppAndPvc(appNames, pvcName)
 	By("Delete restored app and pvc")
-	deleteAppAndPvc(restoreAppNames, restoreSnapPvcName)
+	deleteAppAndPvc(restoreAppNames, restorePvcObj.Name)
 	By("Deleting thinProvision storage class", deleteStorageClass)
 }
