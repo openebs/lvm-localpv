@@ -439,24 +439,30 @@ spec:
                 thinPools:
                   description: ThinPools hosted by the volume group.
                   items:
+                    description: ThinPool LV present on VG.
                     properties:
-                      data_percent:
+                      free:
                         anyOf:
                         - type: integer
                         - type: string
-                        description: Used capacity of thinpool, in percent.
+                        description: Free capacity of thinpool. In bytes, if no unit
+                          specified.
                         pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                         x-kubernetes-int-or-string: true
-                      lv:
+                      name:
                         description: Name of the thinpool lv.
-                        minLength: 1
                         type: string
                       size:
-                        description: 'Size of the thinpool lv. Example: "10737418240B"'
-                        type: string
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: Size of the thinpool lv. In bytes, if no unit
+                          specified.
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
                     required:
-                    - data_percent
-                    - lv
+                    - free
+                    - name
                     - size
                     type: object
                   type: array
@@ -480,7 +486,6 @@ spec:
               - pvCount
               - size
               - snapCount
-              - thinPools
               - uuid
               type: object
             type: array
