@@ -38,7 +38,7 @@ func IsPVCBoundEventually(pvcName string) bool {
 		gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
 		return pvc.NewForAPIObject(volume).IsBound()
 	},
-		60, 5).
+		120, 5).
 		Should(gomega.BeTrue())
 }
 

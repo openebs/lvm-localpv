@@ -63,7 +63,7 @@ func getVolumeWeightedMap(params *VolumeParams, capacity string) (map[string]int
 	}
 
 	for _, node := range nodeList.Items {
-		if !(params.ThinProvision == "yes") && !slices.Contains(suitableNodes, node.Name) {
+		if params.ThinProvision != lvm.YES && !slices.Contains(suitableNodes, node.Name) {
 			continue
 		}
 		for _, vg := range node.VolumeGroups {
@@ -99,7 +99,7 @@ func getCapacityWeightedMap(params *VolumeParams, capacity string) (map[string]i
 	}
 
 	for _, node := range nodeList.Items {
-		if !(params.ThinProvision == "yes") && !slices.Contains(suitableNodes, node.Name) {
+		if params.ThinProvision != lvm.YES && !slices.Contains(suitableNodes, node.Name) {
 			continue
 		}
 		for _, vg := range node.VolumeGroups {
@@ -112,7 +112,7 @@ func getCapacityWeightedMap(params *VolumeParams, capacity string) (map[string]i
 	return nmap, nil
 }
 
-// Goes through all volume groups in the node to determine vg with higest
+// Goes through all volume groups in the node to determine vg with highest
 // free space. In case of thick volume, We discard node in case it has
 // no Volume group that can accommodate it.
 func getSpaceWeightedMap(params *VolumeParams, capacity string) (map[string]int64, error) {
@@ -131,6 +131,13 @@ func getSpaceWeightedMap(params *VolumeParams, capacity string) (map[string]int6
 		for _, vg := range node.VolumeGroups {
 			if params.VgPattern.MatchString(vg.Name) {
 				freeCapacity := vg.Free.Value()
+				if params.ThinProvision == lvm.YES {
+					for _, thinpool := range vg.ThinPools {
+						if thinpool.Name == vg.Name+"_thinpool" {
+							freeCapacity += thinpool.Free.Value()
+						}
+					}
+				}
 				if maxFree < freeCapacity {
 					maxFree = freeCapacity
 				}
@@ -141,7 +148,7 @@ func getSpaceWeightedMap(params *VolumeParams, capacity string) (map[string]int6
 			if err != nil {
 				return nmap, err
 			}
-			if !(params.ThinProvision == "yes") && pvcSize > maxFree {
+			if params.ThinProvision != lvm.YES && pvcSize > maxFree {
 				continue
 			}
 			// To implement SpaceWeighted scheduling, we invert the free space metric by subtracting
