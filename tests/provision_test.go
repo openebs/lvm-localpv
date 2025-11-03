@@ -388,8 +388,6 @@ func capacityTest() {
 func thinSnapshotRestoreToNewThinVolume() {
 	device := setupVg(40, "lvmvg")
 	defer cleanupVg(device, "lvmvg")
-	// create thin pool
-	createVgThinPool("lvmvg", "20G")
 	By("Creating thinProvision storage class", createThinStorageClass)
 	By("creating and verifying PVC bound status")
 	createAndVerifyPVC(true)
