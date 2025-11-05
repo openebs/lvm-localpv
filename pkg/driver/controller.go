@@ -2,6 +2,7 @@ package driver
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -350,13 +351,21 @@ func CreateLVMVolume(ctx context.Context, req *csi.CreateVolumeRequest,
 		// run the scheduler
 		selected := schd.Scheduler(req, nmap)
 
+		// removes the node from the selected if not present in nmap
+		selected = slices.DeleteFunc(selected, func(s string) bool {
+			_, ok := nmap[s]
+			return !ok
+		})
+
 		if len(selected) == 0 {
 			return nil, status.Error(codes.ResourceExhausted, "scheduler failed, not able to select a node to create the PV")
 		}
 
 		owner = selected[0]
 	}
-
+	klog.Infof("scheduling the volume %s/%s on node %s",
+		params.VgPattern.String(), volName, owner)
+		
 	volObj, err := volbuilder.NewBuilder().
 		WithName(volName).
 		WithCapacity(capacity).
