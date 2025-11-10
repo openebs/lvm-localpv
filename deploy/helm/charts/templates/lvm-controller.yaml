@@ -26,6 +26,19 @@ spec:
         {{ toYaml . | nindent 8 }}
         {{- end}}
     spec:
+      {{- if .Values.lvmController.podAntiAffinity.enable }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - openebs-lvm-controller
+            topologyKey: "kubernetes.io/hostname"
+      {{- end }}
+
 {{- if .Values.lvmController.priorityClass.create }}
       priorityClassName: {{ template "lvmlocalpv.lvmController.priorityClassName" . }}
 {{- end }}

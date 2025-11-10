@@ -144,6 +144,8 @@ lvmController:
     # Configure the maximum number of queries allowed after
     # accounting for rolled over qps from previous seconds.
     burst: 0
+  podAntiAffinity:
+    enable: false
 
 # lvmPlugin is the common csi container used by the
 # controller deployment and node daemonset
