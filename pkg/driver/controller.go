@@ -365,7 +365,6 @@ func CreateLVMVolume(ctx context.Context, req *csi.CreateVolumeRequest,
 	}
 	klog.Infof("scheduling the volume %s/%s on node %s",
 		params.VgPattern.String(), volName, owner)
-		
 	volObj, err := volbuilder.NewBuilder().
 		WithName(volName).
 		WithCapacity(capacity).
@@ -664,14 +663,19 @@ func (cs *controller) CreateSnapshot(
 	}
 
 	snapTimeStamp := time.Now().Unix()
-	state, err := lvm.GetLVMSnapshotStatus(req.Name)
-
+	var lvmSnap *lvmapi.LVMSnapshot
+	var restoreSize int64
+	lvmSnap, err = waitForLVMSnapshotReady(req.Name)
 	if err == nil {
+		if lvmSnap.Spec.ThinProvision {
+			restoreSize = lvmSnap.Status.LvSize.Value()
+		}
 		return csipayload.NewCreateSnapshotResponseBuilder().
 			WithSourceVolumeID(req.SourceVolumeId).
 			WithSnapshotID(req.SourceVolumeId+"@"+req.Name).
 			WithCreationTime(snapTimeStamp, 0).
-			WithReadyToUse(state == lvm.LVMStatusReady).
+			WithReadyToUse(lvmSnap.Status.State == lvm.LVMStatusReady).
+			WithSize(restoreSize).
 			Build(), nil
 	}
 
@@ -751,14 +755,43 @@ func (cs *controller) CreateSnapshot(
 		)
 	}
 
-	state, _ = lvm.GetLVMSnapshotStatus(req.Name)
+	lvmSnap, err = waitForLVMSnapshotReady(req.Name)
+	if err != nil {
+		return nil, status.Errorf(
+			codes.ResourceExhausted,
+			"failed to handle CreateSnapshotRequest for %s: %s, {%s}",
+			req.SourceVolumeId, req.Name,
+			err.Error(),
+		)
+	}
+	if lvmSnap.Spec.ThinProvision {
+		restoreSize = lvmSnap.Status.LvSize.Value()
+	}
 
 	return csipayload.NewCreateSnapshotResponseBuilder().
 		WithSourceVolumeID(req.SourceVolumeId).
 		WithSnapshotID(req.SourceVolumeId+"@"+req.Name).
 		WithCreationTime(snapTimeStamp, 0).
-		WithReadyToUse(state == lvm.LVMStatusReady).
+		WithReadyToUse(lvmSnap.Status.State == lvm.LVMStatusReady).
+		WithSize(restoreSize).
 		Build(), nil
+}
+
+// waitForLVMSnapshotReady waits for lvm snapshot to be ready and returns
+// the lvm snapshot CR object
+func waitForLVMSnapshotReady(snapName string) (*lvmapi.LVMSnapshot, error) {
+	var err error
+	var snap *lvmapi.LVMSnapshot
+	for i := 0; i < 10; i++ {
+		snap, err = lvm.GetLVMSnapshot(snapName)
+		if err == nil {
+			if snap.Status.State == lvm.LVMStatusReady {
+				break
+			}
+		}
+		time.Sleep(time.Duration(100 * time.Millisecond))
+	}
+	return snap, err
 }
 
 func getSnapSize(params *SnapshotParams, capacity int64) int64 {
