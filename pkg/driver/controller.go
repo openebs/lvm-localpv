@@ -782,9 +782,11 @@ func (cs *controller) CreateSnapshot(
 func waitForLVMSnapshotReady(snapName string) (*lvmapi.LVMSnapshot, error) {
 	var err error
 	var snap *lvmapi.LVMSnapshot
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 20; i++ {
 		snap, err = lvm.GetLVMSnapshot(snapName)
-		if err == nil {
+		if k8serror.IsNotFound(err) {
+			return snap, err
+		} else if err == nil {
 			if snap.Status.State == lvm.LVMStatusReady {
 				break
 			}
