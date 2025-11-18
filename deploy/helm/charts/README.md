@@ -135,6 +135,7 @@ helm install openebs-lvmlocalpv openebs-lvmlocalpv/lvm-localpv --namespace opene
 | `lvmController.tolerations`                         | lvm localpv controller deployment's pod toleration values                        | `""`                                    |
 | `lvmController.topologySpreadConstraints`           | lvm localpv controller deployment's pod topologySpreadConstraints values         | `""`                                    |
 | `lvmController.securityContext`                     | Security context for lvm localpv controller deployment container                 | `""`                                    |
+| `lvmController.podAntiAffinity.enabled`             | PodAntiAffinity for lvm localpv controller deployment                            | `false`                                    |
 | `rbac.pspEnabled`                                   | Enable PodSecurityPolicy                                                         | `false`                                 |
 | `serviceAccount.lvmNode.create`                     | Create a service account for lvmnode or not                                      | `true`                                  |
 | `serviceAccount.lvmNode.name`                       | Name for the lvmnode service account                                             | `openebs-lvm-node-sa`                   |
