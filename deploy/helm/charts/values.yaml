@@ -145,7 +145,7 @@ lvmController:
     # accounting for rolled over qps from previous seconds.
     burst: 0
   podAntiAffinity:
-    enabled: true
+    enabled: false
     requiredDuringSchedulingIgnoredDuringExecution:
       - labelSelector:
           matchExpressions:
