@@ -26,6 +26,13 @@ spec:
         {{ toYaml . | nindent 8 }}
         {{- end}}
     spec:
+      {{- if .Values.lvmController.podAntiAffinity.enabled }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          {{- toYaml .Values.lvmController.podAntiAffinity.requiredDuringSchedulingIgnoredDuringExecution | nindent 10 }}
+      {{- end }}
+
 {{- if .Values.lvmController.priorityClass.create }}
       priorityClassName: {{ template "lvmlocalpv.lvmController.priorityClassName" . }}
 {{- end }}
