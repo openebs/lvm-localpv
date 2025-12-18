@@ -658,11 +658,8 @@ func checkThinPoolEmpty(poolname string) bool {
 
 // CheckVolumeExists validates if lvm volume exists
 func CheckVolumeExists(vol *apis.LVMVolume) (bool, error) {
-	devPath, err := GetVolumeDevPath(vol)
-	if err != nil {
-		return false, err
-	}
-	if _, err = os.Stat(devPath); err != nil {
+	devPath := GetVolumeDevPath(vol)
+	if _, err := os.Stat(devPath); err != nil {
 		if os.IsNotExist(err) {
 			return false, nil
 		}
@@ -672,7 +669,7 @@ func CheckVolumeExists(vol *apis.LVMVolume) (bool, error) {
 }
 
 // GetVolumeDevPath returns devpath for the given volume
-func GetVolumeDevPath(vol *apis.LVMVolume) (string, error) {
+func GetVolumeDevPath(vol *apis.LVMVolume) string {
 	// LVM doubles the hiphen for the mapper device name
 	// and uses single hiphen to separate volume group from volume
 	vg := strings.ReplaceAll(vol.Spec.VolGroup, "-", "--")
@@ -680,7 +677,7 @@ func GetVolumeDevPath(vol *apis.LVMVolume) (string, error) {
 	lv := strings.ReplaceAll(vol.Name, "-", "--")
 	dev := DevMapperPath + vg + "-" + lv
 
-	return dev, nil
+	return dev
 }
 
 // Validate the size volume based on extents. If the number of extents are already

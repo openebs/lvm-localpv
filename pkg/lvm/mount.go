@@ -154,12 +154,7 @@ func verifyMountRequest(vol *apis.LVMVolume, mountpath string) (bool, error) {
 		return false, status.Error(codes.Internal, "verifyMount: volume is not ready to be mounted")
 	}
 
-	devicePath, err := GetVolumeDevPath(vol)
-	if err != nil {
-		klog.Errorf("can not get device for volume:%s dev %s err: %v",
-			vol.Name, devicePath, err.Error())
-		return false, status.Errorf(codes.Internal, "verifyMount: GetVolumePath failed %s", err.Error())
-	}
+	devicePath := GetVolumeDevPath(vol)
 
 	/*
 	 * This check is the famous *Wall Of North*
