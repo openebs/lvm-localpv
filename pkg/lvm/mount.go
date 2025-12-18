@@ -201,7 +201,7 @@ func MountVolume(vol *apis.LVMVolume, mount *MountInfo, podLVInfo *PodLVInfo) er
 		return nil
 	}
 
-	devicePath := DevPath + volume
+	devicePath := GetVolumeDevPath(vol)
 
 	err = FormatAndMountVol(devicePath, mount)
 	if err != nil {
@@ -237,8 +237,7 @@ func MountFilesystem(vol *apis.LVMVolume, mount *MountInfo, podinfo *PodLVInfo) 
 // MountBlock mounts the block disk to the specified path
 func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo, podLVInfo *PodLVInfo) error {
 	target := mountinfo.MountPath
-	volume := vol.Spec.VolGroup + "/" + vol.Name
-	devicePath := DevPath + volume
+	devicePath := GetVolumeDevPath(vol)
 
 	mountopt := []string{"bind"}
 
