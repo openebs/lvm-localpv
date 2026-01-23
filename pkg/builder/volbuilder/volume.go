@@ -19,6 +19,7 @@ package volbuilder
 import (
 	"github.com/openebs/lib-csi/pkg/common/errors"
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Builder is the builder object for LVMVolume
@@ -198,6 +199,15 @@ func (b *Builder) WithLabels(labels map[string]string) *Builder {
 	for key, value := range labels {
 		b.volume.Object.Labels[key] = value
 	}
+	return b
+}
+
+// WithOwnerReferences sets owner references on the LVMVolume.
+func (b *Builder) WithOwnerReferences(ownerRefs ...metav1.OwnerReference) *Builder {
+	if len(ownerRefs) == 0 {
+		return b
+	}
+	b.volume.Object.OwnerReferences = ownerRefs
 	return b
 }
 

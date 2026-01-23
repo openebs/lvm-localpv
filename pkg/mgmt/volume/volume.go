@@ -192,13 +192,13 @@ func (c *VolController) syncVol(vol *apis.LVMVolume) error {
 	if vol.Spec.VolGroup != "" {
 		err = lvm.CreateVolume(vol)
 		if err == nil {
-			return lvm.UpdateVolInfo(vol, lvm.LVMStatusReady)
+			return lvm.UpdateVolInfo(vol, lvm.LVMStatusReady, c.ownerRef)
 		}
 		klog.Infof("lvm volume %v provisioning failed: %v", vol.Name, err)
 		// In case lvm.CreateVolume fails for given volume group,
 		// mark the volume provisioning failed.
 		vol.Status.Error = c.transformLVMError(err)
-		return lvm.UpdateVolInfo(vol, lvm.LVMStatusFailed)
+		return lvm.UpdateVolInfo(vol, lvm.LVMStatusFailed, c.ownerRef)
 	}
 
 	vgs, err := c.getVgPriorityList(vol)
@@ -219,7 +219,7 @@ func (c *VolController) syncVol(vol *apis.LVMVolume) error {
 				return err
 			}
 			if err = lvm.CreateVolume(vol); err == nil {
-				return lvm.UpdateVolInfo(vol, lvm.LVMStatusReady)
+				return lvm.UpdateVolInfo(vol, lvm.LVMStatusReady, c.ownerRef)
 			}
 		}
 	}
@@ -227,7 +227,7 @@ func (c *VolController) syncVol(vol *apis.LVMVolume) error {
 	// In case no vg available or lvm.CreateVolume fails for all vgs, mark
 	// the volume provisioning failed so that controller can reschedule it.
 	vol.Status.Error = c.transformLVMError(err)
-	return lvm.UpdateVolInfo(vol, lvm.LVMStatusFailed)
+	return lvm.UpdateVolInfo(vol, lvm.LVMStatusFailed, c.ownerRef)
 }
 
 // getVgPriorityList returns ordered list of volume groups from higher to lower
