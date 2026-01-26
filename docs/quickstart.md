@@ -31,13 +31,15 @@ sudo vgcreate lvmvg /dev/loop0       ## here lvmvg is the volume group name to b
 
 Install the latest release of OpenEBS LVM2 LocalPV-LVM driver by running the following command. Note: All nodes must be running the same version of LocalPV-LVM, LMV2, device-mapper & dm-snapshot.
 
+> **Tip**: For automated installation with node labeling and StorageClass creation, see [Installation Scripts Guide](./installation-scripts.md).
+
 **NOTE:** Installation using operator YAMLs is not the supported way any longer.  
 We can install the latest release of OpenEBS LVM driver by running the following command:
 
 ```bash
-helm repo add openebs https://openebs.github.io/openebs
+helm repo add openebs-lvmlocalpv https://openebs.github.io/lvm-localpv
 helm repo update
-helm install openebs --namespace openebs openebs/openebs --create-namespace
+helm install openebs-lvmlocalpv openebs-lvmlocalpv/lvm-localpv --namespace openebs --create-namespace
 ```
 
 **NOTE:** If you are running a custom Kubelet location, or a Kubernetes distribution that uses a custom Kubelet location, the `kubelet` directory must be changed on the helm values at install-time using the flag option `--set lvm-localpv.lvmNode.kubeletDir=<your-directory-path>` in the `helm install` command.
