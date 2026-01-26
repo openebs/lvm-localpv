@@ -102,7 +102,7 @@ graph TD;
 
 - [Prerequisites](./docs/quickstart.md#prerequisites)
 - [Quickstart](./docs/quickstart.md#setup)
-- [Installation Scripts](./docs/installation-scripts.md) - Using deploy/scripts for installation, upgrade, and uninstallation
+- [Installation Scripts](./docs/installation-scripts.md#overview)
 - [Developer Setup](./docs/developer-setup.md#development-workflow)
 - [Testing](./docs/developer-setup.md#testing)
 - [Contibuting Guidelines](./CONTRIBUTING.md)
