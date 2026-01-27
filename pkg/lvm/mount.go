@@ -23,7 +23,6 @@ import (
 	"strconv"
 
 	"github.com/openebs/lib-csi/pkg/device/iolimit"
-
 	mnt "github.com/openebs/lib-csi/pkg/mount"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -214,11 +213,22 @@ func MountVolume(vol *apis.LVMVolume, mount *MountInfo, podLVInfo *PodLVInfo) er
 
 	klog.Infof("lvm: volume %v mounted %v fs %v", volume, mount.MountPath, mount.FSType)
 
-	if ioLimitsEnabled && podLVInfo != nil {
-		if err := setIOLimits(vol, podLVInfo, devicePath); err != nil {
-			klog.Warningf("lvm: error setting io limits: podUid %s, device %s, err=%v", podLVInfo.UID, devicePath, err)
-		} else {
-			klog.Infof("lvm: io limits set for podUid %v, device %s", podLVInfo.UID, devicePath)
+	if podLVInfo != nil {
+		if ioLimitsEnabled {
+			if err := setIOLimits(vol, podLVInfo, devicePath); err != nil {
+				klog.Warningf("lvm: error setting io limits: podUid %s, device %s, err=%v",
+					podLVInfo.UID, devicePath, err)
+			} else {
+				klog.Infof("lvm: io limits set for podUid %s, device %s",
+					podLVInfo.UID, devicePath)
+			}
+		}
+
+		if vol.Spec.QoS != nil {
+			if err := SetQoSValues(vol, podLVInfo.UID); err != nil {
+				klog.Warningf("lvm: error applying io.max: podUid %s, device %s, err=%v",
+					podLVInfo.UID, devicePath, err)
+			}
 		}
 	}
 
@@ -259,11 +269,22 @@ func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo, podLVInfo *PodLVInfo)
 
 	klog.Infof("NodePublishVolume mounted block device %s at %s", devicePath, target)
 
-	if ioLimitsEnabled && podLVInfo != nil {
-		if err := setIOLimits(vol, podLVInfo, devicePath); err != nil {
-			klog.Warningf(": error setting io limits for podUid %s, device %s, err=%v", podLVInfo.UID, devicePath, err)
-		} else {
-			klog.Infof("lvm: io limits set for podUid %s, device %s", podLVInfo.UID, devicePath)
+	if podLVInfo != nil {
+		if ioLimitsEnabled {
+			if err := setIOLimits(vol, podLVInfo, devicePath); err != nil {
+				klog.Warningf("lvm: error setting io limits: podUid %s, device %s, err=%v",
+					podLVInfo.UID, devicePath, err)
+			} else {
+				klog.Infof("lvm: io limits set for podUid %s, device %s",
+					podLVInfo.UID, devicePath)
+			}
+		}
+
+		if vol.Spec.QoS != nil {
+			if err := SetQoSValues(vol, podLVInfo.UID); err != nil {
+				klog.Warningf("lvm: error applying io.max: podUid %s, device %s, err=%v",
+					podLVInfo.UID, devicePath, err)
+			}
 		}
 	}
 	return nil

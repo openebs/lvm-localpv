@@ -134,6 +134,10 @@ func main() {
 		&config.NodeControllerPollingInterval, "node-polling-interval", 60, "The interval, in seconds, between node polling.",
 	)
 
+	cmd.PersistentFlags().StringVar(
+		&config.KubeletDir, "kubelet-dir", "/var/lib/kubelet/", "Kubelet directory provides the operation of volumeAttributesClassName",
+	)
+
 	err := cmd.Execute()
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "%s", err.Error())
@@ -164,6 +168,8 @@ func run(config *config.Config) {
 	if config.SetIOLimits {
 		lvm.SetIORateLimits(config)
 	}
+
+	lvm.SetQoSValuesConf(config)
 
 	err := driver.New(config).Run()
 	if err != nil {

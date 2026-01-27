@@ -213,6 +213,18 @@ func (b *Builder) WithSource(source string) *Builder {
 	return b
 }
 
+// WithQoS sets optional per-volume distribution of IO resources
+func (b *Builder) WithQoS(qos *apis.VolumeQoS) *Builder {
+	if qos == nil {
+		b.volume.Object.Spec.QoS = nil
+		return b
+	}
+	cp := new(apis.VolumeQoS)
+	*cp = *qos
+	b.volume.Object.Spec.QoS = cp
+	return b
+}
+
 // Build returns LVMVolume API object
 func (b *Builder) Build() (*apis.LVMVolume, error) {
 	if len(b.errs) > 0 {

@@ -85,6 +85,9 @@ spec:
             {{- if .Values.lvmPlugin.metricsPort }}
             - "--listen-address=$(METRICS_LISTEN_ADDRESS)"
             {{- end }}
+            {{- if .Values.lvmNode.kubeletDir }}
+            - "--kubelet-dir={{ include "lvmlocalpv.lvmNode.kubeletDir" . }}"
+            {{- end }}
           env:
             - name: OPENEBS_NODE_ID
               valueFrom:

@@ -88,6 +88,9 @@ type Config struct {
 
 	// NodeControllerPollingInterval is the interval, in seconds, between node polling.
 	NodeControllerPollingInterval int
+
+	// Kubelet directory provides the operation of volumeAttributesClassName.
+	KubeletDir string
 }
 
 // Default returns a new instance of config
