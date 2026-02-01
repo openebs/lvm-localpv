@@ -1,0 +1,56 @@
+name: Linting
+on:
+  workflow_call:
+    inputs:
+      branch-name:
+        description: 'Branch name where workflow is running on'
+        required: false
+        type: string
+      tag:
+        description: 'Tag where workflow is running on'
+        required: false
+        type: string
+      action-name:
+        description: 'Action name or event type where workflow is running on'
+        required: false
+        type: string
+
+jobs:
+  go-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup-nix
+        with:
+          preFetchNix: ./shell.nix
+      
+      - uses: ./.github/actions/setup-go
+
+      - name: Lint Check
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.5.0
+          args: -E dupl,revive,bodyclose,goconst,misspell --timeout 5m0s
+
+      - name: Shellcheck
+        if: inputs.action-name == 'pull_request'
+        uses: reviewdog/action-shellcheck@v1
+        with:
+          github_token: ${{ secrets.github_token }}
+          reporter: github-pr-review
+          path: "."
+          pattern: "*.sh"
+
+      - name: Check if the chart follows a valid semver version
+        if: inputs.branch-name
+        run: nix-shell --run './scripts/validate-chart-version.sh --branch "${{ inputs.branch-name }}"'
+
+      - name: Check if the chart is publishable
+        if: inputs.tag
+        run: nix-shell --run './scripts/update-chart-version.sh --tag "${{ inputs.tag }}" --publish-release'
+
+      - name: Run chart-testing lint 
+        run: nix-shell --run "ct lint --config ct.yaml"
