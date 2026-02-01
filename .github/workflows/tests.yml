@@ -1,0 +1,77 @@
+name: Tests
+
+on:
+  workflow_call:
+    inputs:
+      coverage:
+        description: Upload code coverage
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-go
+
+      - name: Unit test
+        run: make test
+
+      # todo: this coverage was previously not reported, and since the value is rather low
+      # it's failing the checks
+      # Also the bdd coverage is incorrect, it's not collecting the data from the pods...
+      - uses: codecov/codecov-action@v5
+        if: inputs.coverage
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.txt
+          directory: ./coverage
+          flags: unittests
+          fail_ci_if_error: true
+          dry_run: true
+
+  bdd-tests:
+    runs-on: ubuntu-latest
+    needs: ["unit-tests"]
+    strategy:
+      fail-fast: true
+      matrix:
+        kubernetes: [v1.34.3]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-go
+
+      - name: Build images locally
+        run: make lvm-driver-image fio-image
+
+      - uses: ./.github/actions/setup-minikube
+        with:
+          kubernetes-version: ${{ matrix.kubernetes }}
+
+      - run: make bootstrap
+
+      - env:
+          OPENEBS_NAMESPACE: "openebs"
+        run: make ci
+
+      - uses: codecov/codecov-action@v5
+        if: inputs.coverage
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          disable_search: true
+          files: ./tests/bdd_coverage.txt
+          flags: bddtests
+          fail_ci_if_error: true
+
+  results:
+    runs-on: ubuntu-latest
+    needs: [bdd-tests]
+    if: ${{ !cancelled() }}
+    steps:
+      - if: ${{ needs.bdd-tests.result != 'success' }}
+        run: exit 1
+      - run: exit 0

@@ -54,7 +54,7 @@ echo_err() {
 }
 
 needs_help() {
-  [ -n "$1" ] && echo_err "$1\n"
+  [ -n "${1:-}" ] && echo_err "$1\n"
   help
   exit 1
 }
@@ -218,12 +218,20 @@ run() {
 
   # Set the configuration for thin pool autoextend in lvm.conf
   # WARNING: this is modifying the host's settings!!!
-  sudo sed -i '/^[^#]*thin_pool_autoextend_threshold/ s/= .*/= 50/' /etc/lvm/lvm.conf
-  sudo sed -i '/^[^#]*thin_pool_autoextend_percent/ s/= .*/= 20/' /etc/lvm/lvm.conf
+  sudo sed -i 's/^[[:space:]]*#*[[:space:]]*thin_pool_autoextend_threshold =.*/	thin_pool_autoextend_threshold = 50/' /etc/lvm/lvm.conf
+  sudo sed -i 's/^[[:space:]]*#*[[:space:]]*thin_pool_autoextend_percent =.*/	thin_pool_autoextend_percent = 20/' /etc/lvm/lvm.conf
 
   # Prepare env for running BDD tests
   helm install lvm-localpv ./deploy/helm/charts -n "$OPENEBS_NAMESPACE" --create-namespace --set lvmPlugin.image.pullPolicy=Never --set analytics.enabled=false
   kubectl apply -f "${SNAP_CLASS}"
+
+  runTestSuite bdd_coverage.txt
+
+  printf "\n\n######### All test cases passed #########\n\n"
+}
+
+runTestSuite() {
+  local coverageFile=$1
 
   # wait for lvm-driver to be up
   waitForLVMDriver
@@ -232,15 +240,13 @@ run() {
 
   kubectl get po -n "$OPENEBS_NAMESPACE"
 
-  echo "running ginkgo test case"
+  echo "running ginkgo test case with coverage ${coverageFile}"
 
-  if ! ginkgo -v -coverprofile=bdd_coverage.txt -covermode=atomic; then
+  if ! ginkgo -v -coverprofile="${coverageFile}" -covermode=atomic; then
     dump_logs
     [ "$CLEAN_AFTER" = "true" ] && cleanup
     exit 1
   fi
-
-  printf "\n\n######### All test cases passed #########\n\n"
 }
 
 load_k3s() {
