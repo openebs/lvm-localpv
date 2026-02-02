@@ -267,7 +267,7 @@ func buildLVMCreateArgs(vol *apis.LVMVolume) []string {
 func buildLVMDestroyArgs(vol *apis.LVMVolume) []string {
 	var LVMVolArg []string
 
-	dev, _ := GetVolumeDevPath(vol)
+	dev := GetVolumeDevPath(vol)
 
 	LVMVolArg = append(LVMVolArg, "-y", dev)
 
@@ -686,7 +686,7 @@ func GetVolumeDevPath(vol *apis.LVMVolume) (string, error) {
 // Validate the size volume based on extents. If the number of extents are already
 // greater than or equal to required, then make a no-op.
 func needsLvResize(vol *apis.LVMVolume, desiredSizeBytes uint64) bool {
-	lvPath, _ := GetVolumeDevPath(vol)
+	lvPath := GetVolumeDevPath(vol)
 	vgName := vol.Spec.VolGroup
 
 	// 1. Get LV Size in bytes, without the unit suffix.
@@ -736,7 +736,7 @@ func needsLvResize(vol *apis.LVMVolume, desiredSizeBytes uint64) bool {
 func buildVolumeResizeArgs(vol *apis.LVMVolume, resizefs bool) []string {
 	var LVMVolArg []string
 
-	dev, _ := GetVolumeDevPath(vol)
+	dev := GetVolumeDevPath(vol)
 	size := vol.Spec.Capacity + "b"
 
 	LVMVolArg = append(LVMVolArg, dev, "-L", size)
@@ -1512,7 +1512,7 @@ func getThinPoolSize(vgname, volsize string) string {
 
 // removeVolumeFilesystem will erases the filesystem signature from lvm volume
 func removeVolumeFilesystem(lvmVolume *apis.LVMVolume) error {
-	devicePath, _ := GetVolumeDevPath(lvmVolume)
+	devicePath := GetVolumeDevPath(lvmVolume)
 
 	// wipefs erases the filesystem signature from the lvm volume
 	// -a    wipe all magic strings
@@ -1534,7 +1534,7 @@ func removeVolumeFilesystem(lvmVolume *apis.LVMVolume) error {
 
 // updateVolumeUuid will update volume xfs and btrfs filesyetm UUID
 func updateVolumeUuid(lvmVolume *apis.LVMVolume) error {
-	devicePath, _ := GetVolumeDevPath(lvmVolume)
+	devicePath := GetVolumeDevPath(lvmVolume)
 
 	// get volume filesystem type
 	fsType, err := detectFsType(devicePath)
