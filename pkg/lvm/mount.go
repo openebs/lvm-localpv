@@ -154,12 +154,7 @@ func verifyMountRequest(vol *apis.LVMVolume, mountpath string) (bool, error) {
 		return false, status.Error(codes.Internal, "verifyMount: volume is not ready to be mounted")
 	}
 
-	devicePath, err := GetVolumeDevPath(vol)
-	if err != nil {
-		klog.Errorf("can not get device for volume:%s dev %s err: %v",
-			vol.Name, devicePath, err.Error())
-		return false, status.Errorf(codes.Internal, "verifyMount: GetVolumePath failed %s", err.Error())
-	}
+	devicePath := GetVolumeDevPath(vol)
 
 	/*
 	 * This check is the famous *Wall Of North*
@@ -206,7 +201,7 @@ func MountVolume(vol *apis.LVMVolume, mount *MountInfo, podLVInfo *PodLVInfo) er
 		return nil
 	}
 
-	devicePath := DevPath + volume
+	devicePath := GetVolumeDevPath(vol)
 
 	err = FormatAndMountVol(devicePath, mount)
 	if err != nil {
@@ -242,8 +237,7 @@ func MountFilesystem(vol *apis.LVMVolume, mount *MountInfo, podinfo *PodLVInfo) 
 // MountBlock mounts the block disk to the specified path
 func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo, podLVInfo *PodLVInfo) error {
 	target := mountinfo.MountPath
-	volume := vol.Spec.VolGroup + "/" + vol.Name
-	devicePath := DevPath + volume
+	devicePath := GetVolumeDevPath(vol)
 
 	mountopt := []string{"bind"}
 
