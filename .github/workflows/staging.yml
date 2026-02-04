@@ -20,11 +20,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Go 1.24
-        uses: actions/setup-go@v5
+      - name: Set up Go 1.24.12
+        uses: actions/setup-go@v6
         with:
-          go-version: 1.24.7
-          cache: false
+          go-version: 1.24.12
 
       - name: Set go env
         run: |
@@ -37,20 +36,17 @@ jobs:
           version: v2.5.0
           args: -E dupl,revive,bodyclose,goconst,misspell --timeout 5m0s
 
-      - uses: cachix/install-nix-action@v22
-      - uses: rrbutani/use-nix-shell-action@v1.1.0
-        env:
-          HOME: /home/runner
+      - uses: ./.github/actions/setup-nix
         with:
-          file: shell.nix
+          preFetchNix: ./shell.nix
 
       - name: Check if the chart is publishable
         run: |
-          ./scripts/update-chart-version.sh --tag "${TAG}" --publish-release
+          nix-shell --run "./scripts/update-chart-version.sh --tag "${TAG}" --publish-release"
 
       - name: Run chart-testing lint
         run: |
-          ct lint --config ct.yaml
+          nix-shell --run "ct lint --config ct.yaml"
 
   unit-tests:
     runs-on: ubuntu-latest
@@ -58,11 +54,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Go 1.24
-        uses: actions/setup-go@v5
+      - name: Set up Go 1.24.12
+        uses: actions/setup-go@v6
         with:
-          go-version: 1.24.7
-          cache: false
+          go-version: 1.24.12
 
       - name: Set go env
         run: |
@@ -91,11 +86,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Go 1.24
-        uses: actions/setup-go@v5
+      - name: Set up Go 1.24.12
+        uses: actions/setup-go@v6
         with:
-          go-version: 1.24.7
-          cache: false
+          go-version: 1.24.12
 
       - name: Set go env
         run: |

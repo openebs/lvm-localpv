@@ -5,27 +5,27 @@ in
 pkgs.mkShell {
   name = "lvm-shell";
   buildInputs = with pkgs; [
+    cacert
     chart-testing
+    crane
+    curl
     git
+    gnumake
     go_1_24
     golangci-lint
     golint
+    helm-docs
+    jq
     kubectl
     kubernetes-helm
-    gnumake
-    helm-docs
-    minikube
-    semver-tool
-    yq-go
-    which
-    curl
-    crane
-    cacert
-    util-linux
-    jq
     lvm2_dmeventd
-    nixos-shell
+    minikube
     niv
+    nixos-shell
+    semver-tool
+    util-linux
+    which
+    yq-go
   ] ++ pkgs.lib.optional (builtins.getEnv "IN_NIX_SHELL" == "pure") [ docker-client ];
 
   PRE_COMMIT_ALLOW_NO_CONFIG = 1;

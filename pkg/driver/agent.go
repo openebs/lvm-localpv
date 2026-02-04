@@ -1,53 +1,34 @@
-/*
-Copyright © 2019 The OpenEBS Authors
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package driver
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/collectors"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
-	"github.com/openebs/lvm-localpv/pkg/collector"
-
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/openebs/lib-csi/pkg/btrfs"
 	k8sapi "github.com/openebs/lib-csi/pkg/client/k8s"
 	"github.com/openebs/lib-csi/pkg/mount"
-	"golang.org/x/net/context"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	klog "k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
 	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	"github.com/openebs/lvm-localpv/pkg/builder/volbuilder"
+	"github.com/openebs/lvm-localpv/pkg/collector"
 	"github.com/openebs/lvm-localpv/pkg/lvm"
 	"github.com/openebs/lvm-localpv/pkg/mgmt/lvmnode"
 	"github.com/openebs/lvm-localpv/pkg/mgmt/snapshot"
 	"github.com/openebs/lvm-localpv/pkg/mgmt/volume"
-
-	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 // node is the server implementation
