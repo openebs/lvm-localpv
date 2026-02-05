@@ -165,7 +165,7 @@ lvmPlugin:
     repository: openebs/lvm-driver
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: 1.8.1-prerelease
+    tag: 1.8.2-prerelease
   ioLimits:
     enabled: false
     containerRuntime: containerd
