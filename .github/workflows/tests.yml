@@ -27,7 +27,6 @@ jobs:
         if: inputs.coverage
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./coverage.txt
           directory: ./coverage
           flags: unittests
           fail_ci_if_error: true
