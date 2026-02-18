@@ -124,7 +124,7 @@ Features
 - [x] Topology
 - [x] Snapshot
     - [x] [Create](docs/snapshot.md)
-    - [ ] Restore
+    - [x] Restore
 - [ ] Clone
 - [x] [Volume Resize](docs/resize.md)
 - [x] [Thin Provision](docs/thin_provision.md)
@@ -134,7 +134,7 @@ Features
 ## Limitation
 
 - Resize of volumes with snapshot is not supported.
-- Restore of a volume from snapshot is not supported.
+- Restore from snapshot of thick volume is not supported.
 - Clone of a volume from volume is not supported.
 
 ## Dev Activity dashboard
