@@ -52,5 +52,5 @@ jobs:
         if: inputs.tag
         run: nix-shell --run './scripts/update-chart-version.sh --tag "${{ inputs.tag }}" --publish-release'
 
-      - name: Run chart-testing lint 
+      - name: Run chart-testing lint
         run: nix-shell --run "ct lint --config ct.yaml"
