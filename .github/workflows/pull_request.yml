@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: Detect relevant changes
         id: filter
         uses: dorny/paths-filter@v3
@@ -38,7 +38,8 @@ jobs:
     with:
       branch-name: ${{ github.event.pull_request.base.ref }}
       action-name: ${{ github.event_name }}
-      
+      validate-codegen: true
+
   tests:
     needs: ["lint", "relevant-changes"]
     if: needs.relevant-changes.outputs.relevant == 'true'
