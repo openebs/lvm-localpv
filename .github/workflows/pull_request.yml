@@ -69,3 +69,14 @@ jobs:
           file: ./buildscripts/lvm-driver/Dockerfile.buildx
           push: false
           platforms: linux/amd64, linux/arm64
+ 
+  ci:
+    if: ${{ success() || needs.relevant-changes.outputs.relevant == 'false' }}
+    needs:
+      - lint
+      - tests
+      - csi-driver
+    runs-on: ubuntu-latest
+    steps:
+      - name: CI succeeded
+        run: exit 0
