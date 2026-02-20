@@ -5,31 +5,50 @@ on:
     branches:
       - develop
       - "release/**"
-    paths-ignore:
-      - "*.md"
-      - "BUILDMETA"
-      - "changelogs/**"
-      - "docs/**"
-      - "design/**"
-      - "LICENSE"
-      - "MAINTAINERS"
   workflow_dispatch:
 
 jobs:
+  relevant-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      relevant: ${{ steps.filter.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Detect relevant changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            relevant:
+              - '**'
+              - '!*.md'
+              - '!BUILDMETA'
+              - '!changelogs/**'
+              - '!docs/**'
+              - '!design/**'
+              - '!LICENSE'
+              - '!MAINTAINERS'
   lint:
+    needs: ["relevant-changes"]
+    if: needs.relevant-changes.outputs.relevant == 'true'
     uses: ./.github/workflows/lint.yml
     with:
       branch-name: ${{ github.event.pull_request.base.ref }}
       action-name: ${{ github.event_name }}
       
   tests:
-    needs: ["lint"]
+    needs: ["lint", "relevant-changes"]
+    if: needs.relevant-changes.outputs.relevant == 'true'
     uses: ./.github/workflows/tests.yml
     secrets: inherit
 
   csi-driver:
     runs-on: ubuntu-latest
-    needs: ["lint"]
+    needs: ["lint", "relevant-changes"]
+    if: needs.relevant-changes.outputs.relevant == 'true'
     steps:
       - uses: actions/checkout@v4
 
