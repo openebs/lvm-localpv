@@ -27,7 +27,7 @@ rules:
     resources: ["persistentvolumeclaims/status"]
     verbs: ["update", "patch"]
   - apiGroups: ["storage.k8s.io"]
-    resources: ["storageclasses", "csinodes"]
+    resources: ["storageclasses", "csinodes","volumeattributesclasses"]
     verbs: ["get", "list", "watch"]
   - apiGroups: [ "storage.k8s.io" ]
     resources: [ "csistoragecapacities"]

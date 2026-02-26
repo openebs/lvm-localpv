@@ -74,6 +74,10 @@ type VolumeInfo struct {
 	// +kubebuilder:validation:MinLength=1
 	Capacity string `json:"capacity"`
 
+	// QoS contains VAC realization based on cgroup v2 io controller.
+	// Nil means "no explicit QoS settings applied".
+	QoS *VolumeQoS `json:"qos,omitempty"`
+
 	// Shared specifies whether the volume can be shared among multiple pods.
 	// If it is not set to "yes", then the LVM LocalPV Driver will not allow
 	// the volumes to be mounted by more than one pods.
@@ -91,6 +95,15 @@ type VolumeInfo struct {
 	// If not specified, a standard LVM volume will be created.
 	// If specified, the new volume will be created using the defined data source.
 	Source string `json:"source,omitempty"`
+}
+
+// VolumeQoS now represents per-volume IO management based on cgroup v2 io.max.
+// Each field be either "max" or a positive integer string (base-10).
+type VolumeQoS struct {
+	ReadBPS   string `json:"readBPS"`
+	ReadIOPS  string `json:"readIOPS"`
+	WriteBPS  string `json:"writeBPS"`
+	WriteIOPS string `json:"writeIOPS"`
 }
 
 // VolStatus string that specifies the current state of the volume provisioning request.

@@ -18,6 +18,7 @@ package volume
 
 import (
 	"fmt"
+	"reflect"
 	"regexp"
 	"sort"
 	"strconv"
@@ -89,6 +90,11 @@ func (c *VolController) addVol(obj interface{}) {
 
 // updateVol is the update event handler for LVMVolume
 func (c *VolController) updateVol(oldObj, newObj interface{}) {
+	oldVol, ok := c.getStructuredObject(oldObj)
+	if !ok {
+		runtime.HandleError(fmt.Errorf("couldn't get old Vol object %#v", oldObj))
+		return
+	}
 	newVol, ok := c.getStructuredObject(newObj)
 	if !ok {
 		runtime.HandleError(fmt.Errorf("couldn't get Vol object %#v", newVol))
@@ -102,6 +108,11 @@ func (c *VolController) updateVol(oldObj, newObj interface{}) {
 	if c.isDeletionCandidate(newVol) {
 		klog.Infof("Got update event for deleted Vol %s, Deletion timestamp %s", newVol.Name, newVol.DeletionTimestamp)
 		c.enqueueVol(newVol)
+	}
+	if !reflect.DeepEqual(oldVol.Spec.QoS, newVol.Spec.QoS) {
+		klog.Infof("Got update event for Vol %s: spec.qos changed old=%+v new=%+v", newVol.Name, oldVol.Spec.QoS, newVol.Spec.QoS)
+		c.enqueueVol(newVol)
+		return
 	}
 }
 
@@ -183,6 +194,11 @@ func (c *VolController) syncVol(vol *apis.LVMVolume) error {
 		klog.Warningf("Skipping retrying lvm volume provisioning as its already in failed state: %+v", vol.Status.Error)
 		return nil
 	case lvm.LVMStatusReady:
+		if vol.Spec.QoS != nil {
+			if err := lvm.ReconcileSetQoSValues(vol); err != nil {
+				klog.Warningf("failed to reconcile io.max for vol %s: %v", vol.Name, err)
+			}
+		}
 		klog.Info("lvm volume already provisioned")
 		return nil
 	}

@@ -85,7 +85,7 @@ lvmController:
       repository: sig-storage/csi-resizer
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
-      tag: v1.11.2
+      tag: v2.0.0
   snapshotter:
     name: "csi-snapshotter"
     image:
@@ -115,7 +115,7 @@ lvmController:
       repository: sig-storage/csi-provisioner
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
-      tag: v5.2.0
+      tag: v6.1.0
   updateStrategy:
     type: RollingUpdate
   annotations: {}

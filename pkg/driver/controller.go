@@ -366,6 +366,12 @@ func CreateLVMVolume(ctx context.Context, req *csi.CreateVolumeRequest,
 	}
 	klog.Infof("scheduling the volume %s/%s on node %s",
 		params.VgPattern.String(), volName, owner)
+
+	qos, err := NewQoSParams(req.GetMutableParameters())
+	if err != nil {
+		return nil, err
+	}
+
 	volObj, err := volbuilder.NewBuilder().
 		WithName(volName).
 		WithCapacity(capacity).
@@ -373,7 +379,9 @@ func CreateLVMVolume(ctx context.Context, req *csi.CreateVolumeRequest,
 		WithOwnerNode(owner).
 		WithVolumeStatus(lvm.LVMStatusPending).
 		WithShared(params.Shared).
-		WithThinProvision(params.ThinProvision).Build()
+		WithThinProvision(params.ThinProvision).
+		WithQoS(QoSParamsCreateVolume(qos)).
+		Build()
 
 	if err != nil {
 		return nil, status.Errorf(codes.Internal,
@@ -1103,6 +1111,7 @@ func newControllerCapabilities() []*csi.ControllerServiceCapability {
 		csi.ControllerServiceCapability_RPC_EXPAND_VOLUME,
 		csi.ControllerServiceCapability_RPC_CREATE_DELETE_SNAPSHOT,
 		csi.ControllerServiceCapability_RPC_GET_CAPACITY,
+		csi.ControllerServiceCapability_RPC_MODIFY_VOLUME,
 	} {
 		capabilities = append(capabilities, fromType(cap))
 	}
@@ -1255,9 +1264,50 @@ func (cs *controller) ControllerGetVolume(
 	return nil, status.Error(codes.Unimplemented, "ControllerGetVolume is not implemented")
 }
 
+// ControllerModifyVolume update previously provisioned VAC parametrs
+//
+// This implements csi.ControllerServer
 func (cs *controller) ControllerModifyVolume(
 	ctx context.Context,
 	req *csi.ControllerModifyVolumeRequest,
 ) (*csi.ControllerModifyVolumeResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "ControllerModifyVolume is not implemented")
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is nil")
+	}
+	volID := strings.ToLower(strings.TrimSpace(req.GetVolumeId()))
+	if volID == "" {
+		return nil, status.Error(codes.InvalidArgument, "volume_id is empty")
+	}
+
+	vol, err := volbuilder.NewKubeclient().
+		WithNamespace(lvm.LvmNamespace).
+		Get(volID, metav1.GetOptions{})
+	if err != nil {
+		if k8serror.IsNotFound(err) {
+			return nil, status.Errorf(codes.NotFound, "volume %s not found", volID)
+		}
+		return nil, status.Errorf(codes.Internal, "failed to get lvmvolume %s: %v", volID, err)
+	}
+
+	// get the VAC values and prepare lvmvolume spec io format
+	ioPatch, err := NewQoSParams(req.GetMutableParameters())
+	if err != nil {
+		return nil, err
+	}
+
+	// apply new io values
+	modify, changed := QoSParamsModifyVolume(ioPatch, vol.Spec.QoS)
+	if !changed {
+		klog.Infof("ModifyVolume: QoS unchanged for volume %v, skipping update", vol)
+		return &csi.ControllerModifyVolumeResponse{}, nil
+	}
+	vol.Spec.QoS = modify
+
+	if _, err := volbuilder.NewKubeclient().
+		WithNamespace(lvm.LvmNamespace).
+		Update(vol); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to update lvmvolume qos %s: %v", volID, err)
+	}
+
+	return &csi.ControllerModifyVolumeResponse{}, nil
 }

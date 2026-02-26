@@ -80,6 +80,25 @@ spec:
                   can not be edited after the volume has been provisioned.
                 minLength: 1
                 type: string
+              qos:
+                description: |-
+                  QoS contains VAC realization based on cgroup v2 io controller.
+                  Nil means "no explicit QoS settings applied".
+                properties:
+                  readBPS:
+                    type: string
+                  readIOPS:
+                    type: string
+                  writeBPS:
+                    type: string
+                  writeIOPS:
+                    type: string
+                required:
+                - readBPS
+                - readIOPS
+                - writeBPS
+                - writeIOPS
+                type: object
               shared:
                 description: Shared specifies whether the volume can be shared among
                   multiple pods. If it is not set to "yes", then the LVM LocalPV Driver
