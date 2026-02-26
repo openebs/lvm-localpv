@@ -14,6 +14,11 @@ on:
         description: 'Action name or event type where workflow is running on'
         required: false
         type: string
+      validate-codegen:
+        description: 'Validate codegen'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   go-lint:
@@ -26,7 +31,7 @@ jobs:
       - uses: ./.github/actions/setup-nix
         with:
           preFetchNix: ./shell.nix
-      
+
       - uses: ./.github/actions/setup-go
 
       - name: Lint Check
@@ -54,3 +59,20 @@ jobs:
 
       - name: Run chart-testing lint
         run: nix-shell --run "ct lint --config ct.yaml"
+
+  validate-codegen:
+    runs-on: ubuntu-latest
+    if: ${{ inputs.validate-codegen }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-go
+
+      - name: Helm tool installer
+        uses: Azure/setup-helm@v4.2.0
+
+      - name: Verify kubegen
+        run: make verify-kubegen
+
+      - name: Verify manifests
+        run: make verify-manifests

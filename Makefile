@@ -301,4 +301,14 @@ golint:
 	@echo "--------------------------------"
 	@echo ""
 
+.PHONY: verify-manifests
+verify-manifests: bootstrap manifests
+	@./buildscripts/check-diff.sh
+	@echo "Completed verify-manifests no changes detected !!"
+
+.PHONY: verify-kubegen
+verify-kubegen: bootstrap kubegen
+	@./buildscripts/check-diff.sh
+	@echo "Completed verify-codegen no changes detected !!"
+
 include Makefile.buildx.mk

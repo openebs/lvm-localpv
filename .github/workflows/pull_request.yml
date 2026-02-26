@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: Detect relevant changes
         id: filter
         uses: dorny/paths-filter@v3
@@ -38,7 +38,8 @@ jobs:
     with:
       branch-name: ${{ github.event.pull_request.base.ref }}
       action-name: ${{ github.event_name }}
-      
+      validate-codegen: true
+
   tests:
     needs: ["lint", "relevant-changes"]
     if: needs.relevant-changes.outputs.relevant == 'true'
@@ -68,3 +69,14 @@ jobs:
           file: ./buildscripts/lvm-driver/Dockerfile.buildx
           push: false
           platforms: linux/amd64, linux/arm64
+ 
+  ci:
+    if: ${{ success() || needs.relevant-changes.outputs.relevant == 'false' }}
+    needs:
+      - lint
+      - tests
+      - csi-driver
+    runs-on: ubuntu-latest
+    steps:
+      - name: CI succeeded
+        run: exit 0
