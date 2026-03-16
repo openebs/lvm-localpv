@@ -141,5 +141,54 @@ Create the name of the priority class for csi controller plugin
 Ensure that the path to kubelet ends with a slash
 */}}
 {{- define "lvmlocalpv.lvmNode.kubeletDir" -}}
-{{- printf "%s/" (.Values.lvmNode.kubeletDir | trimSuffix "/") -}}
+{{- printf "%s/" (default .Values.lvmNode.kubeletDir .Values.global.kubeletDir | trimSuffix "/") -}}
 {{- end }}
+
+{{/*
+Creates the image URL ie registry/repository:tag
+*/}}
+{{- define "lvmlocalpv.common.image" -}}
+{{- $registryName := default .imageRoot.registry ((.global).imageRegistry) | trimSuffix "/" -}}
+{{- $repositoryName := .imageRoot.repository -}}
+{{- $termination := .imageRoot.tag | toString -}}
+{{- if $registryName }}
+    {{- printf "%s/%s:%s" $registryName $repositoryName $termination -}}
+{{- else -}}
+    {{- printf "%s:%s"  $repositoryName $termination -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Concatenates imagepullsecrets and handles different formats (example - secret or - name: secret)
+*/}}
+{{- define "lvmlocalpv.common.pullSecrets" -}}
+{{- $names := list -}}
+{{- with .Values.global.imagePullSecrets -}}
+  {{- range . -}}
+    {{- if kindIs "map" . }}
+      {{- if and (hasKey . "name") (not (empty .name)) -}}
+        {{ $names = append $names .name }}
+      {{- end -}}
+    {{- else if not (empty .) -}}
+      {{ $names = append $names . -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- with .Values.imagePullSecrets -}}
+  {{- range . }}
+    {{- if kindIs "map" . -}}
+      {{- if and (hasKey . "name") (not (empty .name)) -}}
+        {{- $names = append $names .name }}
+      {{- end -}}
+    {{- else if not (empty .) -}}
+     {{- $names = append $names . -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- $names = uniq $names -}}
+{{- if $names -}}
+{{- range $names }}
+- name: {{ . }}
+{{- end -}}
+{{- end -}}
+{{- end -}}

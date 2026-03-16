@@ -2,8 +2,25 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+global:
+  # Global override for container image registry.
+  imageRegistry: ""
+  # Global image pull secrets (merged with local imagePullSecrets and not overridden)
+  # - secret
+  imagePullSecrets: []
+  # # Global override for image pull policy
+  imagePullPolicy: ""
+  analytics:
+    # Global override for analytics
+    enabled:
+  # Global override for kubelet directory
+  # This can be configured to run on various different k8s distributions like
+  # microk8s where kubelet dir is different
+  kubeletDir: ""
+
+# - secret
 imagePullSecrets:
-# - name: "image-pull-secret"
+
 
 # enable storage capacity tracking feature
 # Ref: https://kubernetes:io/docs/concepts/storage/storage-capacity
