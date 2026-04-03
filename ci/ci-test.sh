@@ -216,10 +216,18 @@ run() {
   sudo modprobe dm-snapshot
   sudo modprobe dm_thin_pool
 
+  # log the current lvm configuration for debugging purposes
+  echo "Current thin pool autoextend configuration in lvm.conf:"
+  cat /etc/lvm/lvm.conf | grep thin_pool_autoextend_
+
   # Set the configuration for thin pool autoextend in lvm.conf
   # WARNING: this is modifying the host's settings!!!
-  sudo sed -i 's/^[[:space:]]*#*[[:space:]]*thin_pool_autoextend_threshold =.*/	thin_pool_autoextend_threshold = 50/' /etc/lvm/lvm.conf
-  sudo sed -i 's/^[[:space:]]*#*[[:space:]]*thin_pool_autoextend_percent =.*/	thin_pool_autoextend_percent = 20/' /etc/lvm/lvm.conf
+  sudo sed -i '0,/thin_pool_autoextend_threshold =/ s/^\([[:space:]]*\)#*[[:space:]]*thin_pool_autoextend_threshold =.*/\1thin_pool_autoextend_threshold = 50/' /etc/lvm/lvm.conf
+  sudo sed -i '0,/thin_pool_autoextend_percent =/ s/^\([[:space:]]*\)#*[[:space:]]*thin_pool_autoextend_percent =.*/\1thin_pool_autoextend_percent = 20/' /etc/lvm/lvm.conf
+
+  # log the current lvm configuration for debugging purposes
+  echo "After update, thin pool autoextend configuration in lvm.conf:"
+  cat /etc/lvm/lvm.conf | grep thin_pool_autoextend_
 
   # Prepare env for running BDD tests
   helm install lvm-localpv ./deploy/helm/charts -n "$OPENEBS_NAMESPACE" --create-namespace --set lvmPlugin.image.pullPolicy=Never --set analytics.enabled=false
