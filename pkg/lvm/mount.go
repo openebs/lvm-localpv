@@ -17,7 +17,6 @@ package lvm
 
 import (
 	"errors"
-	"fmt"
 	"math"
 	"os"
 	"strconv"
@@ -113,26 +112,12 @@ func UmountVolume(vol *apis.LVMVolume, targetPath string,
 		return nil
 	}
 
-	if pathExists, pathErr := mount.PathExists(targetPath); pathErr != nil {
-		return fmt.Errorf("error checking if path exists: %v", pathErr)
-	} else if !pathExists {
-		klog.Warningf(
-			"Warning: Unmount skipped because path does not exist: %v",
-			targetPath,
-		)
-		return nil
-	}
-
-	if err = mounter.Unmount(targetPath); err != nil {
+	if err = mount.CleanupMountPoint(targetPath, mounter, false); err != nil {
 		klog.Errorf(
 			"lvm: failed to unmount %s: path %s err: %v",
 			vol.Name, targetPath, err,
 		)
 		return err
-	}
-
-	if err := os.Remove(targetPath); err != nil {
-		klog.Errorf("lvm: failed to remove mount path vol %s err : %v", vol.Name, err)
 	}
 
 	klog.Infof("umount done %s path %v", vol.Name, targetPath)
