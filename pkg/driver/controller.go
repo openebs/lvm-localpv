@@ -971,22 +971,12 @@ func (cs *controller) GetCapacity(
 			vgThinPoolName := fmt.Sprintf("%s_thinpool", vg.Name)
 			freeCapacity := vg.Free.Value()
 			if params.ThinProvision == lvm.YES {
-				foundPool := false
 				for _, pool := range vg.ThinPools {
 					if pool.Name == vgThinPoolName {
 						freeCapacity += pool.Free.Value()
-						foundPool = true
 						break
 					}
 				}
-				// If thin pool isn't found, report VG free capacity
-				// because the driver will create the pool automatically.
-				if !foundPool {
-					klog.V(4).Infof("Thin pool %s not found on node %s, falling back to VG free capacity: %d",
-						vgThinPoolName, nodeName, vg.Free.Value())
-				}
-			} else {
-				freeCapacity = vg.Free.Value()
 			}
 			if availableCapacity < freeCapacity {
 				availableCapacity = freeCapacity
