@@ -21,6 +21,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
+	storagev1 "k8s.io/api/storage/v1"
 )
 
 var _ = Describe("[lvmpv] TEST VOLUME PROVISIONING", func() {
@@ -236,7 +237,8 @@ func sharedVolumeTest() {
 }
 
 func thinVolCreationTest() {
-	By("Creating thinProvision storage class", createThinStorageClass)
+	By("Creating thinProvision storage class")
+	createThinStorageClass(storagev1.VolumeBindingImmediate)
 	By("creating and verifying PVC bound status")
 	createAndVerifyPVC(true)
 	By("Creating and deploying app pod")
@@ -259,8 +261,27 @@ func thinVolCreationTest() {
 	By("Deleting thinProvision storage class", deleteStorageClass)
 }
 
+func thinVolCreationLateBindingTest() {
+	By("Creating thinProvision storage class")
+	createThinStorageClass(storagev1.VolumeBindingWaitForFirstConsumer)
+	By("creating and verifying PVC bound status")
+	createAndVerifyPVC(false)
+	By("Creating and deploying app pod")
+	createDeployVerifyApp(appNames, pvcObj)
+	By("Verifying that PV is created after mount")
+	verifyPVForPVC(true, pvcName)
+	By("Verifying LVMVolume object to be Ready")
+	VerifyLVMVolume(true, "", pvcObj)
+	By("Deleting pvc/pod")
+	deleteAppAndPvc(appNames, pvcName)
+	By("Verifying that PV is deleted after deletion")
+	verifyPVForPVC(false, pvcName)
+	By("Deleting storage class", deleteStorageClass)
+}
+
 func thinVolCapacityTest() {
-	By("Creating thinProvision storage class", createThinStorageClass)
+	By("Creating thinProvision storage class")
+	createThinStorageClass(storagev1.VolumeBindingImmediate)
 	By("creating and verifying PVC bound status")
 	createAndVerifyPVC(true)
 	By("enabling monitoring on thinpool", enableThinpoolMonitoring)
@@ -348,6 +369,7 @@ func volumeCreationTest() {
 	By("###Running filesystem with formatOptions creation test###", formatOptionsTest)
 	By("###Running block volume creation test###", blockVolCreationTest)
 	By("###Running thin volume creation test###", thinVolCreationTest)
+	By("###Running thin volume creation with late binding test###", thinVolCreationLateBindingTest)
 	By("###Running leak protection test###", leakProtectionTest)
 	By("###Running shared volume for two app pods on same node test###", sharedVolumeTest)
 }
@@ -355,7 +377,8 @@ func volumeCreationTest() {
 func volumeDeletionTest() {
 	device := setupVg(40, "lvmvg")
 	defer cleanupVg(device, "lvmvg")
-	By("Creating thinProvision storage class", createThinStorageClass)
+	By("Creating thinProvision storage class")
+	createThinStorageClass(storagev1.VolumeBindingImmediate)
 	By("Creating and verifying a PVC bound status")
 	createAndVerifyBlockPVCId(true, "1")
 	By("Verifying LVMVolume object to be Ready")
@@ -388,7 +411,8 @@ func capacityTest() {
 func thinSnapshotRestoreToNewThinVolume() {
 	device := setupVg(40, "lvmvg")
 	defer cleanupVg(device, "lvmvg")
-	By("Creating thinProvision storage class", createThinStorageClass)
+	By("Creating thinProvision storage class")
+	createThinStorageClass(storagev1.VolumeBindingImmediate)
 	By("creating and verifying PVC bound status")
 	createAndVerifyPVC(true)
 	By("Creating and deploying app pod")
