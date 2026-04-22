@@ -968,17 +968,15 @@ func (cs *controller) GetCapacity(
 			if !params.VgPattern.MatchString(vg.Name) {
 				continue
 			}
-
-			var freeCapacity int64
+			vgThinPoolName := fmt.Sprintf("%s_thinpool", vg.Name)
+			freeCapacity := vg.Free.Value()
 			if params.ThinProvision == lvm.YES {
 				for _, pool := range vg.ThinPools {
-					if pool.Name == vg.Name+"_thinpool" {
-						freeCapacity = pool.Free.Value()
+					if pool.Name == vgThinPoolName {
+						freeCapacity += pool.Free.Value()
 						break
 					}
 				}
-			} else {
-				freeCapacity = vg.Free.Value()
 			}
 			if availableCapacity < freeCapacity {
 				availableCapacity = freeCapacity

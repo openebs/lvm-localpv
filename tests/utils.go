@@ -11,6 +11,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -210,7 +211,7 @@ func createSharedVolStorageClass() {
 	gomega.Expect(err).To(gomega.BeNil(), "while creating a shared volume storageclass {%s}", scName)
 }
 
-func createThinStorageClass() {
+func createThinStorageClass(bindingMode storagev1.VolumeBindingMode) {
 	var (
 		err error
 	)
@@ -225,7 +226,9 @@ func createThinStorageClass() {
 		WithGenerateName(scName).
 		WithParametersNew(parameters).
 		WithVolumeExpansion(true).
-		WithProvisioner(LocalProvisioner).Build()
+		WithProvisioner(LocalProvisioner).
+		WithVolumeBindingMode(bindingMode).
+		Build()
 	gomega.Expect(err).ShouldNot(gomega.HaveOccurred(),
 		"while building thinProvision storageclass obj with prefix {%s}", scName)
 
@@ -816,6 +819,8 @@ func verifyPVForPVC(shouldExist bool, pvcName string) {
 	}
 
 	gomega.Expect(matchingPVExists).To(shouldPVExist)
+	ginkgo.By("Update pvc object")
+	pvcObj, err = PVCClient.WithNamespace(OpenEBSNamespace).Get(pvcObj.Name, metav1.GetOptions{})
 }
 
 // IsPVDeletedEventually checks if the PV is deleted or not eventually
