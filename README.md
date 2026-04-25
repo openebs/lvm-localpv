@@ -128,7 +128,7 @@ Features
 - [ ] Clone
 - [x] [Volume Resize](docs/resize.md)
 - [x] [Thin Provision](docs/thin_provision.md)
-- [ ] Backup/Restore
+- [x] Backup/Restore
 - [ ] Ephemeral inline volume
 
 ## Limitation
