@@ -87,7 +87,12 @@ helm install openebs-lvmlocalpv openebs-lvmlocalpv/lvm-localpv --namespace opene
 
 | Parameter                                           | Description                                                                      | Default                                 |
 |-----------------------------------------------------|----------------------------------------------------------------------------------|-----------------------------------------|
-| `crds.csi.volumeSnapshots.enabled`                  | Enable/Disable installation of VolumeSnapshot-related CRDs                       | `true`                                   |
+| `global.imageRegistry`                              | Global override for container image registry                                                     | `""`                            |
+| `global.imagePullSecrets`                           | Global image pull secrets (merged with local imagePullSecrets and not overridden)                                                  | `[]`                            |
+| `global.imagePullPolicy`                            | Global override for image pull policy                                                       | `""`                            |
+| `global.analytics.enabled`                          | Global override for analytics                                                    | `""`                            |
+| `global.kubeletDir`                                 | Global override for kubelet directory                                                    | `""`                            |
+| `crds.csi.volumeSnapshots.enabled`                  | Enable/Disable installation of VolumeSnapshot-related CRDs                       | `true`                                  |
 | `imagePullSecrets`                                  | Provides image pull secret                                                       | `""`                                    |
 | `lvmPlugin.image.registry`                          | Registry for openebs-lvm-plugin image                                            | `""`                                    |
 | `lvmPlugin.image.repository`                        | Image repository for openebs-lvm-plugin                                          | `openebs/lvm-driver`                    |
