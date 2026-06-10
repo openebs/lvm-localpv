@@ -39,7 +39,7 @@ spec:
       serviceAccountName: {{ .Values.serviceAccount.lvmController.name }}
       containers:
         - name: {{ .Values.lvmController.resizer.name }}
-          image: {{ include "lvmlocalpv.common.image" (dict "imageRoot" .Values.lvmController.resizer.image "global" .Values.global) }}
+          image: {{ include "lvmlocalpv.common.image" (dict "imageRoot" .Values.lvmController.resizer.image "global" .Values.global) | quote }}
           args:
             - "--v={{ .Values.lvmController.logLevel }}"
             - "--csi-address=$(ADDRESS)"
@@ -56,7 +56,7 @@ spec:
           resources:
             {{- toYaml .Values.lvmController.resources | nindent 12 }}
         - name: {{ .Values.lvmController.snapshotter.name }}
-          image: {{ include "lvmlocalpv.common.image" (dict "imageRoot" .Values.lvmController.snapshotter.image "global" .Values.global) }}
+          image: {{ include "lvmlocalpv.common.image" (dict "imageRoot" .Values.lvmController.snapshotter.image "global" .Values.global) | quote }}
           imagePullPolicy: {{ default .Values.lvmController.snapshotter.image.pullPolicy .Values.global.imagePullPolicy}}
           args:
             - "--csi-address=$(ADDRESS)"
@@ -72,7 +72,7 @@ spec:
           resources:
             {{- toYaml .Values.lvmController.resources | nindent 12 }}
         - name: {{ .Values.lvmController.snapshotController.name }}
-          image: {{ include "lvmlocalpv.common.image" (dict "imageRoot" .Values.lvmController.snapshotController.image "global" .Values.global) }}
+          image: {{ include "lvmlocalpv.common.image" (dict "imageRoot" .Values.lvmController.snapshotController.image "global" .Values.global) | quote }}
           args:
             - "--v={{ .Values.lvmController.logLevel }}"
             {{- if gt (int .Values.lvmController.replicas) 1 }}
@@ -82,7 +82,7 @@ spec:
           resources:
             {{- toYaml .Values.lvmController.resources | nindent 12 }}
         - name: {{ .Values.lvmController.provisioner.name }}
-          image: {{ include "lvmlocalpv.common.image" (dict "imageRoot" .Values.lvmController.provisioner.image "global" .Values.global) }}
+          image: {{ include "lvmlocalpv.common.image" (dict "imageRoot" .Values.lvmController.provisioner.image "global" .Values.global) | quote }}
           imagePullPolicy: {{ default .Values.lvmController.provisioner.image.pullPolicy .Values.global.imagePullPolicy}}
           args:
             - "--csi-address=$(ADDRESS)"
@@ -112,7 +112,7 @@ spec:
           resources:
             {{- toYaml .Values.lvmController.resources | nindent 12 }}
         - name: {{ .Values.lvmPlugin.name }}
-          image: {{ include "lvmlocalpv.common.image" (dict "imageRoot" .Values.lvmPlugin.image "global" .Values.global) }}
+          image: {{ include "lvmlocalpv.common.image" (dict "imageRoot" .Values.lvmPlugin.image "global" .Values.global) | quote }}
           imagePullPolicy: {{ default .Values.lvmPlugin.image.pullPolicy .Values.global.imagePullPolicy }}
           env:
             - name: OPENEBS_CONTROLLER_DRIVER

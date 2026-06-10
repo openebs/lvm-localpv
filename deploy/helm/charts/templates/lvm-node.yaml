@@ -36,7 +36,7 @@ spec:
       hostNetwork: {{ .Values.lvmNode.hostNetwork }}
       containers:
         - name: {{ .Values.lvmNode.driverRegistrar.name }}
-          image: {{ include "lvmlocalpv.common.image" (dict "imageRoot" .Values.lvmNode.driverRegistrar.image "global" .Values.global) }}
+          image: {{ include "lvmlocalpv.common.image" (dict "imageRoot" .Values.lvmNode.driverRegistrar.image "global" .Values.global) | quote }}
           imagePullPolicy: {{ default .Values.lvmNode.driverRegistrar.image.pullPolicy .Values.global.imagePullPolicy }}
           args:
             - "--v={{ .Values.lvmNode.logLevel }}"
@@ -68,7 +68,7 @@ spec:
           securityContext:
             privileged: true
             allowPrivilegeEscalation: true
-          image: {{ include "lvmlocalpv.common.image" (dict "imageRoot" .Values.lvmPlugin.image "global" .Values.global) }}
+          image: {{ include "lvmlocalpv.common.image" (dict "imageRoot" .Values.lvmPlugin.image "global" .Values.global) | quote }}
           imagePullPolicy: {{ default .Values.lvmPlugin.image.pullPolicy .Values.global.imagePullPolicy}}
           args:
             - "--nodeid=$(OPENEBS_NODE_ID)"
