@@ -671,6 +671,7 @@ func (cs *controller) ControllerExpandVolume(
 	if volsize >= updatedSize {
 		return csipayload.NewControllerExpandVolumeResponseBuilder().
 			WithCapacityBytes(volsize).
+			WithNodeExpansionRequired(true).
 			Build(), nil
 	}
 
