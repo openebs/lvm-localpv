@@ -13,7 +13,7 @@ import (
 	"github.com/openebs/lib-csi/pkg/common/errors"
 	"github.com/openebs/lib-csi/pkg/csipv"
 	schd "github.com/openebs/lib-csi/pkg/scheduler"
-	"golang.org/x/net/context"
+	"context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	corev1 "k8s.io/api/core/v1"

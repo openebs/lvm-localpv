@@ -33,7 +33,7 @@ import (
 	"github.com/openebs/lib-csi/pkg/btrfs"
 	k8sapi "github.com/openebs/lib-csi/pkg/client/k8s"
 	"github.com/openebs/lib-csi/pkg/mount"
-	"golang.org/x/net/context"
+	"context"
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
