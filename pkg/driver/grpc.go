@@ -24,7 +24,7 @@ import (
 	"strings"
 	"sync"
 
-	"golang.org/x/net/context"
+	"context"
 	"google.golang.org/grpc"
 
 	"github.com/kubernetes-csi/csi-lib-utils/protosanitizer"
