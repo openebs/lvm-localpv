@@ -121,7 +121,7 @@ helm install openebs-lvmlocalpv openebs-lvmlocalpv/lvm-localpv --namespace opene
 | `lvmController.snapshotter.image.registry`          | Registry for csi-snapshotter image                                               | `registry.k8s.io/`                      |
 | `lvmController.snapshotter.image.repository`        | Image repository for csi-snapshotter                                             | `sig-storage/csi-snapshotter`           |
 | `lvmController.snapshotter.image.pullPolicy`        | Image pull policy for csi-snapshotter                                            | `IfNotPresent`                          |
-| `lvmController.snapshotter.image.tag`               | Image tag for csi-snapshotter                                                    | `v8.0.0`                                |
+| `lvmController.snapshotter.image.tag`               | Image tag for csi-snapshotter                                                    | `v8.2.0`                                |
 | `lvmController.snapshotController.image.registry`   | Registry for snapshot-controller image                                           | `registry.k8s.io/`                      |
 | `lvmController.snapshotController.image.repository` | Image repository for snapshot-controller                                         | `sig-storage/snapshot-controller`       |
 | `lvmController.snapshotController.image.pullPolicy` | Image pull policy for snapshot-controller                                        | `IfNotPresent`                          |
