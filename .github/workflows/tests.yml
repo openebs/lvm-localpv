@@ -13,7 +13,7 @@ jobs:
   unit-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: ./.github/actions/setup-go
 
@@ -23,7 +23,7 @@ jobs:
       # todo: this coverage was previously not reported, and since the value is rather low
       # it's failing the checks
       # Also the bdd coverage is incorrect, it's not collecting the data from the pods...
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v7
         if: inputs.coverage
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -40,7 +40,7 @@ jobs:
       matrix:
         kubernetes: [v1.34.3]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: ./.github/actions/setup-go
 
@@ -57,7 +57,7 @@ jobs:
           OPENEBS_NAMESPACE: "openebs"
         run: make ci
 
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v7
         if: inputs.coverage
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.ref_type == 'tag' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: ./.github/actions/setup-nix
         with:
@@ -29,7 +29,7 @@ jobs:
       - name: Create Pull Request to release
         if: ${{ env.BASE }}
         id: cpr
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v8
         with:
           base: ${{ env.BASE }}
           commit-message: "chore(ci): update helm chart versions and/or git submodules"
@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.ref_type == 'branch' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - run: git checkout develop
@@ -67,7 +67,7 @@ jobs:
         
       - name: Create Pull Request to develop
         id: cpr
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v8
         with:
           base: develop
           commit-message: "chore(ci): update helm chart versions and/or git submodules"
@@ -86,7 +86,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.ref_type == 'branch' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: ./.github/actions/setup-nix
         with:
@@ -102,7 +102,7 @@ jobs:
       
       - name: Create Pull Request to release
         id: cpr
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v8
         with:
           base: ${{ github.ref_name }}
           commit-message: "chore(ci): update helm chart versions and/or git submodules"
