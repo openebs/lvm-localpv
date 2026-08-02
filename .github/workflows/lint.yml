@@ -24,7 +24,7 @@ jobs:
   go-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -35,7 +35,7 @@ jobs:
       - uses: ./.github/actions/setup-go
 
       - name: Lint Check
-        uses: golangci/golangci-lint-action@v8
+        uses: golangci/golangci-lint-action@v9
         with:
           version: v2.5.0
           args: -E dupl,revive,bodyclose,goconst,misspell --timeout 5m0s
@@ -64,12 +64,12 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ inputs.validate-codegen }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: ./.github/actions/setup-go
 
       - name: Helm tool installer
-        uses: Azure/setup-helm@v4.2.0
+        uses: Azure/setup-helm@v5.0.1
 
       - name: Verify kubegen
         run: make verify-kubegen
