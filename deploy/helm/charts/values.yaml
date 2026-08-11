@@ -114,6 +114,8 @@ lvmController:
       # Overrides the image tag whose default is the chart appVersion.
       tag: v8.2.0
   snapshotController:
+    # There should only be one snapshot-controller per cluster. Set this to false if the cluster already runs one.
+    enabled: true
     name: "snapshot-controller"
     image:
       # Make sure that registry name end with a '/'.
