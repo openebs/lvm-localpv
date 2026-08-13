@@ -50,7 +50,7 @@ jobs:
     secrets: inherit
 
   csi-driver:
-    runs-on: ubuntu-latest
+    runs-on: cncf-ubuntu-16-64-x86
     needs: ["lint", "preconditions"]
     if: needs.preconditions.outputs.run == 'true'
     steps:
