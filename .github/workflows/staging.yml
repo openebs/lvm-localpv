@@ -27,14 +27,14 @@ jobs:
       coverage: false
 
   csi-driver:
-    runs-on: ubuntu-latest
+    runs-on: cncf-ubuntu-16-64-x86
     needs: ["lint"]
     steps:
       - uses: actions/checkout@v7
 
       - uses: ./.github/actions/setup-nix
         with:
-          preFetchNix: ./shell.nix
+          preFetchNix: ./scripts/chart.nix
       
       - name: Set Image Org
         run: |
@@ -42,7 +42,7 @@ jobs:
           echo "IMAGE_ORG=${IMAGE_ORG}" >> $GITHUB_ENV
 
       - name: Check if chart is publishable
-        run: nix-shell --pure --run "./scripts/update-chart-version.sh --tag ${TAG} --publish-release" ./shell.nix
+        run: nix-shell --pure --run "./scripts/update-chart-version.sh --tag ${TAG} --publish-release" ./scripts/chart.nix
 
       - name: Set IMAGE_TAG and BRANCH
         run: |
@@ -91,6 +91,8 @@ jobs:
           context: .
           file: ./buildscripts/lvm-driver/Dockerfile.buildx
           push: true
+          sbom: true
+          provenance: mode=max
           platforms: linux/amd64, linux/arm64
           tags: |
             ${{ steps.docker_meta.outputs.tags }}
@@ -108,7 +110,7 @@ jobs:
 
       - uses: ./.github/actions/setup-nix
         with:
-          preFetchNix: ./shell.nix
+          preFetchNix: ./scripts/chart.nix
 
       - name: Set Image Org
         run: |
@@ -117,11 +119,11 @@ jobs:
 
       - name: Check if the chart is publishable
         run: |
-          nix-shell --pure --run "./scripts/update-chart-version.sh --tag ${TAG} --publish-release" ./shell.nix
+          nix-shell ./scripts/chart.nix --pure --run "./scripts/update-chart-version.sh --tag ${TAG} --publish-release"
 
       - name: Update the registry and repository in values.yaml
         run: |
-          nix-shell --pure --run "./scripts/update-reg-repo.sh --registry ghcr.io/ --repository ${{ env.IMAGE_ORG }}/dev/lvm-driver" ./shell.nix
+          nix-shell ./scripts/chart.nix --pure --run "./scripts/update-reg-repo.sh --registry ghcr.io/ --repository ${{ env.IMAGE_ORG }}/dev/lvm-driver"
 
       - name: Set Chart Version
         run: |

@@ -36,7 +36,7 @@ jobs:
           dry_run: true
 
   bdd-tests:
-    runs-on: ubuntu-latest
+    runs-on: cncf-ubuntu-8-32-x86
     permissions:
       contents: read
       id-token: write
