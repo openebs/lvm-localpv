@@ -47,7 +47,7 @@ runs:
           keep-env-derivations = true
           keep-outputs = true
       env:
-        HOME: /home/runner
+        # HOME: /home/runner
         NIX_PATH: "${{ steps.nixpkgs.outputs.nix_path }}"
     - name: PreFetch Nix
       if: ${{ inputs.preFetchNix }}
