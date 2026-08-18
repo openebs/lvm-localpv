@@ -1,0 +1,31 @@
+name: Test CI
+
+on:
+  push:
+    branches:
+      - ci-dbg
+
+jobs:
+   test-nix:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [cncf-ubuntu-16-64-x86, ubuntu-latest, macos-14, macos-15]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: dbg
+        run: |
+          echo "$USER"
+          echo "$HOME"
+
+      - uses: ./.github/actions/setup-nix
+        with:
+          preFetchNix: ./scripts/chart.nix
+
+      - name: dbg
+        run: |
+          echo "$USER"
+          echo "$HOME"
+      

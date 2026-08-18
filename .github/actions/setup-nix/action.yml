@@ -31,6 +31,11 @@ runs:
         end=$(date +%s)
         echo "::endgroup::"
         echo "⏱️ GC took $(( end - start ))s"
+    - name: dbg
+      shell: bash
+      run: |
+        echo "$USER"
+        echo "$HOME"
     - id: nixpkgs
       shell: bash
       run: echo "nix_path=nixpkgs=$(jq -r '.nixpkgs.url' nix/sources.json)" >> $GITHUB_OUTPUT
