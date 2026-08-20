@@ -21,6 +21,7 @@ import (
 
 	"github.com/openebs/lib-csi/pkg/common/errors"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
@@ -71,11 +72,14 @@ type VolController struct {
 	// recorder is an event recorder for recording Event resources to the
 	// Kubernetes API.
 	recorder record.EventRecorder
+
+	// ownerRef is used to set the owner reference on volume
+	ownerRef metav1.OwnerReference
 }
 
 // This function returns controller object with all required keys set to watch over lvmvolume object
 func newVolController(kubeClient kubernetes.Interface, client dynamic.Interface,
-	dynInformer dynamicinformer.DynamicSharedInformerFactory) (*VolController, error) {
+	dynInformer dynamicinformer.DynamicSharedInformerFactory, ownerRef metav1.OwnerReference) (*VolController, error) {
 	//Creating informer for lvmvolume resource
 	volInformer := dynInformer.ForResource(volresource).Informer()
 	//This ratelimiter requeues failed items after 5 secs for first 12 attempts. Then objects are requeued after 30 secs.
@@ -96,6 +100,7 @@ func newVolController(kubeClient kubernetes.Interface, client dynamic.Interface,
 		workqueue: workqueue.NewTypedRateLimitingQueueWithConfig(rateLimiter,
 			workqueue.TypedRateLimitingQueueConfig[any]{Name: "Vol"}),
 		recorder: recorder,
+		ownerRef: ownerRef,
 	}
 
 	klog.Infof("Adding Event handler functions for lvm volume controller")

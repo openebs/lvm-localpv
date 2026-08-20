@@ -17,16 +17,21 @@ limitations under the License.
 package volume
 
 import (
+	"context"
 	"sync"
 	"time"
 
+	"github.com/openebs/lvm-localpv/pkg/lvm"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	klog "k8s.io/klog/v2"
+	"k8s.io/utils/ptr"
 )
 
 var (
@@ -55,6 +60,23 @@ func Start(controllerMtx *sync.RWMutex, stopCh <-chan struct{}) error {
 	}
 
 	VolInformerFactory := dynamicinformer.NewDynamicSharedInformerFactory(openebsClient, 5*time.Minute)
+	k8sNode, err := kubeClient.CoreV1().Nodes().Get(context.TODO(), lvm.NodeID, metav1.GetOptions{})
+	if err != nil {
+		return errors.Wrapf(err, "error getting node %s", lvm.NodeID)
+	}
+
+	nodeGVK := &schema.GroupVersionKind{
+		Group: "", Version: "v1", Kind: "Node",
+	}
+
+	ownerRef := metav1.OwnerReference{
+		APIVersion: nodeGVK.GroupVersion().String(),
+		Kind:       nodeGVK.Kind,
+		Name:       k8sNode.Name,
+		UID:        k8sNode.GetUID(),
+		Controller: ptr.To(true),
+	}
+
 	// Build() fn of all controllers calls AddToScheme to adds all types of this
 	// clientset into the given scheme.
 	// If multiple controllers happen to call this AddToScheme same time,
@@ -63,7 +85,7 @@ func Start(controllerMtx *sync.RWMutex, stopCh <-chan struct{}) error {
 	controllerMtx.Lock()
 
 	//Build Lvm volume controller
-	controller, err := newVolController(kubeClient, openebsClient, VolInformerFactory)
+	controller, err := newVolController(kubeClient, openebsClient, VolInformerFactory, ownerRef)
 	if err != nil {
 		return errors.Wrap(err, "failed to create new lvm volume controller")
 	}

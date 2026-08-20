@@ -20,16 +20,15 @@ import (
 	"strconv"
 	"time"
 
+	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
+	"github.com/openebs/lvm-localpv/pkg/builder/snapbuilder"
+	"github.com/openebs/lvm-localpv/pkg/builder/volbuilder"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	klog "k8s.io/klog/v2"
-
-	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
-	"github.com/openebs/lvm-localpv/pkg/builder/snapbuilder"
-	"github.com/openebs/lvm-localpv/pkg/builder/volbuilder"
 )
 
 const (
@@ -197,7 +196,7 @@ func GetLVMVolumeState(volID string) (string, string, error) {
 }
 
 // UpdateVolInfo updates LVMVolume CR with node id and finalizer
-func UpdateVolInfo(vol *apis.LVMVolume, state string) error {
+func UpdateVolInfo(vol *apis.LVMVolume, state string, ownerRef metav1.OwnerReference) error {
 	if vol.Finalizers != nil {
 		return nil
 	}
@@ -208,10 +207,12 @@ func UpdateVolInfo(vol *apis.LVMVolume, state string) error {
 	case LVMStatusReady:
 		finalizers = append(finalizers, LVMFinalizer)
 	}
+
 	newVol, err := volbuilder.BuildFrom(vol).
 		WithFinalizer(finalizers).
 		WithVolumeStatus(state).
-		WithLabels(labels).Build()
+		WithLabels(labels).
+		WithOwnerReferences(ownerRef).Build()
 
 	if err != nil {
 		return err
