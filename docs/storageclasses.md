@@ -221,8 +221,6 @@ LocalPV-LVM storageclass supports various parameters for different use cases. Fo
     vgpattern: "lvmvg.*"     ## vgpattern specifies pattern of lvm volume group name
   ```
 
-  if `volgroup` and `vgpattern` both the paramaters are defined in the storageclass then `volgroup` will get higher priority and the driver will use that to provision to the volume.
-
   **Note:** Please note that either volgroup or vgpattern should be present in the storageclass parameters to make the provisioning successful.
 
 - #### volgroup (*must* parameter if vgpattern is not provided, otherwise optional)
