@@ -27,6 +27,31 @@ entries:
     - https://openebs.github.io/lvm-localpv/lvm-localpv-1.11.0-develop.tgz
     version: 1.11.0-develop
   - apiVersion: v2
+    appVersion: 1.10.1-prerelease
+    created: "2026-08-27T10:25:25.002593699Z"
+    dependencies:
+    - condition: crds.enabled
+      name: crds
+      repository: ""
+      version: 1.10.1-prerelease
+    description: CSI Driver for dynamic provisioning of LVM Persistent Local Volumes.
+    digest: f67bcdda349c08cbf2dbf367b80afdad1989b53d4a4647bdf06f08a6a0166b73
+    home: https://openebs.io/
+    icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/openebs/icon/color/openebs-icon-color.png
+    keywords:
+    - cloud-native-storage
+    - block-storage
+    - filesystem
+    - LVM
+    - Local Persistent Volumes
+    - storage
+    name: lvm-localpv
+    sources:
+    - https://github.com/openebs/lvm-localpv
+    urls:
+    - https://openebs.github.io/lvm-localpv/lvm-localpv-1.10.1-prerelease.tgz
+    version: 1.10.1-prerelease
+  - apiVersion: v2
     appVersion: 1.10.0
     created: "2026-08-19T12:13:26.187282625Z"
     dependencies:
@@ -1195,4 +1220,4 @@ entries:
     urls:
     - https://github.com/openebs/lvm-localpv/releases/download/lvm-localpv-0.5.0/lvm-localpv-0.5.0.tgz
     version: 0.5.0
-generated: "2026-08-19T12:13:26.185965075Z"
+generated: "2026-08-27T10:25:25.001152595Z"
