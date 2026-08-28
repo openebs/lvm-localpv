@@ -104,6 +104,8 @@ lvmController:
       # Overrides the image tag whose default is the chart appVersion.
       tag: v2.0.0
   snapshotter:
+    # The csi-snapshotter requires the VolumeSnapshot CRDs. Set this to false if they are not installed.
+    enabled: true
     name: "csi-snapshotter"
     image:
       # Make sure that registry name end with a '/'.
