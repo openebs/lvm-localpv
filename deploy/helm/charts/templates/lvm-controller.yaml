@@ -55,6 +55,7 @@ spec:
               mountPath: /var/lib/csi/sockets/pluginproxy/
           resources:
             {{- toYaml .Values.lvmController.resources | nindent 12 }}
+        {{- if .Values.lvmController.snapshotter.enabled }}
         - name: {{ .Values.lvmController.snapshotter.name }}
           image: {{ include "lvmlocalpv.common.image" (dict "imageRoot" .Values.lvmController.snapshotter.image "global" .Values.global) | quote }}
           imagePullPolicy: {{ default .Values.lvmController.snapshotter.image.pullPolicy .Values.global.imagePullPolicy}}
@@ -71,6 +72,7 @@ spec:
               mountPath: /var/lib/csi/sockets/pluginproxy/
           resources:
             {{- toYaml .Values.lvmController.resources | nindent 12 }}
+        {{- end }}
         {{- if .Values.lvmController.snapshotController.enabled }}
         - name: {{ .Values.lvmController.snapshotController.name }}
           image: {{ include "lvmlocalpv.common.image" (dict "imageRoot" .Values.lvmController.snapshotController.image "global" .Values.global) | quote }}
