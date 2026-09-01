@@ -91,6 +91,11 @@ type Config struct {
 
 	// Kubelet directory provides the operation of volumeAttributesClassName.
 	KubeletDir string
+
+	// DefaultFormatOptions holds the "<fstype>=<options>" mkfs options this
+	// node uses when the storage class of the volume does not set
+	// formatOptions. Given once per filesystem.
+	DefaultFormatOptions []string
 }
 
 // Default returns a new instance of config

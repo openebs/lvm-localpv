@@ -17,6 +17,7 @@ limitations under the License.
 package driver
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"os"
@@ -33,7 +34,6 @@ import (
 	"github.com/openebs/lib-csi/pkg/btrfs"
 	k8sapi "github.com/openebs/lib-csi/pkg/client/k8s"
 	"github.com/openebs/lib-csi/pkg/mount"
-	"context"
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -215,11 +215,9 @@ func GetVolAndMountInfo(
 	if err != nil {
 		return nil, nil, err
 	}
-	mountinfo.FormatOptions = nil
-	formatOptions := strings.TrimSpace(req.VolumeContext[lvm.FormatOptionsKey])
-	if len(formatOptions) > 0 {
-		mountinfo.FormatOptions = strings.Split(formatOptions, " ")
-	}
+	// the storage class value wins, the defaults of this node are used when it
+	// does not set any
+	mountinfo.FormatOptions = lvm.FormatOptions(mountinfo.FSType, req.VolumeContext[lvm.FormatOptionsKey])
 
 	return vol, &mountinfo, nil
 }
