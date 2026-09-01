@@ -96,11 +96,31 @@ func formatOptionsTest() {
 	createFormatOptionsStorageClass(formatOptions)
 	By("Creating and verifying PVC bound status")
 	createAndVerifyPVC(true)
-	By("Creating and deploying app pod", createDeployVerifyFormatOptions)
+	// the block size asked for by the storage class has to replace the node
+	// default, the two are not merged
+	By("Creating and deploying app pod", func() { createDeployVerifyFormatOptions("4096", "5000000") })
 	By("Verifying LVMVolume object to be Ready")
 	VerifyLVMVolume(true, "", pvcObj)
 	By("Deleting verifier pvc/pod")
-	deleteAppAndPvc([]string{"format-options-verifier"}, pvcName)
+	deleteAppAndPvc([]string{formatOptionsVerifier}, pvcName)
+	By("Verifying that PV is deleted after deletion")
+	verifyPVForPVC(false, pvcName)
+	By("Deleting storage class", deleteStorageClass)
+}
+
+// defaultFormatOptionsTest provisions a volume whose storage class leaves
+// formatOptions out, so the filesystem has to be made with the ext4 node
+// default that ci-test.sh gives the agent.
+func defaultFormatOptionsTest() {
+	By("####### Creating the storage class without formatOptions #######")
+	createStorageClass()
+	By("Creating and verifying PVC bound status")
+	createAndVerifyPVC(true)
+	By("Creating and deploying app pod", func() { createDeployVerifyFormatOptions(nodeDefaultBlockSize, "") })
+	By("Verifying LVMVolume object to be Ready")
+	VerifyLVMVolume(true, "", pvcObj)
+	By("Deleting verifier pvc/pod")
+	deleteAppAndPvc([]string{formatOptionsVerifier}, pvcName)
 	By("Verifying that PV is deleted after deletion")
 	verifyPVForPVC(false, pvcName)
 	By("Deleting storage class", deleteStorageClass)
@@ -367,6 +387,7 @@ func volumeCreationTest() {
 	defer cleanupVg(device, "lvmvg")
 	By("###Running filesystem volume creation test###", fsVolCreationTest)
 	By("###Running filesystem with formatOptions creation test###", formatOptionsTest)
+	By("###Running filesystem with the node default format options test###", defaultFormatOptionsTest)
 	By("###Running block volume creation test###", blockVolCreationTest)
 	By("###Running thin volume creation test###", thinVolCreationTest)
 	By("###Running thin volume creation with late binding test###", thinVolCreationLateBindingTest)
