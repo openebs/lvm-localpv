@@ -638,19 +638,33 @@ func createAndDeployBlockAppPod() {
 	}
 }
 
-func createDeployVerifyFormatOptions() {
+// createDeployVerifyFormatOptions deploys a pod that checks the volume was
+// made with the mkfs options it is supposed to carry, the ones of the storage
+// class or, when it sets none, the default of that filesystem on the node. An
+// empty minInodes leaves the inode count unchecked.
+func createDeployVerifyFormatOptions(blockSize, minInodes string) {
 	ginkgo.By("creating and deploying verifier pod")
-	createAndDeployVerifyFormatOptions()
+	createAndDeployVerifyFormatOptions(blockSize, minInodes)
 	ginkgo.By("verifying verifier pod is running", verifyFormatOptionsVerifierPodRunning)
 }
 
-func createAndDeployVerifyFormatOptions() {
+func createAndDeployVerifyFormatOptions(blockSize, minInodes string) {
 	var err error
-	appname := "format-options-verifier"
+	appname := formatOptionsVerifier
 	labels := map[string]string{
 		"role": "test",
 		"app":  appname,
 	}
+
+	// the pod only stays up while the checks hold, so a wrong block size or
+	// inode count, which means the options never reached mkfs, keeps it from
+	// ever running. The path is the volume mount set below.
+	check := fmt.Sprintf(`test "$(stat -fc %%s '/mnt/datadir')" = "%s"`, blockSize)
+	if minInodes != "" {
+		check += fmt.Sprintf(` && test "$(df -i '/mnt/datadir' | tail -n 1 | awk '{print $2}')" -ge "%s"`, minInodes)
+	}
+	check += " && tail -f /dev/null"
+
 	ginkgo.By("building app " + appname + " using above lvm volume")
 	deployObj, err = deploy.NewBuilder().
 		WithName(appname).
@@ -665,19 +679,11 @@ func createAndDeployVerifyFormatOptions() {
 						WithImage("debian:stable-slim").
 						WithName("verifier").
 						WithImagePullPolicy(corev1.PullIfNotPresent).
-						WithEnvsNew(
-							[]corev1.EnvVar{
-								{
-									Name:  "MIN_INODES",
-									Value: "5000000",
-								},
-							},
-						).
 						WithCommandNew(
 							[]string{
 								"bash",
 								"-c",
-								`test "$(df -i '/mnt/datadir' | tail -n 1 | awk '{print $2}')" -ge "$MIN_INODES" && tail -f /dev/null`,
+								check,
 							},
 						).
 						WithLifeCycle(
@@ -696,8 +702,7 @@ func createAndDeployVerifyFormatOptions() {
 						WithVolumeMountsNew(
 							[]corev1.VolumeMount{
 								{
-									Name: "datavol1",
-									// If this path changes, modify the above command line accordingly (df command).
+									Name:      "datavol1",
 									MountPath: "/mnt/datadir",
 								},
 							},
@@ -724,7 +729,7 @@ func createAndDeployVerifyFormatOptions() {
 
 func verifyFormatOptionsVerifierPodRunning() {
 	var err error
-	appName := "format-options-verifier"
+	appName := formatOptionsVerifier
 	labelValue := fmt.Sprintf("role=test,app=%s", appName)
 	gomega.Eventually(func() bool {
 		appPod, err = PodClient.WithNamespace(OpenEBSNamespace).

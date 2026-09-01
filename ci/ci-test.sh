@@ -230,7 +230,7 @@ run() {
   cat /etc/lvm/lvm.conf | grep thin_pool_autoextend_
 
   # Prepare env for running BDD tests
-  helm install lvm-localpv ./deploy/helm/charts -n "$OPENEBS_NAMESPACE" --create-namespace --set lvmPlugin.image.pullPolicy=Never --set analytics.enabled=false
+  helm install lvm-localpv ./deploy/helm/charts -n "$OPENEBS_NAMESPACE" --create-namespace --set lvmPlugin.image.pullPolicy=Never --set analytics.enabled=false --set 'lvmNode.defaultFormatOptions.ext4=-b 2048'
   kubectl apply -f "${SNAP_CLASS}"
 
   runTestSuite bdd_coverage.txt
