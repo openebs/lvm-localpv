@@ -81,6 +81,12 @@ var (
 	KubeConfigPath     string
 	OpenEBSNamespace   string
 	restoreSnapPvcName = "lvmpv-snap-restore-pvc"
+
+	// formatOptionsVerifier is the app of the format options verifier pod
+	formatOptionsVerifier = "format-options-verifier"
+	// nodeDefaultBlockSize is the ext4 block size of the
+	// lvmNode.defaultFormatOptions entry ci-test.sh installs the chart with
+	nodeDefaultBlockSize = "2048"
 )
 
 func init() {

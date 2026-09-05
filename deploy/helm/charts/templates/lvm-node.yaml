@@ -88,6 +88,11 @@ spec:
             {{- if .Values.lvmNode.kubeletDir }}
             - "--kubelet-dir={{ include "lvmlocalpv.lvmNode.kubeletDir" . }}"
             {{- end }}
+            {{- range $fsType, $options := .Values.lvmNode.defaultFormatOptions }}
+            {{- if $options }}
+            - "--default-format-options={{ $fsType }}={{ $options }}"
+            {{- end }}
+            {{- end }}
           env:
             - name: OPENEBS_NODE_ID
               valueFrom:

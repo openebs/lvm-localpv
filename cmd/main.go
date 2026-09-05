@@ -138,6 +138,14 @@ func main() {
 		&config.KubeletDir, "kubelet-dir", "/var/lib/kubelet/", "Kubelet directory provides the operation of volumeAttributesClassName",
 	)
 
+	// StringArray and not StringSlice, an mkfs option list is allowed to hold
+	// a comma, "-O ^has_journal,^orphan_file", which StringSlice would split
+	cmd.PersistentFlags().StringArrayVar(
+		&config.DefaultFormatOptions, "default-format-options", nil,
+		"Extra mkfs options as <fstype>=<options>, used when the storage class of the volume "+
+			"does not set formatOptions. Can be given once per filesystem",
+	)
+
 	err := cmd.Execute()
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "%s", err.Error())
@@ -170,6 +178,14 @@ func run(config *config.Config) {
 	}
 
 	lvm.SetQoSValuesConf(config)
+
+	if err := lvm.SetDefaultFormatOptions(config.DefaultFormatOptions); err != nil {
+		log.Fatalln(err)
+	}
+
+	if len(config.DefaultFormatOptions) > 0 {
+		klog.Infof("Default format options: %v", config.DefaultFormatOptions)
+	}
 
 	err := driver.New(config).Run()
 	if err != nil {
