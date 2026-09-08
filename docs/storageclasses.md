@@ -287,6 +287,24 @@ LocalPV-LVM storageclass supports various parameters for different use cases. Fo
 
   Refer to the documentation of the filesystem you are using to know more about the format options.
 
+  If a StorageClass does not set formatOptions, the node agent uses the default of that filesystem, given to it with the `--default-format-options=<fstype>=<options>` argument, `lvmNode.defaultFormatOptions` in the helm chart. The value of a StorageClass replaces the default of its filesystem, the two are not merged.
+
+  The chart sets no default. One case where an option is needed is xfs on an older kernel:
+
+  ```yaml
+  lvmNode:
+    defaultFormatOptions:
+      xfs: "-i nrext64=0"
+  ```
+
+  `mkfs.xfs` 6.5 and above, which the driver image ships, set nrext64 (64 bit extent counters) on a new filesystem, and only kernel 5.19 and above can mount one. Without that option, an xfs volume created on a node running an older kernel, such as RHEL 8 and 9, Ubuntu 20.04 and 22.04 or SLES 15, fails to mount with:
+
+  ```
+  XFS (dm-0): Superblock has unknown incompatible features (0x20) enabled.
+  ```
+
+  A default only applies when a volume is formatted, on first use, so changing it does not affect the volumes that already exist.
+
 ### VolumeBindingMode (Optional)
 
 lvm-localpv supports two type volume binding modes that are `Immediate` & `late binding`.
