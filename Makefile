@@ -5,7 +5,7 @@ PACKAGES = $(shell go list ./... | grep -v 'pkg/generated')
 VETARGS?=-asmdecl -atomic -bool -buildtags -copylocks -methods \
          -nilfunc -printf -rangeloops -shift -structtags -unsafeptr
 
-GOLANGCI_LINT_VERSION = 2.5.0
+GOLANGCI_LINT_VERSION = 2.11.4
 
 # Tools required for different make
 # targets or for development purposes
