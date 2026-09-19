@@ -38,7 +38,7 @@ jobs:
       - name: Lint Check
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.5.0
+          version: v2.11.4
           args: -E dupl,revive,bodyclose,goconst,misspell --timeout 5m0s
 
       - name: Shellcheck
