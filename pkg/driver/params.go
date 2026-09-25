@@ -103,12 +103,19 @@ func NewVolumeParams(m map[string]string) (*VolumeParams, error) {
 	// to the lower case.
 	m = helpers.GetCaseInsensitiveMap(&m)
 
-	// for ensuring backward compatibility, we first check if
-	// there is any volgroup param exists for storage class.
+	vgPattern, vgPatternOK := m["vgpattern"]
+	volGroup, volGroupOK := m["volgroup"]
+	// volgroup and vgpattern are mutually exclusive: volgroup pins the volume
+	// to a single volume group, whereas vgpattern selects among many. Supplying
+	// both is ambiguous, so reject the request.
+	if vgPatternOK && volGroupOK {
+		return nil, status.Errorf(codes.InvalidArgument,
+			"only one of volgroup or vgpattern may be set, but both were provided")
+	}
 
-	vgPattern := m["vgpattern"]
-	volGroup, ok := m["volgroup"]
-	if ok {
+	// for ensuring backward compatibility, if volgroup is provided we derive an
+	// exact-match vgpattern from it.
+	if volGroupOK {
 		vgPattern = fmt.Sprintf("^%v$", volGroup)
 	}
 
