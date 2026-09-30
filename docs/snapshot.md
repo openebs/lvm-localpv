@@ -95,7 +95,7 @@ $ kubectl apply -f lvmsnapshot.yaml
 volumesnapshot.snapshot.storage.k8s.io/lvm-localpv-snap created
 ```
 
-4. Please note that you have to create the snapshot in the same namespace where the PVC is created. Check the created snapshot resource, make sure readyToUsefield is true, before using this snapshot for any purpose. 
+4. Please note that you have to create the snapshot in the same namespace where the PVC is created. Check the created snapshot resource, make sure readyToUsefield is true, before using this snapshot for any purpose.
 ```bash
 $ kubectl get volumesnapshot
 NAME               READYTOUSE   SOURCEPVC    SOURCESNAPSHOTCONTENT   RESTORESIZE   SNAPSHOTCLASS     SNAPSHOTCONTENT                                    CREATIONTIME   AGE
