@@ -11,7 +11,7 @@ Following matrix shows standard storageclass parameters for lvm-localpv
     <th> Development Status </th>
     <th> E2E Coverage </th>
   </tr>
-  
+
   <tr>
     <td rowspan=2> <a href="#allowvolumeexpansion-optional"> allowVolumeExpansion </a> </td>
     <td> true </td>
@@ -208,7 +208,7 @@ LocalPV-LVM storageclass supports various parameters for different use cases. Fo
 - #### vgpattern (*must* parameter if volgroup is not provided, otherwise optional)
 
   vgpattern specifies the regular expression for the volume groups on node from which the volumes can be created. The *vgpattern* is the must argument if `volgroup` parameter is not provided in the storageclass. Here, in this case the driver will pick the volume groups matching the vgpattern with enough free capacity to accomodate the volume and will use the one which has largest capacity available for provisioning the volume. More information about vgpattern workflow
-  is available [here](../design/lvm/storageclass-parameters/vg_pattern.md). 
+  is available [here](../design/lvm/storageclass-parameters/vg_pattern.md).
 
   ```yaml
   apiVersion: storage.k8s.io/v1

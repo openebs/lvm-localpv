@@ -1,5 +1,5 @@
 ## Manage FSGroup using pod security context and CSI driver spec
-	
+
 We can manage permission change of volume using fsGroup. This helps non root process to access the volume. CSI driver spec and Pod security context helps us on when to apply permission change using fsGroup.
 
 ## External links describing this feature
@@ -81,21 +81,21 @@ spec:
 
 ## Test plans
 Test plans are combination of
-- CSIDriver.Spec.FSGroupPolicy 
+- CSIDriver.Spec.FSGroupPolicy
   - File
   - None
   - ReadWriteOnceWithFSType
-- PersistentVolumeClaim.Status.AccessModes 
+- PersistentVolumeClaim.Status.AccessModes
   - ReadWriteOnce
   - ReadOnlyMany
   - ReadWriteMany
 
 LVM CSI driver supports only ReadWriteOnly access mode so updated combination
-- CSIDriver.Spec.FSGroupPolicy 
+- CSIDriver.Spec.FSGroupPolicy
   - File
   - None
   - ReadWriteOnceWithFSType
-- PersistentVolumeClaim.Status.AccessModes 
+- PersistentVolumeClaim.Status.AccessModes
   - ReadWriteOnce
 
 `FSGroupPolicy` `File` and `ReadWriteOnceWithFSType` are equal for accesstype `ReadWriteOnce`.
