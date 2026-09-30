@@ -38,7 +38,7 @@ modprobe dm_thin_pool
 ### Extend the Thin Pool size
 
 Thin-pools are just a logical volume, so if we need to extend the size of thin-pool
-we can use the same command like, we have used for logical volumes extend, but we 
+we can use the same command like, we have used for logical volumes extend, but we
 can not reduce the size of thin-pool.
 
 ```
@@ -79,14 +79,14 @@ across the nodes to use the auto extend threshold feature.
    lvmvg_thinpool lvmvg twi-aotz-- 2.07g                       0.00   11.52                            monitored
    ```
 
-2. Editing the settings in the `/etc/lvm/lvm.conf` can allow auto growth of the thin 
+2. Editing the settings in the `/etc/lvm/lvm.conf` can allow auto growth of the thin
 pool when required. By default, the threshold is 100% which means that the pool
-will not grow. If we set this to, 75%, the Thin Pool will autoextend when the 
+will not grow. If we set this to, 75%, the Thin Pool will autoextend when the
 pool is 75% full. It will increase by the default percentage of 20% if the value
 is not changed. We can see these settings using the command grep against the file.
 
    ```
-   $ grep -E ‘^\s*thin_pool_auto’ /etc/lvm/lvm.conf 
+   $ grep -E ‘^\s*thin_pool_auto’ /etc/lvm/lvm.conf
    thin_pool_autoextend_threshold = 100
    thin_pool_autoextend_percent = 20
    ```
