@@ -76,7 +76,7 @@ parameters:
 provisioner: local.csi.openebs.io
 ```
 
-Check the doc on [storageclasses](docs/storageclasses.md) to know all the supported parameters for LocalPV-LVM
+Check the doc on [storageclasses](./storageclasses.md) to know all the supported parameters for LocalPV-LVM
 
 ##### VolumeGroup Availability
 
