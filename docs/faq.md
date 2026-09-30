@@ -3,7 +3,7 @@
 To add custom topology key:
 * Label the nodes with the required key and value.
 * Set env variables in the LVM driver daemonset yaml(openebs-lvm-localpv-node), if already deployed, you can edit the daemonSet directly.
-* "openebs.io/nodename" has been added as default topology key. 
+* "openebs.io/nodename" has been added as default topology key.
 * Create storageclass with above specific labels keys.
 
 
