@@ -1,0 +1,1 @@
+make the controller Deployment own CSIStorageCapacity objects so capacity keeps updating after rollouts

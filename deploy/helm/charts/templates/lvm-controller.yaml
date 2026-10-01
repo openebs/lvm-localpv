@@ -97,6 +97,7 @@ spec:
             - "--leader-election"
             {{- end }}
             - "--enable-capacity={{ .Values.storageCapacity }}"
+            - "--capacity-ownerref-level=2"
             - "--extra-create-metadata=true"
             - "--default-fstype=ext4"
           env:
