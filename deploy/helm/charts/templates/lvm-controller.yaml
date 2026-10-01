@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ template "lvmlocalpv.fullname" . }}-controller
+  namespace: {{ .Release.Namespace }}
   {{- with .Values.lvmController.annotations }}
   annotations: {{ toYaml . | nindent 4 }}
   {{- end }}
