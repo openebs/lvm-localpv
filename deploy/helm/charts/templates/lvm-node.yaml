@@ -13,9 +13,7 @@ spec:
     matchLabels:
       {{- include "lvmlocalpv.lvmNode.matchLabels" . | nindent 6 }}
   updateStrategy:
-    rollingUpdate:
-      maxUnavailable: 100%
-    type: RollingUpdate
+    {{- toYaml .Values.lvmNode.updateStrategy | nindent 4 }}
   template:
     metadata:
       {{- with .Values.lvmNode.podAnnotations }}
