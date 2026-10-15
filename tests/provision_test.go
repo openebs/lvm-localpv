@@ -17,13 +17,15 @@ limitations under the License.
 package tests
 
 import (
-	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 	storagev1 "k8s.io/api/storage/v1"
 )
+
+// user created thinpool in VOLGROUP, used to test thinPoolName parameter.
+const customThinPool = "custompool"
 
 var _ = Describe("[lvmpv] TEST VOLUME PROVISIONING", func() {
 	Context("App is deployed with lvm driver", func() {
@@ -32,6 +34,7 @@ var _ = Describe("[lvmpv] TEST VOLUME PROVISIONING", func() {
 		It("Running volume/snapshot Capacity Tests", capacityTest)
 		It("Running thin snapshot restore Tests", thinSnapshotRestoreToNewThinVolume)
 		It("Running volume Deletion Tests", volumeDeletionTest)
+		It("Running custom thinpool Tests", customThinPoolTest)
 	})
 })
 
@@ -396,20 +399,6 @@ func volumeCreationTest() {
 	By("###Running shared volume for two app pods on same node test###", sharedVolumeTest)
 }
 
-// thinPoolChunkSize is the chunk size, in KiB, that the node agent is given
-// with --thin-pool-create-args=--chunksize --thin-pool-create-args=128k when the e2e cluster is set up.
-const thinPoolChunkSize = "128.00"
-
-// verifyThinPoolChunkSize checks that the thin pool the driver created uses the
-// chunk size from the node's thinpool create args.
-func verifyThinPoolChunkSize(vg string, thinpool string) {
-	stdout, stderr, err := execAtLocal("sudo", nil,
-		"lvs", "--noheadings", "--nosuffix", "--units", "k", "-o", "chunk_size", vg+"/"+thinpool)
-	gomega.Expect(err).ShouldNot(gomega.HaveOccurred(), "lvs failed: %s", string(stderr))
-	gomega.Expect(strings.TrimSpace(string(stdout))).To(gomega.Equal(thinPoolChunkSize),
-		"thin pool was not created with the thinpool create args")
-}
-
 func volumeDeletionTest() {
 	device := setupVg(40, "lvmvg")
 	defer cleanupVg(device, "lvmvg")
@@ -420,7 +409,10 @@ func volumeDeletionTest() {
 	By("Verifying LVMVolume object to be Ready")
 	VerifyLVMVolume(true, "", pvcObj)
 	By("Verifying the thin pool was created with the thinpool create args", func() {
-		verifyThinPoolChunkSize("lvmvg", "lvmvg_thinpool")
+		VerifyThinPoolChunkSize("lvmvg", "lvmvg_thinpool")
+	})
+	By("Verifying the driver created thin pool is tagged as managed", func() {
+		VerifyThinPoolManagedTag("lvmvg", "lvmvg_thinpool", true)
 	})
 	By("Creating and verifying another PVC bound status")
 	createAndVerifyBlockPVCId(true, "2")
@@ -490,5 +482,28 @@ func thinSnapshotRestoreToNewThinVolume() {
 	deleteAppAndPvc(appNames, pvcName)
 	By("Delete restored app and pvc")
 	deleteAppAndPvc(restoreAppNames, restorePvcObj.Name)
+	By("Deleting thinProvision storage class", deleteStorageClass)
+}
+
+// customThinPoolTest provisions a thin volume on a user created thin pool and
+// verifies that the pool is not removed when its last volume is deleted.
+func customThinPoolTest() {
+	device := setupVg(40, "lvmvg")
+	defer cleanupVg(device, "lvmvg")
+	By("Creating the custom thinpool", func() { createThinPool("lvmvg", customThinPool, "10G") })
+	By("Creating thinProvision storage class with thinPoolName")
+	createCustomThinPoolStorageClass(customThinPool)
+	By("Creating and verifying PVC bound status")
+	createAndVerifyBlockPVCId(true, "1")
+	By("Verifying LVMVolume object to be Ready")
+	VerifyLVMVolume(true, "", pvcObj)
+	By("Verifying the volume is created on the custom thinpool")
+	VerifyVolumeThinPool(customThinPool)
+	By("Verifying the user created thinpool is not tagged as managed", func() {
+		VerifyThinPoolManagedTag("lvmvg", customThinPool, false)
+	})
+	deleteAndVerifyPVC(pvcName + "-1")
+	By("Verifying that the custom thinpool is not deleted after the last volume deletion")
+	VerifyThinPoolDeletion("lvmvg", customThinPool, false)
 	By("Deleting thinProvision storage class", deleteStorageClass)
 }

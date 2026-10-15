@@ -126,6 +126,13 @@ Following matrix shows standard storageclass parameters for lvm-localpv
   </tr>
 
   <tr>
+    <td> <a href="https://github.com/openebs/lvm-localpv/blob/HEAD/docs/thin_provision.md#using-an-existing-thin-pool"> thinPoolName </td>
+    <td> yes </td>
+    <td> Supported </td>
+    <td> Pending </td>
+  </tr>
+
+  <tr>
     <td> <a href="#formatoptions-optional"> formatOptions </td>
     <td> yes </td>
     <td> Supported </td>
