@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -268,6 +269,12 @@ func (c *VolController) getVgPriorityList(vol *apis.LVMVolume) ([]apis.VolumeGro
 	filteredVgs := make([]apis.VolumeGroup, 0)
 	for _, vg := range vgs {
 		if !re.MatchString(vg.Name) {
+			continue
+		}
+		// a specific thin pool is requested: it must exist in the vg, except
+		// for the default "<vg>_thinpool", which is created on demand
+		if vol.Spec.ThinPoolName != "" && vol.Spec.ThinPoolName != vg.Name+"_thinpool" && !slices.ContainsFunc(vg.ThinPools,
+			func(p apis.ThinPool) bool { return p.Name == vol.Spec.ThinPoolName }) {
 			continue
 		}
 		// skip the vgs capacity comparison in case of thin provision enable volume
