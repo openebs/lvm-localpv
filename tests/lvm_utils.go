@@ -253,6 +253,34 @@ func VerifyThinpoolExtend() {
 		Should(gomega.BeTrue())
 }
 
+// Creates a thinpool of the given size in the vg, outside of the driver.
+func createThinPool(vg string, name string, size string) {
+	ginkgo.By("Creating thinpool")
+	args := []string{
+		"lvcreate",
+		"-T",
+		"-L", size,
+		vg + "/" + name,
+		"-y",
+	}
+	_, _, err := execAtLocal("sudo", nil, args...)
+	gomega.Expect(err).To(gomega.BeNil(), "thinpool create failed")
+}
+
+// Verify that the volume of the current pvc is created on the given thinpool.
+func VerifyVolumeThinPool(thinpool string) {
+	lv := VOLGROUP + "/" + pvcObj.Spec.VolumeName
+	args := []string{
+		"lvs",
+		"--noheadings",
+		"--options", "pool_lv",
+		lv,
+	}
+	stdout, _, err := execAtLocal("sudo", nil, args...)
+	gomega.Expect(err).ShouldNot(gomega.HaveOccurred(), "display LV")
+	gomega.Expect(strings.TrimSpace(string(stdout))).To(gomega.Equal(thinpool), "volume thinpool")
+}
+
 // Verify if thinpool is deleted or not as per input expectation.
 func VerifyThinPoolDeletion(vg string, thinpool string, expect_deleted bool) {
 	thinpool_lv := vg + "/" + thinpool
@@ -288,4 +316,34 @@ func setThinPoolKeepTag(vg string, thinpool string, add bool) {
 	}
 	_, _, err := execAtLocal("sudo", nil, args...)
 	gomega.Expect(err).To(gomega.BeNil(), "lvchange tag on thinpool failed")
+}
+
+// thinPoolChunkSize is the chunk size, in KiB, that the node agent is given
+// with --thin-pool-create-args=--chunksize --thin-pool-create-args=128k when the e2e cluster is set up.
+const thinPoolChunkSize = "128.00"
+
+// VerifyThinPoolChunkSize checks that the thin pool the driver created uses the
+// chunk size from the node's thinpool create args.
+func VerifyThinPoolChunkSize(vg string, thinpool string) {
+	stdout, stderr, err := execAtLocal("sudo", nil,
+		"lvs", "--noheadings", "--nosuffix", "--units", "k", "-o", "chunk_size", vg+"/"+thinpool)
+	gomega.Expect(err).ShouldNot(gomega.HaveOccurred(), "lvs failed: %s", string(stderr))
+	gomega.Expect(strings.TrimSpace(string(stdout))).To(gomega.Equal(thinPoolChunkSize),
+		"thin pool was not created with the thinpool create args")
+}
+
+// VerifyThinPoolManagedTag checks whether the thin pool carries the tag that
+// marks it as created by the driver.
+func VerifyThinPoolManagedTag(vg string, thinpool string, expectTagged bool) {
+	stdout, stderr, err := execAtLocal("sudo", nil,
+		"lvs", "--noheadings", "-o", "lv_tags", vg+"/"+thinpool)
+	gomega.Expect(err).ShouldNot(gomega.HaveOccurred(), "lvs failed: %s", string(stderr))
+	tags := strings.Split(strings.TrimSpace(string(stdout)), ",")
+	if expectTagged {
+		gomega.Expect(tags).To(gomega.ContainElement(MANAGED_THINPOOL_TAG),
+			"driver created thin pool is not tagged as managed")
+	} else {
+		gomega.Expect(tags).NotTo(gomega.ContainElement(MANAGED_THINPOOL_TAG),
+			"user created thin pool must not be tagged as managed")
+	}
 }

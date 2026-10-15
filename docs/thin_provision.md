@@ -69,6 +69,40 @@ To allow garbage collection again, remove the tag:
 $ lvchange --deltag openebs.io/resource-policy=keep lvmvg/lvmvg_thinpool
 ```
 
+### Using an existing thin pool
+
+By default, thin volumes are created on a driver managed thin pool named `<volgroup>_thinpool`,
+which is created with the first thin volume and removed with the last one. To create volumes on
+a thin pool that you manage yourself, set `thinPoolName` along with `thinProvision: "yes"`.
+
+```
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+ name: lvm-sc
+provisioner: local.csi.openebs.io
+parameters:
+  volgroup: "lvmvg"
+  thinProvision: "yes"
+  thinPoolName: "mypool"
+```
+
+- The thinpool must already exist in the volume group (`lvcreate -L 10G -T lvmvg/mypool`). The driver
+  only creates thin volumes on it and never creates or removes it.
+- Only nodes having a volume group that matches `volgroup`/`vgpattern` and contains the pool are
+  considered for scheduling. If there is no such node, the provisioning fails and no `LVMVolume` is created.
+- `thinPoolName` is rejected if `thinProvision` is not "yes".
+- Volumes restored from a snapshot always stay in the pool of the snapshot, so a StorageClass used for
+  restores must not set `thinPoolName`; the restore request is rejected otherwise.
+
+> **Note:** A thin pool you created yourself is only used when it is named in `thinPoolName`.
+> If `thinPoolName` is not set, the driver uses its own `<volgroup>_thinpool`, creating it if missing.
+>
+> - Setting `thinPoolName` to `<volgroup>_thinpool` is the same as not setting it.
+> - Any other pool is never created or removed by the driver, even after its last thin volume is deleted.
+> - The default pool is sized from the free space in the volume group. If your pools already use
+>   most of the space, creating the default pool can fail with an `lvcreate` error.
+
 ### Extend the Thin Pool size
 
 Thin-pools are just a logical volume, so if we need to extend the size of thin-pool
