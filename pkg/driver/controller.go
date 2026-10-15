@@ -346,6 +346,11 @@ func CreateLVMVolume(ctx context.Context, req *csi.CreateVolumeRequest,
 		}
 
 		if len(nmap) == 0 {
+			if params.ThinPoolName != "" {
+				return nil, status.Errorf(codes.ResourceExhausted,
+					"Could not find suitable node to schedule the PVC: no volume group matching %q has thin pool %q",
+					params.VgPattern.String(), params.ThinPoolName)
+			}
 			return nil, status.Error(codes.ResourceExhausted, "Could not find suitable node to schedule the PVC")
 		}
 
@@ -380,6 +385,7 @@ func CreateLVMVolume(ctx context.Context, req *csi.CreateVolumeRequest,
 		WithVolumeStatus(lvm.LVMStatusPending).
 		WithShared(params.Shared).
 		WithThinProvision(params.ThinProvision).
+		WithThinPoolName(params.ThinPoolName).
 		WithQoS(QoSParamsCreateVolume(qos)).
 		Build()
 
@@ -969,7 +975,10 @@ func (cs *controller) GetCapacity(
 			if !params.VgPattern.MatchString(vg.Name) {
 				continue
 			}
-			vgThinPoolName := fmt.Sprintf("%s_thinpool", vg.Name)
+			if !vgHasThinPool(params, vg) {
+				continue
+			}
+			vgThinPoolName := getThinPoolName(params, vg.Name)
 			freeCapacity := vg.Free.Value()
 			if params.ThinProvision == lvm.YES {
 				for _, pool := range vg.ThinPools {

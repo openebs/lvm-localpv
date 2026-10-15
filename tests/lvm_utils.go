@@ -253,6 +253,34 @@ func VerifyThinpoolExtend() {
 		Should(gomega.BeTrue())
 }
 
+// Creates a thinpool of the given size in the vg, outside of the driver.
+func createThinPool(vg string, name string, size string) {
+	ginkgo.By("Creating thinpool")
+	args := []string{
+		"lvcreate",
+		"-T",
+		"-L", size,
+		vg + "/" + name,
+		"-y",
+	}
+	_, _, err := execAtLocal("sudo", nil, args...)
+	gomega.Expect(err).To(gomega.BeNil(), "thinpool create failed")
+}
+
+// Verify that the volume of the current pvc is created on the given thinpool.
+func VerifyVolumeThinPool(thinpool string) {
+	lv := VOLGROUP + "/" + pvcObj.Spec.VolumeName
+	args := []string{
+		"lvs",
+		"--noheadings",
+		"--options", "pool_lv",
+		lv,
+	}
+	stdout, _, err := execAtLocal("sudo", nil, args...)
+	gomega.Expect(err).ShouldNot(gomega.HaveOccurred(), "display LV")
+	gomega.Expect(strings.TrimSpace(string(stdout))).To(gomega.Equal(thinpool), "volume thinpool")
+}
+
 // Verify if thinpool is deleted or not as per input expectation.
 func VerifyThinPoolDeletion(vg string, thinpool string, expect_deleted bool) {
 	thinpool_lv := vg + "/" + thinpool
