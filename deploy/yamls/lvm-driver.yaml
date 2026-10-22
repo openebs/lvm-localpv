@@ -908,6 +908,9 @@ rules:
   - apiGroups: [""]
     resources: ["pods"]
     verbs: ["get", "list", "watch", "update", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get"]
   - apiGroups: ["local.openebs.io"]
     resources: ["lvmvolumes", "lvmsnapshots", "lvmnodes"]
     verbs: ["*"]
@@ -1017,6 +1020,7 @@ spec:
             - "--leader-election"
             - "--extra-create-metadata=true"
             - "--enable-capacity=true"
+            - "--capacity-ownerref-level=2"
             - "--default-fstype=ext4"
           env:
             - name: ADDRESS
