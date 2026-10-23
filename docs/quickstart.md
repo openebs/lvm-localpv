@@ -31,7 +31,7 @@ sudo vgcreate lvmvg /dev/loop0       ## here lvmvg is the volume group name to b
 
 Install the latest release of OpenEBS LVM2 LocalPV-LVM driver by running the following command. Note: All nodes must be running the same version of LocalPV-LVM, LMV2, device-mapper & dm-snapshot.
 
-**NOTE:** Installation using operator YAMLs is not the supported way any longer.  
+**NOTE:** Installation using operator YAMLs is not the supported way any longer.
 We can install the latest release of OpenEBS LVM driver by running the following command:
 
 ```bash
@@ -76,7 +76,7 @@ parameters:
 provisioner: local.csi.openebs.io
 ```
 
-Check the doc on [storageclasses](docs/storageclasses.md) to know all the supported parameters for LocalPV-LVM
+Check the doc on [storageclasses](./storageclasses.md) to know all the supported parameters for LocalPV-LVM
 
 ##### VolumeGroup Availability
 
