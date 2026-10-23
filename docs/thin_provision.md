@@ -35,6 +35,45 @@ If modules are not loaded, then execute the following command to load the module
 modprobe dm_thin_pool
 ```
 
+### Using an existing thin pool
+
+By default, thin volumes are created on a driver managed thin pool named `<volgroup>_thinpool`,
+which is created with the first thin volume and removed with the last one (only if the driver created it). To create volumes on
+a thin pool that you manage yourself, set `thinPoolName` along with `thinProvision: "yes"`.
+
+```
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+ name: lvm-sc
+provisioner: local.csi.openebs.io
+parameters:
+  volgroup: "lvmvg"
+  thinProvision: "yes"
+  thinPoolName: "mypool"
+```
+
+- The thin pool must already exist in the volume group (`lvcreate -L 10G -T lvmvg/mypool`). The driver
+  only creates thin volumes on it and never creates or removes it.
+- Only nodes having a volume group that matches `volgroup`/`vgpattern` and contains the pool are
+  considered for scheduling. If there is no such node, the provisioning fails and no `LVMVolume` is created.
+- `thinPoolName` is rejected if `thinProvision` is not "yes".
+- Volumes restored from a snapshot stay in the pool of the snapshot.
+
+> **Note:** A thin pool you created yourself is only used when it is named in `thinPoolName`.
+> If `thinPoolName` is not set, the driver ignores your pools and creates its own
+> `<volgroup>_thinpool` next to them, as it always has.
+>
+> - Setting `thinPoolName` to `<volgroup>_thinpool` is allowed and is the same as not setting it: the
+>   pool is created on demand if missing.
+> - The driver tags the pools it creates with the LVM tag `openebs-lvm-managed` and removes a pool
+>   when its last thin volume is deleted only if it has this tag. A pool you created yourself is never
+>   removed, even if it is named `<volgroup>_thinpool`.
+> - Default pools created by an older driver version have no tag and are not removed automatically.
+>   To keep the old cleanup for them, run `lvchange --addtag openebs-lvm-managed <volgroup>/<volgroup>_thinpool`.
+> - The default pool is sized from the free space in the volume group. If your pools already use
+>   most of the space, creating the default pool can fail with an `lvcreate` error.
+
 ### Extend the Thin Pool size
 
 Thin-pools are just a logical volume, so if we need to extend the size of thin-pool

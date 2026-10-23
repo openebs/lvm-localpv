@@ -25,6 +25,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -70,6 +71,10 @@ const (
 
 	PVList = "pvs"
 	PVScan = "pvscan"
+
+	// ManagedThinPoolTag is set on thin pools created by the driver, so that
+	// only those are removed when their last thin volume is deleted.
+	ManagedThinPoolTag = "openebs-lvm-managed"
 
 	YES        = "yes"
 	LVThinPool = "thin-pool"
@@ -225,6 +230,21 @@ func newExecError(output []byte, err error) error {
 	}
 }
 
+// GetThinPoolName returns the thin pool the volume is created on: the one
+// requested in the storage class, else the default "<volgroup>_thinpool".
+func GetThinPoolName(vol *apis.LVMVolume) string {
+	if vol.Spec.ThinPoolName != "" {
+		return vol.Spec.ThinPoolName
+	}
+	return vol.Spec.VolGroup + "_thinpool"
+}
+
+// isDefaultThinPool returns true if the volume uses the driver managed thin
+// pool, i.e. no pool was requested or the requested one is "<volgroup>_thinpool".
+func isDefaultThinPool(vol *apis.LVMVolume) bool {
+	return vol.Spec.ThinPoolName == "" || vol.Spec.ThinPoolName == vol.Spec.VolGroup+"_thinpool"
+}
+
 // builldLVMCreateArgs returns lvcreate command for the volume
 func buildLVMCreateArgs(vol *apis.LVMVolume) []string {
 	var LVMVolArg []string
@@ -232,13 +252,15 @@ func buildLVMCreateArgs(vol *apis.LVMVolume) []string {
 	volume := vol.Name
 	size := vol.Spec.Capacity + "b"
 	// thinpool name required for thinProvision volumes
-	pool := vol.Spec.VolGroup + "_thinpool"
+	pool := GetThinPoolName(vol)
 
 	if len(vol.Spec.Capacity) != 0 {
 		// check if thin pool exists for given volumegroup requested thin volume
 		if strings.TrimSpace(vol.Spec.ThinProvision) != YES {
 			LVMVolArg = append(LVMVolArg, "-L", size)
-		} else if !lvThinExists(vol.Spec.VolGroup, pool) {
+		} else if isDefaultThinPool(vol) && !lvThinExists(vol.Spec.VolGroup, pool) {
+			// the pool is created only for the default (driver managed) pool;
+			// any other user specified pool must already exist.
 			// thinpool size can't be equal or greater than actual volumegroup size
 			LVMVolArg = append(LVMVolArg, "-L", getThinPoolSize(vol.Spec.VolGroup, vol.Spec.Capacity))
 		}
@@ -402,6 +424,9 @@ func CreateVolume(vol *apis.LVMVolume) error {
 		klog.Infof("lvm restore: created restored volume %s from thin snapshot %s as source", volume, snapName)
 		return nil
 	}
+	// the default thin pool is created along with its first thin volume
+	createsPool := strings.TrimSpace(vol.Spec.ThinProvision) == YES && isDefaultThinPool(vol) &&
+		!lvThinExists(vol.Spec.VolGroup, GetThinPoolName(vol))
 	args := buildLVMCreateArgs(vol)
 	out, _, err := RunCommandSplit(LVCreate, args...)
 
@@ -413,6 +438,15 @@ func CreateVolume(vol *apis.LVMVolume) error {
 		return err
 	}
 	klog.Infof("lvm: created volume %s", volume)
+
+	if createsPool {
+		// mark the pool as ours. On failure the pool is just never auto removed.
+		pool := vol.Spec.VolGroup + "/" + GetThinPoolName(vol)
+		if out, _, err := RunCommandSplit(LVChange, "--addtag", ManagedThinPoolTag, pool); err != nil {
+			klog.Warningf("lvm: could not tag thinpool %s as managed, it will not be removed automatically: %v: %s",
+				pool, err, string(out))
+		}
+	}
 
 	return nil
 }
@@ -458,8 +492,11 @@ func DestroyVolume(vol *apis.LVMVolume) error {
 	// If the destroyed volume was a thinvol, then check if it was the
 	// last one on the corresponding thinpool. If yes, then destroy the
 	// thinpool too.
-	if is_thin {
-		thinpool_lv := vgname + "_thinpool"
+	// only a thin pool created by the driver (tagged at creation) is cleaned
+	// up. A pool created by the user is never removed, even when it has the
+	// default name.
+	if is_thin && isManagedThinPool(vgname, GetThinPoolName(vol)) {
+		thinpool_lv := GetThinPoolName(vol)
 		can_destroy := checkThinPoolEmpty(thinpool_lv)
 		name := vgname + "/" + thinpool_lv
 		klog.Infof("Destroy: %v. thinpool: %s", can_destroy, name)
@@ -1451,6 +1488,18 @@ func decodePvsJSON(raw []byte) ([]PhysicalVolume, error) {
 	}
 	return pvs, nil
 }
+
+// isManagedThinPool returns true if the thin pool was created by the driver,
+// i.e. it carries ManagedThinPoolTag.
+func isManagedThinPool(vg string, name string) bool {
+	out, _, err := RunCommandSplit(LVList, vg+"/"+name, "--noheadings", "-o", "lv_tags")
+	if err != nil {
+		klog.Errorf("failed to get tags of thinpool %s/%s: %v", vg, name, err)
+		return false
+	}
+	return slices.Contains(strings.Split(strings.TrimSpace(string(out)), ","), ManagedThinPoolTag)
+}
+
 
 // lvThinExists verifies if thin pool/volume already exists for given volumegroup
 func lvThinExists(vg string, name string) bool {
