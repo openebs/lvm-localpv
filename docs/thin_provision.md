@@ -35,6 +35,17 @@ If modules are not loaded, then execute the following command to load the module
 modprobe dm_thin_pool
 ```
 
+### Thin pool creation arguments
+
+The driver creates the thin pool of a volume group, named `<volgroup>_thinpool`, when the first thin volume is provisioned on it. To pass extra `lvcreate` arguments to that creation, set `lvmNode.thinpoolCreateArgs` in the helm chart, which is given to the node agent as `--thinpool-create-args`:
+
+```yaml
+lvmNode:
+  thinpoolCreateArgs: "--chunksize 128k --poolmetadatasize 1G"
+```
+
+The chart sets no arguments, so the thin pool is created with the `lvcreate` defaults unless you set this. The arguments are used only when the driver creates a pool, so they do not change a thin pool that already exists.
+
 ### Extend the Thin Pool size
 
 Thin-pools are just a logical volume, so if we need to extend the size of thin-pool
