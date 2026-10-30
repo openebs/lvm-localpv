@@ -17,6 +17,7 @@ limitations under the License.
 package tests
 
 import (
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -395,6 +396,20 @@ func volumeCreationTest() {
 	By("###Running shared volume for two app pods on same node test###", sharedVolumeTest)
 }
 
+// thinPoolChunkSize is the chunk size, in KiB, that the node agent is given
+// with --thinpool-create-args="--chunksize 128k" when the e2e cluster is set up.
+const thinPoolChunkSize = "128.00"
+
+// verifyThinPoolChunkSize checks that the thin pool the driver created uses the
+// chunk size from the node's thinpool create args.
+func verifyThinPoolChunkSize(vg string, thinpool string) {
+	stdout, stderr, err := execAtLocal("sudo", nil,
+		"lvs", "--noheadings", "--nosuffix", "--units", "k", "-o", "chunk_size", vg+"/"+thinpool)
+	gomega.Expect(err).ShouldNot(gomega.HaveOccurred(), "lvs failed: %s", string(stderr))
+	gomega.Expect(strings.TrimSpace(string(stdout))).To(gomega.Equal(thinPoolChunkSize),
+		"thin pool was not created with the thinpool create args")
+}
+
 func volumeDeletionTest() {
 	device := setupVg(40, "lvmvg")
 	defer cleanupVg(device, "lvmvg")
@@ -404,6 +419,9 @@ func volumeDeletionTest() {
 	createAndVerifyBlockPVCId(true, "1")
 	By("Verifying LVMVolume object to be Ready")
 	VerifyLVMVolume(true, "", pvcObj)
+	By("Verifying the thin pool was created with the thinpool create args", func() {
+		verifyThinPoolChunkSize("lvmvg", "lvmvg_thinpool")
+	})
 	By("Creating and verifying another PVC bound status")
 	createAndVerifyBlockPVCId(true, "2")
 	By("Verifying LVMVolume object to be Ready")
