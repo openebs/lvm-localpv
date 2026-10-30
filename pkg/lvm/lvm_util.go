@@ -73,6 +73,10 @@ const (
 
 	YES        = "yes"
 	LVThinPool = "thin-pool"
+	// ThinPoolDoNotDeleteTag is the LVM tag which, when set on the
+	// <vg>_thinpool LV, prevents the driver from garbage collecting the pool
+	// once its last thin volume is removed.
+	ThinPoolDoNotDeleteTag = "do-not-delete"
 )
 
 var (
@@ -460,8 +464,18 @@ func DestroyVolume(vol *apis.LVMVolume) error {
 	// thinpool too.
 	if is_thin {
 		thinpool_lv := vgname + "_thinpool"
-		can_destroy := checkThinPoolEmpty(thinpool_lv)
 		name := vgname + "/" + thinpool_lv
+		protected, err := thinPoolHasDoNotDeleteTag(name)
+		if err != nil {
+			// can't tell whether the pool is protected, so leave it alone
+			klog.Errorf("lvm: skipping thinpool %s garbage collection: %v", name, err)
+			return nil
+		}
+		if protected {
+			klog.Infof("lvm: thinpool %s is tagged %q, skipping garbage collection", name, ThinPoolDoNotDeleteTag)
+			return nil
+		}
+		can_destroy := checkThinPoolEmpty(thinpool_lv)
 		klog.Infof("Destroy: %v. thinpool: %s", can_destroy, name)
 		// Addressing TOCTOU vulnerability. A new thin lv might get created after we checked above,
 		// and before we issue remove. The new lv will get destroyed in such case. Hence,
@@ -612,6 +626,21 @@ func DestroyVolume(vol *apis.LVMVolume) error {
 	}
 
 	return nil
+}
+
+// thinPoolHasDoNotDeleteTag returns true if the given thinpool (vg/lv) carries
+// the do-not-delete LVM tag.
+func thinPoolHasDoNotDeleteTag(name string) (bool, error) {
+	out, errOut, err := RunCommandSplit(LVList, "--noheadings", "-o", "lv_tags", name)
+	if err != nil {
+		return false, fmt.Errorf("failed to get tags of %s: %v, output: %s", name, err, string(errOut))
+	}
+	for _, tag := range strings.Split(strings.TrimSpace(string(out)), ",") {
+		if strings.TrimSpace(tag) == ThinPoolDoNotDeleteTag {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // If there is no thin LV on the thinpool, return true.
