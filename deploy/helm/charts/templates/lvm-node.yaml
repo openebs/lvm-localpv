@@ -87,6 +87,9 @@ spec:
             {{- if .Values.lvmNode.kubeletDir }}
             - "--kubelet-dir={{ include "lvmlocalpv.lvmNode.kubeletDir" . }}"
             {{- end }}
+            {{- range .Values.lvmNode.thinPoolCreateArgs }}
+            - {{ printf "--thin-pool-create-args=%s" . | quote }}
+            {{- end }}
             {{- range $fsType, $options := .Values.lvmNode.defaultFormatOptions }}
             {{- if $options }}
             - "--default-format-options={{ $fsType }}={{ $options }}"

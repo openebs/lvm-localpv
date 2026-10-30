@@ -146,6 +146,13 @@ func main() {
 			"does not set formatOptions. Can be given once per filesystem",
 	)
 
+	cmd.PersistentFlags().StringArrayVar(
+		&config.ThinPoolCreateArgs, "thin-pool-create-args", nil,
+		"Extra lvcreate argument used when the driver creates the thin pool of a volume group. "+
+			"Given once per argument, for example --thin-pool-create-args=--chunksize "+
+			"--thin-pool-create-args=128k",
+	)
+
 	err := cmd.Execute()
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "%s", err.Error())
@@ -185,6 +192,12 @@ func run(config *config.Config) {
 
 	if len(config.DefaultFormatOptions) > 0 {
 		klog.Infof("Default format options: %v", config.DefaultFormatOptions)
+	}
+
+	lvm.SetThinPoolCreateArgs(config.ThinPoolCreateArgs)
+
+	if len(config.ThinPoolCreateArgs) > 0 {
+		klog.Infof("Thin pool create args: %q", config.ThinPoolCreateArgs)
 	}
 
 	err := driver.New(config).Run()

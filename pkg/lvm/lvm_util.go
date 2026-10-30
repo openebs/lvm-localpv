@@ -231,6 +231,18 @@ func newExecError(output []byte, err error) error {
 	}
 }
 
+// thinPoolCreateArgs holds the extra lvcreate arguments used when the driver
+// creates a thin pool. It is set once, from the --thin-pool-create-args flag of
+// the node agent, and is empty unless the user asks for it.
+var thinPoolCreateArgs []string
+
+// SetThinPoolCreateArgs keeps the lvcreate arguments to use when a thin pool
+// is created by the driver. They are passed to lvcreate as given, without a
+// shell.
+func SetThinPoolCreateArgs(args []string) {
+	thinPoolCreateArgs = append([]string(nil), args...)
+}
+
 // builldLVMCreateArgs returns lvcreate command for the volume
 func buildLVMCreateArgs(vol *apis.LVMVolume) []string {
 	var LVMVolArg []string
@@ -247,6 +259,8 @@ func buildLVMCreateArgs(vol *apis.LVMVolume) []string {
 		} else if !lvThinExists(vol.Spec.VolGroup, pool) {
 			// thinpool size can't be equal or greater than actual volumegroup size
 			LVMVolArg = append(LVMVolArg, "-L", getThinPoolSize(vol.Spec.VolGroup, vol.Spec.Capacity))
+			// user supplied options apply only to the creation of the pool
+			LVMVolArg = append(LVMVolArg, thinPoolCreateArgs...)
 		}
 	}
 
