@@ -1,0 +1,1 @@
+Add extraVolumes/extraVolumeMounts to the helm chart so custom volumes like a configmap (e.g. lvm.conf) can be mounted into the plugin containers
