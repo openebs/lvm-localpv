@@ -54,6 +54,9 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
+            {{- with .Values.lvmController.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           resources:
             {{- toYaml .Values.lvmController.resources | nindent 12 }}
         {{- if .Values.lvmController.snapshotter.enabled }}
@@ -71,6 +74,9 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
+            {{- with .Values.lvmController.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           resources:
             {{- toYaml .Values.lvmController.resources | nindent 12 }}
         {{- end }}
@@ -115,6 +121,9 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
+            {{- with .Values.lvmController.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           resources:
             {{- toYaml .Values.lvmController.resources | nindent 12 }}
         - name: {{ .Values.lvmPlugin.name }}
@@ -159,11 +168,17 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
+            {{- with .Values.lvmController.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           resources:
             {{- toYaml .Values.lvmController.resources | nindent 12 }}
       volumes:
         - name: socket-dir
           emptyDir: {}
+        {{- with .Values.lvmController.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- if or .Values.global.imagePullSecrets .Values.imagePullSecrets }}
       imagePullSecrets:
       {{- include "lvmlocalpv.common.pullSecrets" . | indent 6 }}
