@@ -96,6 +96,10 @@ type Config struct {
 	// node uses when the storage class of the volume does not set
 	// formatOptions. Given once per filesystem.
 	DefaultFormatOptions []string
+
+	// ThinPoolCreateArgs holds the extra lvcreate arguments, space separated,
+	// used when this node creates the thin pool of a volume group.
+	ThinPoolCreateArgs string
 }
 
 // Default returns a new instance of config

@@ -51,6 +51,12 @@ lvmNode:
   # a filesystem, so on a cluster with nodes running older kernels give xfs
   # "-i nrext64=0".
   defaultFormatOptions: {}
+  # thinpoolCreateArgs are extra lvcreate arguments, given as one space
+  # separated string, that the node uses when it creates the thin pool of a
+  # volume group for a thin provisioned volume. They are not used for a pool
+  # that already exists. The chart sets none, for example:
+  #   thinpoolCreateArgs: "--chunksize 128k --poolmetadatasize 1G"
+  thinpoolCreateArgs: ""
   driverRegistrar:
     name: "csi-node-driver-registrar"
     image:
