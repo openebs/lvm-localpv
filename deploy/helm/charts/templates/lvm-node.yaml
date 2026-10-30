@@ -63,6 +63,9 @@ spec:
               mountPath: /plugin
             - name: registration-dir
               mountPath: /registration
+            {{- with .Values.lvmNode.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           resources:
             {{- toYaml .Values.lvmNode.resources | nindent 12 }}
         - name: {{ .Values.lvmPlugin.name }}
@@ -133,6 +136,9 @@ spec:
               # needed so that any mounts setup inside this container are
               # propagated back to the host machine.
               mountPropagation: "Bidirectional"
+            {{- with .Values.lvmNode.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           resources:
             {{- toYaml .Values.lvmNode.resources | nindent 12 }}
       volumes:
@@ -152,6 +158,9 @@ spec:
           hostPath:
             path: {{ include "lvmlocalpv.lvmNode.kubeletDir" . | quote }}
             type: Directory
+        {{- with .Values.lvmNode.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- if or .Values.global.imagePullSecrets .Values.imagePullSecrets }}
       imagePullSecrets:
       {{- include "lvmlocalpv.common.pullSecrets" . | indent 6 }}

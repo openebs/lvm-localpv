@@ -115,6 +115,8 @@ helm install openebs-lvmlocalpv openebs-lvmlocalpv/lvm-localpv --namespace opene
 | `lvmNode.nodeSelector`                              | Nodeselector for lvmnode daemonset pods                                          | `""`                                    |
 | `lvmNode.tolerations`                               | lvmnode daemonset's pod toleration values                                        | `""`                                    |
 | `lvmNode.securityContext`                           | Security context for lvmnode daemonset container                                 | `""`                                    |
+| `lvmNode.extraVolumes`                              | Extra volumes appended to the lvmnode daemonset pods, e.g. a configMap volume    | `[]`                                    |
+| `lvmNode.extraVolumeMounts`                         | Extra volumeMounts added to every lvmnode daemonset container                    | `[]`                                    |
 | `lvmController.resizer.image.registry`              | Registry for csi-resizer image                                                   | `registry.k8s.io/`                      |
 | `lvmController.resizer.image.repository`            | Image repository for csi-resizer                                                 | `sig-storage/csi-resizer`               |
 | `lvmController.resizer.image.pullPolicy`            | Image pull policy for csi-resizer                                                | `IfNotPresent`                          |
@@ -143,6 +145,8 @@ helm install openebs-lvmlocalpv openebs-lvmlocalpv/lvm-localpv --namespace opene
 | `lvmController.tolerations`                         | lvm localpv controller deployment's pod toleration values                        | `""`                                    |
 | `lvmController.topologySpreadConstraints`           | lvm localpv controller deployment's pod topologySpreadConstraints values         | `""`                                    |
 | `lvmController.securityContext`                     | Security context for lvm localpv controller deployment container                 | `""`                                    |
+| `lvmController.extraVolumes`                        | Extra volumes appended to the lvm localpv controller deployment pods, e.g. a configMap volume | `[]`                       |
+| `lvmController.extraVolumeMounts`                   | Extra volumeMounts added to every lvm localpv controller deployment container    | `[]`                                    |
 | `lvmController.podAntiAffinity.enabled`             | PodAntiAffinity for lvm localpv controller deployment                            | `false`                                    |
 | `rbac.pspEnabled`                                   | Enable PodSecurityPolicy                                                         | `false`                                 |
 | `serviceAccount.lvmNode.create`                     | Create a service account for lvmnode or not                                      | `true`                                  |

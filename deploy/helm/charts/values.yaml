@@ -82,6 +82,19 @@ lvmNode:
   tolerations: []
   securityContext: {}
   labels: {}
+  # extraVolumes are appended to the volumes of the node daemonset pods
+  # extraVolumeMounts are added to every container of the node daemonset
+  # for example, to mount a custom configmap:
+  #   extraVolumes:
+  #     - name: custom-config
+  #       configMap:
+  #         name: my-configmap
+  #   extraVolumeMounts:
+  #     - name: custom-config
+  #       mountPath: /etc/lvm-localpv
+  #       readOnly: true
+  extraVolumes: []
+  extraVolumeMounts: []
   priorityClass:
     create: true
     name: lvm-localpv-csi-node-critical
@@ -169,6 +182,19 @@ lvmController:
   tolerations: []
   topologySpreadConstraints: []
   securityContext: {}
+  # extraVolumes are appended to the volumes of the controller deployment pods
+  # extraVolumeMounts are added to every container of the controller deployment
+  # for example, to mount a custom configmap:
+  #   extraVolumes:
+  #     - name: custom-config
+  #       configMap:
+  #         name: my-configmap
+  #   extraVolumeMounts:
+  #     - name: custom-config
+  #       mountPath: /etc/lvm-localpv
+  #       readOnly: true
+  extraVolumes: []
+  extraVolumeMounts: []
   priorityClass:
     create: true
     name: lvm-localpv-csi-controller-critical
