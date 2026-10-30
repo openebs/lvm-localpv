@@ -430,6 +430,22 @@ func volumeDeletionTest() {
 	VerifyThinPoolDeletion("lvmvg", "lvmvg_thinpool", false)
 	deleteAndVerifyPVC(pvcName + "-2")
 	VerifyThinPoolDeletion("lvmvg", "lvmvg_thinpool", true)
+
+	By("###Running thinpool keep tag test###")
+	By("Creating a thin PVC, which recreates the thinpool")
+	createAndVerifyBlockPVCId(true, "3")
+	VerifyLVMVolume(true, "", pvcObj)
+	setThinPoolKeepTag("lvmvg", "lvmvg_thinpool", true)
+	deleteAndVerifyPVC(pvcName + "-3")
+	By("Thinpool tagged with resource-policy=keep must survive deletion of its last thin volume")
+	VerifyThinPoolDeletion("lvmvg", "lvmvg_thinpool", false)
+
+	By("Removing the tag, thinpool must be garbage collected again")
+	setThinPoolKeepTag("lvmvg", "lvmvg_thinpool", false)
+	createAndVerifyBlockPVCId(true, "4")
+	VerifyLVMVolume(true, "", pvcObj)
+	deleteAndVerifyPVC(pvcName + "-4")
+	VerifyThinPoolDeletion("lvmvg", "lvmvg_thinpool", true)
 }
 
 func schedulingTest() {
