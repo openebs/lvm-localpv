@@ -119,20 +119,24 @@ helm install openebs-lvmlocalpv openebs-lvmlocalpv/lvm-localpv --namespace opene
 | `lvmController.resizer.image.repository`            | Image repository for csi-resizer                                                 | `sig-storage/csi-resizer`               |
 | `lvmController.resizer.image.pullPolicy`            | Image pull policy for csi-resizer                                                | `IfNotPresent`                          |
 | `lvmController.resizer.image.tag`                   | Image tag for csi-resizer                                                        | `v2.0.0`                                |
+| `lvmController.resizer.extraArgs`                   | Additional arguments to pass to csi-resizer                                      | `[]`                                    |
 | `lvmController.snapshotter.enabled`                 | Enable the csi-snapshotter container. Disable if VolumeSnapshot CRDs are absent   | `true`                                  |
 | `lvmController.snapshotter.image.registry`          | Registry for csi-snapshotter image                                               | `registry.k8s.io/`                      |
 | `lvmController.snapshotter.image.repository`        | Image repository for csi-snapshotter                                             | `sig-storage/csi-snapshotter`           |
 | `lvmController.snapshotter.image.pullPolicy`        | Image pull policy for csi-snapshotter                                            | `IfNotPresent`                          |
 | `lvmController.snapshotter.image.tag`               | Image tag for csi-snapshotter                                                    | `v8.2.0`                                |
+| `lvmController.snapshotter.extraArgs`               | Additional arguments to pass to csi-snapshotter                                  | `[]`                                    |
 | `lvmController.snapshotController.enabled`          | Enable the snapshot-controller container. Disable if the cluster already runs one | `true`                                  |
 | `lvmController.snapshotController.image.registry`   | Registry for snapshot-controller image                                           | `registry.k8s.io/`                      |
 | `lvmController.snapshotController.image.repository` | Image repository for snapshot-controller                                         | `sig-storage/snapshot-controller`       |
 | `lvmController.snapshotController.image.pullPolicy` | Image pull policy for snapshot-controller                                        | `IfNotPresent`                          |
 | `lvmController.snapshotController.image.tag`        | Image tag for snapshot-controller                                                | `v8.2.0`                                |
+| `lvmController.snapshotController.extraArgs`        | Additional arguments to pass to snapshot-controller                              | `[]`                                    |
 | `lvmController.provisioner.image.registry`          | Registry for csi-provisioner image                                               | `registry.k8s.io/`                      |
 | `lvmController.provisioner.image.repository`        | Image repository for csi-provisioner                                             | `sig-storage/csi-provisioner`           |
 | `lvmController.provisioner.image.pullPolicy`        | Image pull policy for csi-provisioner                                            | `IfNotPresent`                          |
 | `lvmController.provisioner.image.tag`               | Image tag for csi-provisioner                                                    | `v3.5.0`                                |
+| `lvmController.provisioner.extraArgs`               | Additional arguments to pass to csi-provisioner                                  | `[]`                                    |
 | `lvmController.updateStrategy.type`                 | Update strategy for lvm localpv controller deployment                            | `RollingUpdate`                         |
 | `lvmController.annotations`                         | Annotations for lvm localpv controller deployment metadata                       | `""`                                    |
 | `lvmController.podAnnotations`                      | Annotations for lvm localpv controller deployment's pods metadata                | `""`                                    |

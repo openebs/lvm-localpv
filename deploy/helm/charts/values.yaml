@@ -117,6 +117,7 @@ lvmController:
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
       tag: v2.0.0
+    extraArgs: []
   snapshotter:
     # The csi-snapshotter requires the VolumeSnapshot CRDs. Set this to false if they are not installed.
     enabled: true
@@ -129,6 +130,7 @@ lvmController:
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
       tag: v8.2.0
+    extraArgs: []
   snapshotController:
     # There should only be one snapshot-controller per cluster. Set this to false if the cluster already runs one.
     enabled: true
@@ -141,6 +143,7 @@ lvmController:
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
       tag: v8.2.0
+    extraArgs: []
   provisioner:
     name: "csi-provisioner"
     image:
@@ -151,6 +154,7 @@ lvmController:
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
       tag: v6.1.0
+    extraArgs: []
   updateStrategy:
     type: RollingUpdate
   annotations: {}
