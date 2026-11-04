@@ -182,7 +182,7 @@ func getSuitableNodes(reg *regexp.Regexp, capacity string) ([]string, error) {
 		if err != nil {
 			return nodes, err
 		}
-		if maxFree > pvcSize {
+		if maxFree >= pvcSize {
 			nodes = append(nodes, node.Name)
 		}
 	}
