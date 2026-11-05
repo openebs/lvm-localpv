@@ -1,0 +1,3 @@
+render lvmNode and lvmController updateStrategy from values
+
+the chart ignored the documented updateStrategy values; the node daemonset can now be rolled with a custom maxUnavailable
