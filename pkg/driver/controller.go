@@ -707,7 +707,7 @@ func (cs *controller) CreateSnapshot(
 	snapTimeStamp := time.Now().Unix()
 	var lvmSnap *lvmapi.LVMSnapshot
 	var restoreSize int64
-	lvmSnap, err = waitForLVMSnapshotReady(req.Name)
+	lvmSnap, err = waitForLVMSnapshotReady(ctx, req.Name)
 	if err == nil {
 		if lvmSnap.Spec.ThinProvision {
 			restoreSize = lvmSnap.Status.LvSize.Value()
@@ -797,7 +797,7 @@ func (cs *controller) CreateSnapshot(
 		)
 	}
 
-	lvmSnap, err = waitForLVMSnapshotReady(req.Name)
+	lvmSnap, err = waitForLVMSnapshotReady(ctx, req.Name)
 	if err != nil {
 		return nil, status.Errorf(
 			codes.ResourceExhausted,
@@ -819,23 +819,32 @@ func (cs *controller) CreateSnapshot(
 		Build(), nil
 }
 
-// waitForLVMSnapshotReady waits for lvm snapshot to be ready and returns
-// the lvm snapshot CR object
-func waitForLVMSnapshotReady(snapName string) (*lvmapi.LVMSnapshot, error) {
-	var err error
-	var snap *lvmapi.LVMSnapshot
-	for i := 0; i < 20; i++ {
-		snap, err = lvm.GetLVMSnapshot(snapName)
-		if k8serror.IsNotFound(err) {
+var (
+	// The node agent never marks a snapshot Failed, so the wait needs its own upper bound.
+	snapshotReadyTimeout      = 30 * time.Second
+	snapshotReadyPollInterval = 200 * time.Millisecond
+	getLVMSnapshot            = lvm.GetLVMSnapshot
+)
+
+// waitForLVMSnapshotReady waits until the node agent marks the lvm snapshot Ready,
+// the snapshot is not found, ctx is done or snapshotReadyTimeout passes, and returns
+// the last seen lvm snapshot CR object
+func waitForLVMSnapshotReady(ctx context.Context, snapName string) (*lvmapi.LVMSnapshot, error) {
+	ctx, cancel := context.WithTimeout(ctx, snapshotReadyTimeout)
+	defer cancel()
+	ticker := time.NewTicker(snapshotReadyPollInterval)
+	defer ticker.Stop()
+	for {
+		snap, err := getLVMSnapshot(snapName)
+		if k8serror.IsNotFound(err) || (err == nil && snap.Status.State == lvm.LVMStatusReady) {
 			return snap, err
-		} else if err == nil {
-			if snap.Status.State == lvm.LVMStatusReady {
-				break
-			}
 		}
-		time.Sleep(time.Duration(100 * time.Millisecond))
+		select {
+		case <-ctx.Done():
+			return snap, err
+		case <-ticker.C:
+		}
 	}
-	return snap, err
 }
 
 func getSnapSize(params *SnapshotParams, capacity int64) int64 {
