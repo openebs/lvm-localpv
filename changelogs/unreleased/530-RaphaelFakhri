@@ -1,0 +1,1 @@
+fix scheduling of thick volumes with the VolumeWeighted and CapacityWeighted schedulers when a volume group's free space equals the requested size
