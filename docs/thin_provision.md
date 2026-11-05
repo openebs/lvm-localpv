@@ -35,6 +35,31 @@ If modules are not loaded, then execute the following command to load the module
 modprobe dm_thin_pool
 ```
 
+### Protecting an existing thin pool from garbage collection
+
+When the last thin volume on a thin pool named `<vg>_thinpool` is deleted, the driver
+removes the (now empty) pool. If you created `<vg>_thinpool` yourself (for example with a
+custom chunk size or metadata size) and want to keep it, tag it with `do-not-delete`.
+The driver will never remove a pool carrying this tag. See
+[#455](https://github.com/openebs/lvm-localpv/issues/455).
+
+```
+$ lvchange --addtag do-not-delete lvmvg/lvmvg_thinpool
+```
+
+Verify the tag:
+
+```
+$ lvs -o lv_name,lv_tags lvmvg/lvmvg_thinpool
+```
+
+To allow garbage collection again, remove the tag:
+
+```
+$ lvchange --deltag do-not-delete lvmvg/lvmvg_thinpool
+```
+
+
 ### Extend the Thin Pool size
 
 Thin-pools are just a logical volume, so if we need to extend the size of thin-pool
