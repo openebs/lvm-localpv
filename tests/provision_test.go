@@ -24,6 +24,9 @@ import (
 	storagev1 "k8s.io/api/storage/v1"
 )
 
+// user created thinpool in VOLGROUP, used to test thinPoolName parameter.
+const customThinPool = "custompool"
+
 var _ = Describe("[lvmpv] TEST VOLUME PROVISIONING", func() {
 	Context("App is deployed with lvm driver", func() {
 		It("Running volume Creation Tests", volumeCreationTest)
@@ -31,6 +34,7 @@ var _ = Describe("[lvmpv] TEST VOLUME PROVISIONING", func() {
 		It("Running volume/snapshot Capacity Tests", capacityTest)
 		It("Running thin snapshot restore Tests", thinSnapshotRestoreToNewThinVolume)
 		It("Running volume Deletion Tests", volumeDeletionTest)
+		It("Running custom thinpool Tests", customThinPoolTest)
 	})
 })
 
@@ -456,5 +460,25 @@ func thinSnapshotRestoreToNewThinVolume() {
 	deleteAppAndPvc(appNames, pvcName)
 	By("Delete restored app and pvc")
 	deleteAppAndPvc(restoreAppNames, restorePvcObj.Name)
+	By("Deleting thinProvision storage class", deleteStorageClass)
+}
+
+// customThinPoolTest provisions a thin volume on a user created thin pool and
+// verifies that the pool is not removed when its last volume is deleted.
+func customThinPoolTest() {
+	device := setupVg(40, "lvmvg")
+	defer cleanupVg(device, "lvmvg")
+	By("Creating the custom thinpool", func() { createThinPool("lvmvg", customThinPool, "10G") })
+	By("Creating thinProvision storage class with thinPoolName")
+	createCustomThinPoolStorageClass(customThinPool)
+	By("Creating and verifying PVC bound status")
+	createAndVerifyBlockPVCId(true, "1")
+	By("Verifying LVMVolume object to be Ready")
+	VerifyLVMVolume(true, "", pvcObj)
+	By("Verifying the volume is created on the custom thinpool")
+	VerifyVolumeThinPool(customThinPool)
+	deleteAndVerifyPVC(pvcName + "-1")
+	By("Verifying that the custom thinpool is not deleted after the last volume deletion")
+	VerifyThinPoolDeletion("lvmvg", customThinPool, false)
 	By("Deleting thinProvision storage class", deleteStorageClass)
 }

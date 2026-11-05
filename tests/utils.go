@@ -236,6 +236,31 @@ func createThinStorageClass(bindingMode storagev1.VolumeBindingMode) {
 	gomega.Expect(err).To(gomega.BeNil(), "while creating a thinProvision storageclass {%s}", scName)
 }
 
+func createCustomThinPoolStorageClass(thinPoolName string) {
+	var (
+		err error
+	)
+
+	parameters := map[string]string{
+		"volgroup":      VOLGROUP,
+		"thinProvision": "yes",
+		"thinPoolName":  thinPoolName,
+	}
+
+	ginkgo.By("building a thinProvision storage class with custom thinpool")
+	scObj, err = sc.NewBuilder().
+		WithGenerateName(scName).
+		WithParametersNew(parameters).
+		WithProvisioner(LocalProvisioner).
+		WithVolumeBindingMode(storagev1.VolumeBindingImmediate).
+		Build()
+	gomega.Expect(err).ShouldNot(gomega.HaveOccurred(),
+		"while building custom thinpool storageclass obj with prefix {%s}", scName)
+
+	scObj, err = SCClient.Create(scObj)
+	gomega.Expect(err).To(gomega.BeNil(), "while creating a custom thinpool storageclass {%s}", scName)
+}
+
 func createFormatOptionsStorageClass(formatOptions string) {
 	var (
 		err error
