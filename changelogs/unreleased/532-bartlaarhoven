@@ -1,0 +1,3 @@
+wait for the node agent within the request context when creating a snapshot
+
+CreateSnapshot no longer gives up after 2s, so slow lvcreate does not leave the VolumeSnapshot with readyToUse=false
