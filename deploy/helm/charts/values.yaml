@@ -63,6 +63,8 @@ lvmNode:
       tag: v2.13.0
   updateStrategy:
     type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 100%
   annotations: {}
   podAnnotations: {}
   # This can be configured to run on various different k8s distributions like
