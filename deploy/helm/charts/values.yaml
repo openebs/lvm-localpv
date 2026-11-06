@@ -183,6 +183,9 @@ lvmController:
     # Configure the maximum number of queries allowed after
     # accounting for rolled over qps from previous seconds.
     burst: 0
+  # How long CreateSnapshot waits for the node agent to create the snapshot
+  # before it returns ready_to_use=false and lets the csi-snapshotter retry.
+  snapshotReadyTimeout: 30s
   podAntiAffinity:
     enabled: false
     requiredDuringSchedulingIgnoredDuringExecution:
