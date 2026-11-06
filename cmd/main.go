@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/spf13/cobra"
 	klog "k8s.io/klog/v2"
@@ -151,6 +152,12 @@ func main() {
 		"Extra lvcreate argument used when the driver creates the thin pool of a volume group. "+
 			"Given once per argument, for example --thin-pool-create-args=--chunksize "+
 			"--thin-pool-create-args=128k",
+	)
+
+	cmd.PersistentFlags().DurationVar(
+		&config.SnapshotReadyTimeout, "snapshot-ready-timeout", 30*time.Second,
+		"How long CreateSnapshot waits for the node agent to create the snapshot before it "+
+			"returns ready_to_use=false and lets the csi-snapshotter retry. Used by the controller only",
 	)
 
 	err := cmd.Execute()

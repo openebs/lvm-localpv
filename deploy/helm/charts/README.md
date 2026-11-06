@@ -156,6 +156,7 @@ helm install openebs-lvmlocalpv openebs-lvmlocalpv/lvm-localpv --namespace opene
 | `lvmController.provisioner.image.pullPolicy`        | Image pull policy for csi-provisioner                                            | `IfNotPresent`                          |
 | `lvmController.provisioner.image.tag`               | Image tag for csi-provisioner                                                    | `v6.1.0`                                |
 | `lvmController.provisioner.extraArgs`               | Additional arguments to pass to csi-provisioner                                  | `[]`                                    |
+| `lvmController.snapshotReadyTimeout`                | How long CreateSnapshot waits for the node agent to create the snapshot          | `30s`                                   |
 | `lvmController.updateStrategy.type`                 | Update strategy for lvm localpv controller deployment                            | `RollingUpdate`                         |
 | `lvmController.replicas`                            | Replicas of the lvm localpv controller deployment, leader election is enabled above 1| `1`                                     |
 | `lvmController.logLevel`                            | Log level (`--v`) of csi-resizer, csi-provisioner and snapshot-controller         | `5`                                     |
