@@ -197,7 +197,14 @@ func getSuitableNodes(reg *regexp.Regexp, capacity string) ([]string, error) {
 	if err != nil {
 		return nodes, err
 	}
-	for _, node := range nodeList.Items {
+	return filterSuitableNodes(nodeList.Items, reg, capacity)
+}
+
+// filterSuitableNodes returns the names of the nodes that have a volume group
+// matching reg with at least capacity bytes free.
+func filterSuitableNodes(lvmNodes []apis.LVMNode, reg *regexp.Regexp, capacity string) ([]string, error) {
+	var nodes []string
+	for _, node := range lvmNodes {
 		var maxFree int64 = 0
 		for _, vg := range node.VolumeGroups {
 			if reg.MatchString(vg.Name) && vg.Free.Value() > maxFree {
