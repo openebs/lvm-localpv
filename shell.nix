@@ -1,3 +1,4 @@
+{ bootstrap ? false }:
 let
   sources = import ./nix/sources.nix;
   pkgs = import sources.nixpkgs { };
@@ -72,6 +73,6 @@ pkgs.mkShell {
       rmdir $OPENEBS_CACHE/bins 2>/dev/null || :
     fi
 
-    make bootstrap
+    if [ "${toString bootstrap}" = "1" ]; then make bootstrap; fi
   '';
 }
