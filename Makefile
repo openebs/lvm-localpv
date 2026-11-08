@@ -6,6 +6,7 @@ VETARGS?=-asmdecl -atomic -bool -buildtags -copylocks -methods \
          -nilfunc -printf -rangeloops -shift -structtags -unsafeptr
 
 GOLANGCI_LINT_VERSION = 2.11.4
+GOLANGCI_LINT_ARGS = -E dupl,revive,bodyclose,goconst,misspell --timeout 5m0s
 
 # Tools required for different make
 # targets or for development purposes
@@ -141,6 +142,14 @@ bootstrap: controller-gen install-golangci-lint
 .PHONY: install-golangci-lint
 install-golangci-lint:
 	$(if $(shell which golangci-lint), echo "golangci-lint already exist in system", (curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b "${GOPATH}/bin" v$(GOLANGCI_LINT_VERSION)))
+
+.PHONY: golangci-lint-version
+golangci-lint-version:
+	@echo $(GOLANGCI_LINT_VERSION)
+
+.PHONY: golangci-lint-args
+golangci-lint-args:
+	@printf '%s\n' '$(GOLANGCI_LINT_ARGS)'
 
 .PHONY: controller-gen
 controller-gen:
@@ -296,7 +305,7 @@ deploy-e2e-images:
 .PHONY: golint
 golint:
 	@echo "--> Running golint"
-	CGO_ENABLED=0 golangci-lint run -E dupl,revive,bodyclose,goconst,misspell --timeout 5m0s
+	CGO_ENABLED=0 golangci-lint run $(GOLANGCI_LINT_ARGS)
 	@echo "Completed golangci-lint no recommendations !!"
 	@echo "--------------------------------"
 	@echo ""

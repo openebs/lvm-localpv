@@ -35,11 +35,17 @@ jobs:
 
       - uses: ./.github/actions/setup-go
 
+      - name: Get golangci-lint version and args
+        id: golangci-lint
+        run: |
+          echo "version=v$(make -s golangci-lint-version)" >> "$GITHUB_OUTPUT"
+          echo "args=$(make -s golangci-lint-args)" >> "$GITHUB_OUTPUT"
+
       - name: Lint Check
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.11.4
-          args: -E dupl,revive,bodyclose,goconst,misspell --timeout 5m0s
+          version: ${{ steps.golangci-lint.outputs.version }}
+          args: ${{ steps.golangci-lint.outputs.args }}
 
       - name: Shellcheck
         if: inputs.action-name == 'pull_request'
