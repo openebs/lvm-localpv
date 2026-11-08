@@ -311,4 +311,8 @@ verify-kubegen: bootstrap kubegen
 	@./buildscripts/check-diff.sh
 	@echo "Completed verify-codegen no changes detected !!"
 
+.PHONY: verify-go-version
+verify-go-version:
+	@./buildscripts/check-go-version.sh
+
 include Makefile.buildx.mk
