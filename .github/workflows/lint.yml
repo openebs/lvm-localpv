@@ -31,7 +31,10 @@ jobs:
 
       - uses: ./.github/actions/setup-nix
         with:
-          preFetchNix: ./scripts/chart.nix
+          preFetchNix: ./nix/chart.nix
+
+      - name: Verify nixpkgs provides the go.mod Go version
+        run: nix-instantiate --eval -E '(import ./nix/go.nix { }).go.version'
 
       - uses: ./.github/actions/setup-go
 
@@ -58,14 +61,14 @@ jobs:
 
       - name: Check if the chart follows a valid semver version
         if: inputs.branch-name
-        run: nix-shell ./scripts/chart.nix --run './scripts/validate-chart-version.sh --branch "${{ inputs.branch-name }}"'
+        run: nix-shell ./nix/chart.nix --run './scripts/validate-chart-version.sh --branch "${{ inputs.branch-name }}"'
 
       - name: Check if the chart is publishable
         if: inputs.tag
-        run: nix-shell ./scripts/chart.nix --run './scripts/update-chart-version.sh --tag "${{ inputs.tag }}" --publish-release'
+        run: nix-shell ./nix/chart.nix --run './scripts/update-chart-version.sh --tag "${{ inputs.tag }}" --publish-release'
 
       - name: Run chart-testing lint
-        run: nix-shell ./scripts/chart.nix --run "ct lint --config ct.yaml"
+        run: nix-shell ./nix/chart.nix --run "ct lint --config ct.yaml"
 
   validate-codegen:
     runs-on: ubuntu-latest
