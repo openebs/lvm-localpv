@@ -7,7 +7,7 @@ pkgs.mkShell {
   buildInputs = with pkgs; [
     chart-testing
     git
-    go_1_24
+    go_1_26
     golangci-lint
     golint
     kubectl
