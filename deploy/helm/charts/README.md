@@ -93,26 +93,41 @@ helm install openebs-lvmlocalpv openebs-lvmlocalpv/lvm-localpv --namespace opene
 | `global.analytics.enabled`                          | Global override for analytics                                                    | `""`                            |
 | `global.kubeletDir`                                 | Global override for kubelet directory                                                    | `""`                            |
 | `crds.csi.volumeSnapshots.enabled`                  | Enable/Disable installation of VolumeSnapshot-related CRDs                       | `true`                                  |
+| `crds.csi.volumeSnapshots.keep`                     | Keep the VolumeSnapshot-related CRDs on chart uninstall                          | `true`                                  |
+| `crds.lvmLocalPv.enabled`                           | Enable/Disable installation of the LVMVolume, LVMSnapshot and LVMNode CRDs       | `true`                                  |
+| `crds.lvmLocalPv.keep`                              | Keep the lvm-localpv CRDs on chart uninstall                                     | `true`                                  |
 | `imagePullSecrets`                                  | Provides image pull secret                                                       | `""`                                    |
-| `lvmPlugin.image.registry`                          | Registry for openebs-lvm-plugin image                                            | `""`                                    |
+| `storageCapacity`                                   | Enable storage capacity tracking (`--enable-capacity` of csi-provisioner)        | `true`                                  |
+| `lvmPlugin.image.registry`                          | Registry for openebs-lvm-plugin image                                            | `docker.io/`                            |
 | `lvmPlugin.image.repository`                        | Image repository for openebs-lvm-plugin                                          | `openebs/lvm-driver`                    |
 | `lvmPlugin.image.pullPolicy`                        | Image pull policy for openebs-lvm-plugin                                         | `IfNotPresent`                          |
-| `lvmPlugin.image.tag`                               | Image tag for openebs-lvm-plugin                                                 | `1.6.1`                                 |
+| `lvmPlugin.image.tag`                               | Image tag for openebs-lvm-plugin, set to the chart version on release            | the chart version                       |
 | `lvmPlugin.metricsPort`                             | The TCP port number used for exposing lvm-metrics                                | `9500`                                  |
 | `lvmPlugin.allowedTopologies`                       | The comma seperated list of allowed node topologies                              | `kubernetes.io/hostname,`               |
+| `lvmPlugin.ioLimits.enabled`                        | Set per-GB IOPS limits on the volumes of the lvmnode daemonset                   | `false`                                 |
+| `lvmPlugin.ioLimits.containerRuntime`               | Container runtime of the nodes, used to find the pod cgroup for the IO limits    | `containerd`                            |
+| `lvmPlugin.ioLimits.readIopsPerGB`                  | Read IOPS per GB of volume size, by volume group name prefix, e.g. `vg1-prefix:100,vg2-prefix:200`| `""`                                    |
+| `lvmPlugin.ioLimits.writeIopsPerGB`                 | Write IOPS per GB of volume size, by volume group name prefix, e.g. `vg1-prefix:100,vg2-prefix:200`| `""`                                    |
 | `lvmNode.driverRegistrar.image.registry`            | Registry for csi-node-driver-registrar image                                     | `registry.k8s.io/`                      |
 | `lvmNode.driverRegistrar.image.repository`          | Image repository for csi-node-driver-registrar                                   | `sig-storage/csi-node-driver-registrar` |
 | `lvmNode.driverRegistrar.image.pullPolicy`          | Image pull policy for csi-node-driver-registrar                                  | `IfNotPresent`                          |
-| `lvmNode.driverRegistrar.image.tag`                 | Image tag for csi-node-driver-registrar                                          | `v2.8.0`                                |
+| `lvmNode.driverRegistrar.image.tag`                 | Image tag for csi-node-driver-registrar                                          | `v2.13.0`                               |
 | `lvmNode.updateStrategy.type`                       | Update strategy for lvmnode daemonset                                            | `RollingUpdate`                         |
 | `lvmNode.updateStrategy.rollingUpdate.maxUnavailable` | Max unavailable lvmnode pods during a rolling update                             | `100%`                                  |
 | `lvmNode.kubeletDir`                                | Kubelet mount point for lvmnode daemonset                                        | `"/var/lib/kubelet/"`                   |
+| `lvmNode.logLevel`                                  | Log level (`--v`) of the csi-node-driver-registrar container                     | `5`                                     |
+| `lvmNode.hostNetwork`                               | Run the lvmnode daemonset pods in the host network                               | `false`                                 |
+| `lvmNode.kubeClientRateLimiter.qps`                 | Kubernetes API client QPS of the lvmnode agent, 0 keeps the client default       | `0`                                     |
+| `lvmNode.kubeClientRateLimiter.burst`               | Kubernetes API client burst of the lvmnode agent, 0 keeps the client default     | `0`                                     |
+| `lvmNode.serviceMonitor.enabled`                    | Create a ServiceMonitor for the lvmnode metrics (needs the `monitoring.coreos.com/v1` API)| `false`                                 |
+| `lvmNode.priorityClass.create`                      | Create a PriorityClass named `<release>-<name>` and use it for the lvmnode daemonset pods. When `false` the pods get no priority class| `true`                                  |
+| `lvmNode.priorityClass.name`                        | Name suffix of the lvmnode PriorityClass                                         | `lvm-localpv-csi-node-critical`         |
 | `lvmNode.defaultFormatOptions`                      | Extra mkfs options per filesystem, used when the StorageClass of a volume does not set `formatOptions`. A StorageClass value replaces the default of its filesystem, the two are not merged. Keys are the formatted filesystem types (ext2, ext3, ext4, xfs, btrfs), values the space separated mkfs options of that filesystem as one string, e.g. `{"ext4": "-m 0", "xfs": "-i nrext64=0"}`. | `{}`                                    |
 | `lvmNode.annotations`                               | Annotations for lvmnode daemonset metadata                                       | `""`                                    |
 | `lvmNode.podAnnotations`                            | Annotations for lvmnode daemonset's pods metadata                                | `""`                                    |
 | `lvmNode.resources`                                 | Resource and request and limit for lvmnode daemonset containers                  | `""`                                    |
 | `lvmNode.labels`                                    | Labels for lvmnode daemonset metadata                                            | `""`                                    |
-| `lvmNode.podLabels`                                 | Appends labels to the lvmnode daemonset pods                                     | `""`                                    |
+| `lvmNode.podLabels`                                 | Appends labels to the lvmnode daemonset pods                                     | `{"app": "openebs-lvm-node"}`           |
 | `lvmNode.nodeSelector`                              | Nodeselector for lvmnode daemonset pods                                          | `""`                                    |
 | `lvmNode.tolerations`                               | lvmnode daemonset's pod toleration values                                        | `""`                                    |
 | `lvmNode.securityContext`                           | Security context for lvmnode daemonset container                                 | `""`                                    |
@@ -136,14 +151,20 @@ helm install openebs-lvmlocalpv openebs-lvmlocalpv/lvm-localpv --namespace opene
 | `lvmController.provisioner.image.registry`          | Registry for csi-provisioner image                                               | `registry.k8s.io/`                      |
 | `lvmController.provisioner.image.repository`        | Image repository for csi-provisioner                                             | `sig-storage/csi-provisioner`           |
 | `lvmController.provisioner.image.pullPolicy`        | Image pull policy for csi-provisioner                                            | `IfNotPresent`                          |
-| `lvmController.provisioner.image.tag`               | Image tag for csi-provisioner                                                    | `v3.5.0`                                |
+| `lvmController.provisioner.image.tag`               | Image tag for csi-provisioner                                                    | `v6.1.0`                                |
 | `lvmController.provisioner.extraArgs`               | Additional arguments to pass to csi-provisioner                                  | `[]`                                    |
 | `lvmController.updateStrategy.type`                 | Update strategy for lvm localpv controller deployment                            | `RollingUpdate`                         |
+| `lvmController.replicas`                            | Replicas of the lvm localpv controller deployment, leader election is enabled above 1| `1`                                     |
+| `lvmController.logLevel`                            | Log level (`--v`) of csi-resizer, csi-provisioner and snapshot-controller         | `5`                                     |
+| `lvmController.kubeClientRateLimiter.qps`           | Kubernetes API client QPS of the lvm localpv controller, 0 keeps the client default| `0`                                     |
+| `lvmController.kubeClientRateLimiter.burst`         | Kubernetes API client burst of the lvm localpv controller, 0 keeps the client default| `0`                                     |
+| `lvmController.priorityClass.create`                | Create a PriorityClass named `<release>-<name>` and use it for the controller pods. When `false` the pods get no priority class| `true`                                  |
+| `lvmController.priorityClass.name`                  | Name suffix of the lvm localpv controller PriorityClass                          | `lvm-localpv-csi-controller-critical`   |
 | `lvmController.annotations`                         | Annotations for lvm localpv controller deployment metadata                       | `""`                                    |
 | `lvmController.podAnnotations`                      | Annotations for lvm localpv controller deployment's pods metadata                | `""`                                    |
 | `lvmController.resources`                           | Resource and request and limit for lvm localpv controller deployment containers  | `""`                                    |
 | `lvmController.labels`                              | Labels for lvm localpv controller deployment metadata                            | `""`                                    |
-| `lvmController.podLabels`                           | Appends labels to the lvm localpv controller deployment pods                     | `""`                                    |
+| `lvmController.podLabels`                           | Appends labels to the lvm localpv controller deployment pods                     | `{"name": "openebs-lvm-controller"}`    |
 | `lvmController.nodeSelector`                        | Nodeselector for lvm localpv controller deployment pods                          | `""`                                    |
 | `lvmController.tolerations`                         | lvm localpv controller deployment's pod toleration values                        | `""`                                    |
 | `lvmController.topologySpreadConstraints`           | lvm localpv controller deployment's pod topologySpreadConstraints values         | `""`                                    |
