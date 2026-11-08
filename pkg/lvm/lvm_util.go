@@ -888,14 +888,14 @@ func DestroySnapshot(snap *apis.LVMSnapshot) error {
 	snapVolume := snap.Spec.VolGroup + "/" + getLVMSnapName(snap.Name)
 
 	ok, err := isSnapshotExists(snap.Spec.VolGroup, getLVMSnapName(snap.Name))
-	if !ok {
-		klog.Infof("lvm: snapshot %s does not exist, skipping deletion", snapVolume)
-		return nil
-	}
-
 	if err != nil {
 		klog.Errorf("lvm: error checking for snapshot %s, error: %v", snapVolume, err)
 		return err
+	}
+
+	if !ok {
+		klog.Infof("lvm: snapshot %s does not exist, skipping deletion", snapVolume)
+		return nil
 	}
 
 	args := buildLVMSnapDestroyArgs(snap)
@@ -1463,14 +1463,27 @@ func lvThinExists(vg string, name string) bool {
 	return name == strings.TrimSpace(string(out))
 }
 
-// snapshotExists checks if a snapshot volume exists for the given volumegroup
-// and snapshot name.
+// isSnapshotExists checks if a snapshot volume exists for the given volumegroup
+// and snapshot name. lvs exits non-zero when the logical volume or its volume
+// group does not exist, which is reported as (false, nil). Any other lvs failure
+// is returned as an error, as it says nothing about the snapshot.
 func isSnapshotExists(vg, snapVolumeName string) (bool, error) {
-	out, _, err := RunCommandSplit("lvs", vg+"/"+snapVolumeName, "--noheadings", "-o", "lv_name")
+	out, stderr, err := RunCommandSplit(LVList, vg+"/"+snapVolumeName, "--noheadings", "-o", "lv_name")
 	if err != nil {
-		return false, err
+		if isLVNotFound(stderr) {
+			return false, nil
+		}
+		return false, newExecError(stderr, err)
 	}
 	return snapVolumeName == strings.TrimSpace(string(out)), nil
+}
+
+// isLVNotFound reports whether the stderr of an lvs call on vg/lv says that
+// the logical volume or its volume group does not exist.
+func isLVNotFound(stderr []byte) bool {
+	msg := string(stderr)
+	return strings.Contains(msg, "Failed to find logical volume") ||
+		(strings.Contains(msg, "Volume group") && strings.Contains(msg, "not found"))
 }
 
 // getVGSize get the size in bytes for given volumegroup name
