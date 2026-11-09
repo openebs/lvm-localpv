@@ -23,6 +23,8 @@ import (
 	"github.com/openebs/lvm-localpv/pkg/lvm"
 )
 
+var pvLabels = []string{labelName, "allocatable", "vg", "missing", "in_use"}
+
 /*
 pvCollector collects all the necessary metrics related to physical volume
 */
@@ -39,27 +41,27 @@ func NewPvCollector() prometheus.Collector {
 	return &pvCollector{
 		pvSizeMetric: prometheus.NewDesc(prometheus.BuildFQName("lvm", "pv", "total_size_bytes"),
 			"LVM PV total size in bytes",
-			[]string{"name", "allocatable", "vg", "missing", "in_use"}, nil,
+			pvLabels, nil,
 		),
 		pvFreeMetric: prometheus.NewDesc(prometheus.BuildFQName("lvm", "pv", "free_size_bytes"),
 			"LVM PV free size in bytes",
-			[]string{"name", "allocatable", "vg", "missing", "in_use"}, nil,
+			pvLabels, nil,
 		),
 		pvUsedMetric: prometheus.NewDesc(prometheus.BuildFQName("lvm", "pv", "used_size_bytes"),
 			"LVM PV used size in bytes",
-			[]string{"name", "allocatable", "vg", "missing", "in_use"}, nil,
+			pvLabels, nil,
 		),
 		pvDeviceSizeMetric: prometheus.NewDesc(prometheus.BuildFQName("lvm", "pv", "device_size_bytes"),
 			"LVM PV underlying device size in bytes",
-			[]string{"name", "allocatable", "vg", "missing", "in_use"}, nil,
+			pvLabels, nil,
 		),
 		pvMetadataSizeMetric: prometheus.NewDesc(prometheus.BuildFQName("lvm", "pv", "mda_total_size_bytes"),
 			"LVM PV device smallest metadata area size in bytes",
-			[]string{"name", "allocatable", "vg", "missing", "in_use"}, nil,
+			pvLabels, nil,
 		),
 		pvMetadataFreeMetric: prometheus.NewDesc(prometheus.BuildFQName("lvm", "pv", "mda_free_size_bytes"),
 			"LVM PV device free metadata area space in bytes",
-			[]string{"name", "allocatable", "vg", "missing", "in_use"}, nil,
+			pvLabels, nil,
 		),
 	}
 }

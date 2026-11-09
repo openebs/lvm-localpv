@@ -16,6 +16,8 @@ limitations under the License.
 
 package collector
 
+const labelName = "name"
+
 func contains(list []string, item string) bool {
 	for _, e := range list {
 		if e == item {

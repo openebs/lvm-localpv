@@ -5,7 +5,7 @@ PACKAGES = $(shell go list ./... | grep -v 'pkg/generated')
 VETARGS?=-asmdecl -atomic -bool -buildtags -copylocks -methods \
          -nilfunc -printf -rangeloops -shift -structtags -unsafeptr
 
-GOLANGCI_LINT_VERSION = 2.11.4
+GOLANGCI_LINT_VERSION = 2.14.0
 GOLANGCI_LINT_ARGS = -E dupl,revive,bodyclose,goconst,misspell --timeout 5m0s
 
 # Tools required for different make
@@ -141,7 +141,7 @@ bootstrap: controller-gen install-golangci-lint
 ## Install golangci-lint only if tool doesn't exist in system
 .PHONY: install-golangci-lint
 install-golangci-lint:
-	$(if $(shell which golangci-lint), echo "golangci-lint already exist in system", (curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b "${GOPATH}/bin" v$(GOLANGCI_LINT_VERSION)))
+	$(if $(shell which golangci-lint), echo "golangci-lint already exist in system", (curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/v$(GOLANGCI_LINT_VERSION)/install.sh | sh -s -- -b "${GOPATH}/bin" v$(GOLANGCI_LINT_VERSION)))
 
 .PHONY: golangci-lint-version
 golangci-lint-version:
