@@ -1,26 +1,6 @@
-/*
-Copyright © 2026 The OpenEBS Authors
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package lvm
 
-import (
-	"os"
-	"path/filepath"
-	"testing"
-)
+import "testing"
 
 // lvsThinPoolsReport is the output of
 // `lvs --reportformat json --units b --no-suffix` for a volume group with an
@@ -37,24 +17,13 @@ const lvsThinPoolsReport = `{
   ]
 }`
 
-func TestGetThinPools(t *testing.T) {
-	dir := t.TempDir()
-	report := filepath.Join(dir, "lvs.json")
-	if err := os.WriteFile(report, []byte(lvsThinPoolsReport), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	lvs := "#!/bin/sh\ncat '" + report + "'\n"
-	if err := os.WriteFile(filepath.Join(dir, LVList), []byte(lvs), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
-
-	pools, err := getThinPools("lvmvg")
+func TestParseThinPools(t *testing.T) {
+	pools, err := parseThinPools([]byte(lvsThinPoolsReport), "lvmvg")
 	if err != nil {
-		t.Fatalf("getThinPools() error = %v, want nil", err)
+		t.Fatalf("parseThinPools() error = %v, want nil", err)
 	}
 	if len(pools) != 2 {
-		t.Fatalf("getThinPools() returned %d pools, want 2: %+v", len(pools), pools)
+		t.Fatalf("parseThinPools() returned %d pools, want 2: %+v", len(pools), pools)
 	}
 
 	want := map[string]struct{ size, free int64 }{

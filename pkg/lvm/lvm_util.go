@@ -1001,9 +1001,6 @@ func parseVolumeGroup(m map[string]string) (apis.VolumeGroup, error) {
 
 // Returns thinpools present on the VG.
 func getThinPools(vg string) ([]apis.ThinPool, error) {
-	var thinpools []apis.ThinPool
-	var err error
-
 	args := []string{
 		"--reportformat", "json",
 		"--units", "b", "--no-suffix",
@@ -1013,6 +1010,12 @@ func getThinPools(vg string) ([]apis.ThinPool, error) {
 		klog.Errorf("lvm: error while running command %s %v: %v", LVList, args, err)
 		return nil, err
 	}
+	return parseThinPools(output, vg)
+}
+
+// parseThinPools returns the thinpools of the VG from the json output of lvs.
+func parseThinPools(output []byte, vg string) ([]apis.ThinPool, error) {
+	var thinpools []apis.ThinPool
 
 	var lvsReport struct {
 		Report []struct {
