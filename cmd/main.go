@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/spf13/cobra"
 	klog "k8s.io/klog/v2"
@@ -144,6 +145,12 @@ func main() {
 		&config.DefaultFormatOptions, "default-format-options", nil,
 		"Extra mkfs options as <fstype>=<options>, used when the storage class of the volume "+
 			"does not set formatOptions. Can be given once per filesystem",
+	)
+
+	cmd.PersistentFlags().DurationVar(
+		&config.SnapshotReadyTimeout, "snapshot-ready-timeout", 30*time.Second,
+		"How long CreateSnapshot waits for the node agent to create the snapshot before it "+
+			"returns ready_to_use=false and lets the csi-snapshotter retry. Used by the controller only",
 	)
 
 	err := cmd.Execute()

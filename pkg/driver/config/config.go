@@ -16,6 +16,8 @@ limitations under the License.
 
 package config
 
+import "time"
+
 // Config struct fills the parameters of request or user input
 type Config struct {
 	// DriverName to be registered at CSI
@@ -96,6 +98,10 @@ type Config struct {
 	// node uses when the storage class of the volume does not set
 	// formatOptions. Given once per filesystem.
 	DefaultFormatOptions []string
+
+	// SnapshotReadyTimeout is how long CreateSnapshot waits for the node
+	// agent to create the snapshot before it returns ready_to_use=false.
+	SnapshotReadyTimeout time.Duration
 }
 
 // Default returns a new instance of config
