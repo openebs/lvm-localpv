@@ -73,6 +73,12 @@ const (
 
 	YES        = "yes"
 	LVThinPool = "thin-pool"
+
+	optOptions      = "--options"
+	optReportFormat = "--reportformat"
+	optUnits        = "--units"
+
+	reportFormatJSON = "json"
 )
 
 var (
@@ -626,7 +632,7 @@ func checkThinPoolEmpty(poolname string) bool {
 	}{}
 
 	args := []string{
-		"--reportformat", "json",
+		optReportFormat, reportFormatJSON,
 		"-o", "lv_name,pool_lv",
 	}
 
@@ -687,7 +693,7 @@ func needsLvResize(vol *apis.LVMVolume, desiredSizeBytes uint64) bool {
 	vgName := vol.Spec.VolGroup
 
 	// 1. Get LV Size in bytes, without the unit suffix.
-	lvSizeBytes, _, err := RunCommandSplit(LVList, "-o", "lv_size", "--noheadings", "--nosuffix", "--units", "b", lvPath)
+	lvSizeBytes, _, err := RunCommandSplit(LVList, "-o", "lv_size", "--noheadings", "--nosuffix", optUnits, "b", lvPath)
 	if err != nil {
 		klog.Warningf("failed to get LV size for %s: %v", lvPath, err)
 		return true
@@ -702,7 +708,7 @@ func needsLvResize(vol *apis.LVMVolume, desiredSizeBytes uint64) bool {
 
 	// 2. Get VG Extent Size in bytes
 	// Similar to LV size, get VG extent size in bytes without suffix.
-	vgExtentSizeBytes, _, err := RunCommandSplit(VGList, "-o", "vg_extent_size", "--noheadings", "--nosuffix", "--units", "b", vgName)
+	vgExtentSizeBytes, _, err := RunCommandSplit(VGList, "-o", "vg_extent_size", "--noheadings", "--nosuffix", optUnits, "b", vgName)
 	if err != nil {
 		klog.Warningf("failed to get VG extent size for %s: %v", vgName, err)
 		return true
@@ -803,7 +809,7 @@ func getLVSize(lvName, volGroup string) (uint64, error) {
 		lvmVolumeName,
 		"--noheadings",
 		"-o", "lv_size",
-		"--units", "b",
+		optUnits, "b",
 		"--nosuffix",
 	}
 
@@ -1005,8 +1011,8 @@ func getThinPools(vg string) ([]apis.ThinPool, error) {
 	var err error
 
 	args := []string{
-		"--reportformat", "json",
-		"--units", "b", "--no-suffix",
+		optReportFormat, reportFormatJSON,
+		optUnits, "b", "--no-suffix",
 	}
 	output, _, err := RunCommandSplit(LVList, args...)
 	if err != nil {
@@ -1106,9 +1112,9 @@ func ListLVMVolumeGroup(reloadCache bool) ([]apis.VolumeGroup, error) {
 	}
 
 	args := []string{
-		"--options", "vg_all",
-		"--reportformat", "json",
-		"--units", "b",
+		optOptions, "vg_all",
+		optReportFormat, reportFormatJSON,
+		optUnits, "b",
 	}
 	output, _, err := RunCommandSplit(VGList, args...)
 	if err != nil {
@@ -1301,9 +1307,9 @@ func decodeLvsJSON(raw []byte) ([]LogicalVolume, error) {
 
 func ListLVMLogicalVolume() ([]LogicalVolume, error) {
 	args := []string{
-		"--options", "lv_all,vg_name,segtype",
-		"--reportformat", "json",
-		"--units", "b",
+		optOptions, "lv_all,vg_name,segtype",
+		optReportFormat, reportFormatJSON,
+		optUnits, "b",
 	}
 	output, _, err := RunCommandSplit(LVList, args...)
 	if err != nil {
@@ -1323,9 +1329,9 @@ func ListLVMPhysicalVolume() ([]PhysicalVolume, error) {
 	}
 
 	args := []string{
-		"--options", "pv_all,vg_name",
-		"--reportformat", "json",
-		"--units", "b",
+		optOptions, "pv_all,vg_name",
+		optReportFormat, reportFormatJSON,
+		optUnits, "b",
 	}
 	output, _, err := RunCommandSplit(PVList, args...)
 	if err != nil {
@@ -1488,7 +1494,7 @@ func isLVNotFound(stderr []byte) bool {
 
 // getVGSize get the size in bytes for given volumegroup name
 func getVGSize(vgname string) string {
-	out, _, err := RunCommandSplit("vgs", vgname, "--noheadings", "-o", "vg_free", "--units", "b", "--nosuffix")
+	out, _, err := RunCommandSplit("vgs", vgname, "--noheadings", "-o", "vg_free", optUnits, "b", "--nosuffix")
 	if err != nil {
 		klog.Errorf("failed to list existing volumegroup:%v , %v", vgname, err)
 		return ""

@@ -31,15 +31,24 @@ jobs:
 
       - uses: ./.github/actions/setup-nix
         with:
-          preFetchNix: ./scripts/chart.nix
+          preFetchNix: ./nix/chart.nix
+
+      - name: Verify nixpkgs provides the go.mod Go version
+        run: nix-instantiate --eval -E '(import ./nix/go.nix { }).go.version'
 
       - uses: ./.github/actions/setup-go
+
+      - name: Get golangci-lint version and args
+        id: golangci-lint
+        run: |
+          echo "version=v$(make -s golangci-lint-version)" >> "$GITHUB_OUTPUT"
+          echo "args=$(make -s golangci-lint-args)" >> "$GITHUB_OUTPUT"
 
       - name: Lint Check
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.11.4
-          args: -E dupl,revive,bodyclose,goconst,misspell --timeout 5m0s
+          version: ${{ steps.golangci-lint.outputs.version }}
+          args: ${{ steps.golangci-lint.outputs.args }}
 
       - name: Shellcheck
         if: inputs.action-name == 'pull_request'
@@ -52,14 +61,14 @@ jobs:
 
       - name: Check if the chart follows a valid semver version
         if: inputs.branch-name
-        run: nix-shell ./scripts/chart.nix --run './scripts/validate-chart-version.sh --branch "${{ inputs.branch-name }}"'
+        run: nix-shell ./nix/chart.nix --run './scripts/validate-chart-version.sh --branch "${{ inputs.branch-name }}"'
 
       - name: Check if the chart is publishable
         if: inputs.tag
-        run: nix-shell ./scripts/chart.nix --run './scripts/update-chart-version.sh --tag "${{ inputs.tag }}" --publish-release'
+        run: nix-shell ./nix/chart.nix --run './scripts/update-chart-version.sh --tag "${{ inputs.tag }}" --publish-release'
 
       - name: Run chart-testing lint
-        run: nix-shell ./scripts/chart.nix --run "ct lint --config ct.yaml"
+        run: nix-shell ./nix/chart.nix --run "ct lint --config ct.yaml"
 
   validate-codegen:
     runs-on: ubuntu-latest
@@ -68,6 +77,9 @@ jobs:
       - uses: actions/checkout@v7
 
       - uses: ./.github/actions/setup-go
+
+      - name: Verify Go version consistency
+        run: make verify-go-version
 
       - name: Helm tool installer
         uses: Azure/setup-helm@v5.0.1

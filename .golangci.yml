@@ -15,6 +15,11 @@ linters:
       - common-false-positives
       - legacy
       - std-error-handling
+    rules:
+      # Repeated literals in table-driven tests are clearer than constants.
+      - path: _test\.go
+        linters:
+          - goconst
     paths:
       - "^third_party/"
       - "^builtin/"
