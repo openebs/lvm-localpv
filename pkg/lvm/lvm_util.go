@@ -1050,9 +1050,6 @@ func parseVolumeGroup(m map[string]string) (apis.VolumeGroup, error) {
 
 // Returns thinpools present on the VG.
 func getThinPools(vg string) ([]apis.ThinPool, error) {
-	var thinpools []apis.ThinPool
-	var err error
-
 	args := []string{
 		optReportFormat, reportFormatJSON,
 		optUnits, "b", "--no-suffix",
@@ -1062,6 +1059,12 @@ func getThinPools(vg string) ([]apis.ThinPool, error) {
 		klog.Errorf("lvm: error while running command %s %v: %v", LVList, args, err)
 		return nil, err
 	}
+	return parseThinPools(output, vg)
+}
+
+// parseThinPools returns the thinpools of the VG from the json output of lvs.
+func parseThinPools(output []byte, vg string) ([]apis.ThinPool, error) {
+	var thinpools []apis.ThinPool
 
 	var lvsReport struct {
 		Report []struct {
@@ -1105,8 +1108,13 @@ func getThinPools(vg string) ([]apis.ThinPool, error) {
 	return thinpools, nil
 }
 
-// Returns thinpool free space in bytes.
+// Returns thinpool free space in bytes. lvs leaves data_percent empty when
+// the thin pool is not active, so its usage is unknown and no free space is
+// reported for it.
 func getThinPoolFree(size int64, usedPercent string) (int64, error) {
+	if usedPercent == "" {
+		return 0, nil
+	}
 	usedFloat, err := strconv.ParseFloat(usedPercent, 32)
 	if err != nil {
 		return 0, fmt.Errorf("couldn't convert data_percent %s into float", usedPercent)
