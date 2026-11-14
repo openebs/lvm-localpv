@@ -90,6 +90,12 @@ type VolumeInfo struct {
 	// +kubebuilder:validation:Enum=yes;no
 	ThinProvision string `json:"thinProvision,omitempty"`
 
+	// ThinPoolName is the name of an existing thin pool, in the volume group,
+	// on which the thin logical volume is to be created. It is honoured only
+	// when thinProvision is "yes". If not set, the driver uses (and manages)
+	// the default "<volgroup>_thinpool".
+	ThinPoolName string `json:"thinPoolName,omitempty"`
+
 	// Source defines the data source from which the volume should be created.
 	// It can reference either a snapshot or an existing volume.
 	// If not specified, a standard LVM volume will be created.

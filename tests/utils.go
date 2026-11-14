@@ -101,6 +101,20 @@ func IsPVCDeletedEventually(pvcName string) bool {
 		Should(gomega.BeTrue())
 }
 
+// IsLVMVolumeDeletedEventually checks if the LVMVolume is deleted or not
+// eventually. The finalizer of the LVMVolume is removed only after the backend
+// volume is destroyed, so this indicates that the node driver is done with the
+// deletion, unlike the removal of the PVC object.
+func IsLVMVolumeDeletedEventually(volName string) bool {
+	return gomega.Eventually(func() bool {
+		_, err := LVMClient.WithNamespace(OpenEBSNamespace).
+			Get(volName, metav1.GetOptions{})
+		return k8serrors.IsNotFound(err)
+	},
+		120, 10).
+		Should(gomega.BeTrue())
+}
+
 func createFstypeStorageClass(ftype string) {
 	var (
 		err error
@@ -234,6 +248,31 @@ func createThinStorageClass(bindingMode storagev1.VolumeBindingMode) {
 
 	scObj, err = SCClient.Create(scObj)
 	gomega.Expect(err).To(gomega.BeNil(), "while creating a thinProvision storageclass {%s}", scName)
+}
+
+func createCustomThinPoolStorageClass(thinPoolName string) {
+	var (
+		err error
+	)
+
+	parameters := map[string]string{
+		"volgroup":      VOLGROUP,
+		"thinProvision": "yes",
+		"thinPoolName":  thinPoolName,
+	}
+
+	ginkgo.By("building a thinProvision storage class with custom thinpool")
+	scObj, err = sc.NewBuilder().
+		WithGenerateName(scName).
+		WithParametersNew(parameters).
+		WithProvisioner(LocalProvisioner).
+		WithVolumeBindingMode(storagev1.VolumeBindingImmediate).
+		Build()
+	gomega.Expect(err).ShouldNot(gomega.HaveOccurred(),
+		"while building custom thinpool storageclass obj with prefix {%s}", scName)
+
+	scObj, err = SCClient.Create(scObj)
+	gomega.Expect(err).To(gomega.BeNil(), "while creating a custom thinpool storageclass {%s}", scName)
 }
 
 func createFormatOptionsStorageClass(formatOptions string) {
@@ -779,6 +818,12 @@ func deleteAppDeployment(appname string) {
 }
 
 func deleteAndVerifyPVC(pvcname string) {
+	// The name of the LVMVolume is the name of the PV, which is known only if
+	// the PVC got bound.
+	volName := ""
+	if pvc, err := PVCClient.Get(pvcname, metav1.GetOptions{}); err == nil {
+		volName = pvc.Spec.VolumeName
+	}
 	err := PVCClient.WithNamespace(OpenEBSNamespace).Delete(pvcname, &metav1.DeleteOptions{})
 	gomega.Expect(err).To(
 		gomega.BeNil(),
@@ -789,6 +834,13 @@ func deleteAndVerifyPVC(pvcname string) {
 	ginkgo.By("verifying deleted pvc")
 	status := IsPVCDeletedEventually(pvcname)
 	gomega.Expect(status).To(gomega.Equal(true), "while trying to get deleted pvc")
+	if volName != "" {
+		// PVC removal does not mean that the backend volume is gone. Wait for the
+		// LVMVolume, whose finalizer is removed once the volume is destroyed.
+		ginkgo.By("verifying deleted lvmvolume")
+		gomega.Expect(IsLVMVolumeDeletedEventually(volName)).To(gomega.BeTrue(),
+			"while waiting for lvmvolume {%s} to be deleted", volName)
+	}
 }
 
 func verifyPVForPVC(shouldExist bool, pvcName string) {
