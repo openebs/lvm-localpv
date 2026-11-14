@@ -45,6 +45,29 @@ lvmNode:
 ```
 
 The chart sets no arguments, so the thin pool is created with the `lvcreate` defaults unless you set this. The arguments are used only when the driver creates a pool, so they do not change a thin pool that already exists. The arguments are passed to `lvcreate` as given, without a shell, and the driver does not check them.
+### Protecting an existing thin pool from garbage collection
+
+When the last thin volume on a thin pool named `<vg>_thinpool` is deleted, the driver
+removes the (now empty) pool. If you created `<vg>_thinpool` yourself (for example with a
+custom chunk size or metadata size) and want to keep it, tag it with `openebs.io/resource-policy=keep`.
+The driver will never remove a pool carrying this tag. See
+[#455](https://github.com/openebs/lvm-localpv/issues/455).
+
+```
+$ lvchange --addtag openebs.io/resource-policy=keep lvmvg/lvmvg_thinpool
+```
+
+Verify the tag:
+
+```
+$ lvs -o lv_name,lv_tags lvmvg/lvmvg_thinpool
+```
+
+To allow garbage collection again, remove the tag:
+
+```
+$ lvchange --deltag openebs.io/resource-policy=keep lvmvg/lvmvg_thinpool
+```
 
 ### Extend the Thin Pool size
 

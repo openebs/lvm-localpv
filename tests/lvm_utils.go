@@ -273,3 +273,19 @@ func VerifyThinPoolDeletion(vg string, thinpool string, expect_deleted bool) {
 		gomega.Expect(err).ShouldNot(gomega.HaveOccurred(), "should've found the thinpool")
 	}
 }
+
+// Adds or removes the openebs.io/resource-policy=keep tag on the given thinpool LV.
+func setThinPoolKeepTag(vg string, thinpool string, add bool) {
+	op := "--deltag"
+	if add {
+		op = "--addtag"
+	}
+	ginkgo.By(fmt.Sprintf("Running lvchange %s on thinpool %s/%s", op, vg, thinpool))
+	args := []string{
+		"lvchange",
+		op, "openebs.io/resource-policy=keep",
+		vg + "/" + thinpool,
+	}
+	_, _, err := execAtLocal("sudo", nil, args...)
+	gomega.Expect(err).To(gomega.BeNil(), "lvchange tag on thinpool failed")
+}
