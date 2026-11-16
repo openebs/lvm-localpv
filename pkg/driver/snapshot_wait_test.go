@@ -7,7 +7,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
@@ -20,11 +19,11 @@ const testSnapshotReadyTimeout = 500 * time.Millisecond
 func fakeSnapshotGetter(t *testing.T, states func(call int) (string, error)) *int {
 	t.Helper()
 	calls := 0
-	origGet, origInterval := getLVMSnapshot, snapshotReadyPollInterval
+	origGet, origInitial, origMax := getLVMSnapshot, snapshotReadyPollInitialInterval, snapshotReadyPollMaxInterval
 	t.Cleanup(func() {
-		getLVMSnapshot, snapshotReadyPollInterval = origGet, origInterval
+		getLVMSnapshot, snapshotReadyPollInitialInterval, snapshotReadyPollMaxInterval = origGet, origInitial, origMax
 	})
-	snapshotReadyPollInterval = 10 * time.Millisecond
+	snapshotReadyPollInitialInterval, snapshotReadyPollMaxInterval = 5*time.Millisecond, 20*time.Millisecond
 	getLVMSnapshot = func(name string) (*lvmapi.LVMSnapshot, error) {
 		calls++
 		state, err := states(calls)
@@ -111,23 +110,4 @@ func TestSnapshotWaitErrorCode(t *testing.T) {
 	assert.Equal(t, codes.DeadlineExceeded, snapshotWaitErrorCode(context.DeadlineExceeded))
 	assert.Equal(t, codes.Canceled, snapshotWaitErrorCode(context.Canceled))
 	assert.Equal(t, codes.ResourceExhausted, snapshotWaitErrorCode(k8serror.NewServiceUnavailable("apiserver unavailable")))
-}
-
-func TestLockSnapshot(t *testing.T) {
-	cs := &controller{}
-
-	unlock, err := cs.lockSnapshot("snap-1")
-	assert.NoError(t, err)
-
-	_, err = cs.lockSnapshot("snap-1")
-	assert.Equal(t, codes.Aborted, status.Code(err))
-
-	unlockOther, err := cs.lockSnapshot("snap-2")
-	assert.NoError(t, err)
-	unlockOther()
-
-	unlock()
-	unlock, err = cs.lockSnapshot("snap-1")
-	assert.NoError(t, err)
-	unlock()
 }

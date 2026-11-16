@@ -6,7 +6,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -68,7 +67,7 @@ type controller struct {
 
 	leakProtection *csipv.LeakProtectionController
 
-	snapshotsInFlight sync.Map
+	volumeLock *volumeLock
 
 	csi.UnimplementedControllerServer
 }
@@ -79,6 +78,7 @@ func NewController(d *CSIDriver) csi.ControllerServer {
 	ctrl := &controller{
 		driver:       d,
 		capabilities: newControllerCapabilities(),
+		volumeLock:   newVolumeLock(),
 	}
 
 	if err := ctrl.init(); err != nil {
@@ -732,10 +732,7 @@ func (cs *controller) CreateSnapshot(
 		return nil, err
 	}
 
-	unlock, err := cs.lockSnapshot(req.Name)
-	if err != nil {
-		return nil, err
-	}
+	unlock := cs.volumeLock.LockVolumeWithSnapshot(req.SourceVolumeId, req.Name)
 	defer unlock()
 
 	snapTimeStamp := time.Now().Unix()
@@ -862,19 +859,10 @@ func (cs *controller) CreateSnapshot(
 }
 
 var (
-	snapshotReadyPollInterval = 800 * time.Millisecond
-	getLVMSnapshot            = lvm.GetLVMSnapshot
+	snapshotReadyPollInitialInterval = 100 * time.Millisecond
+	snapshotReadyPollMaxInterval     = 800 * time.Millisecond
+	getLVMSnapshot                   = lvm.GetLVMSnapshot
 )
-
-// lockSnapshot returns codes.Aborted while another request for the same snapshot
-// is in progress, as the CSI spec prescribes, and otherwise a function to unlock it
-func (cs *controller) lockSnapshot(snapName string) (func(), error) {
-	if _, busy := cs.snapshotsInFlight.LoadOrStore(snapName, struct{}{}); busy {
-		return nil, status.Errorf(codes.Aborted,
-			"an operation for snapshot %s is already in progress", snapName)
-	}
-	return func() { cs.snapshotsInFlight.Delete(snapName) }, nil
-}
 
 // waitForLVMSnapshotReady waits until the node agent marks the lvm snapshot Ready,
 // the snapshot is not found, ctx is done or timeout passes. It returns ctx.Err()
@@ -883,8 +871,7 @@ func waitForLVMSnapshotReady(ctx context.Context, snapName string, timeout time.
 	// The node agent never marks a snapshot Failed, so the wait needs its own upper bound.
 	timer := time.NewTimer(timeout)
 	defer timer.Stop()
-	ticker := time.NewTicker(snapshotReadyPollInterval)
-	defer ticker.Stop()
+	interval := snapshotReadyPollInitialInterval
 	for {
 		snap, err := getLVMSnapshot(snapName)
 		if k8serror.IsNotFound(err) || (err == nil && snap.Status.State == lvm.LVMStatusReady) {
@@ -897,10 +884,12 @@ func waitForLVMSnapshotReady(ctx context.Context, snapName string, timeout time.
 		case <-ctx.Done():
 			return snap, ctx.Err()
 		case <-timer.C:
-			klog.Infof("lvm snapshot %s is not ready after %s", snapName, timeout)
+			klog.Warningf("lvm snapshot %s is not ready after %s", snapName, timeout)
 			return snap, err
-		case <-ticker.C:
+		case <-time.After(interval):
 		}
+		// Back off so that a slow snapshot doesn't eat the client-side rate limit of the controller.
+		interval = min(2*interval, snapshotReadyPollMaxInterval)
 	}
 }
 
@@ -950,10 +939,7 @@ func (cs *controller) DeleteSnapshot(
 		)
 	}
 
-	unlock, err := cs.lockSnapshot(snapshotID[1])
-	if err != nil {
-		return nil, err
-	}
+	unlock := cs.volumeLock.LockVolumeWithSnapshot(snapshotID[0], snapshotID[1])
 	defer unlock()
 
 	if err := lvm.DeleteSnapshot(snapshotID[1]); err != nil {
