@@ -1761,6 +1761,10 @@ spec:
             - "--endpoint=$(OPENEBS_CSI_ENDPOINT)"
             - "--plugin=$(OPENEBS_NODE_DRIVER)"
             - "--listen-address=$(METRICS_LISTEN_ADDRESS)"
+          ports:
+            - name: metrics
+              containerPort: 9500
+              protocol: TCP
           env:
             - name: OPENEBS_NODE_ID
               valueFrom:
