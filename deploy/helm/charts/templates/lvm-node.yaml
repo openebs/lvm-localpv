@@ -98,6 +98,12 @@ spec:
             - "--default-format-options={{ $fsType }}={{ $options }}"
             {{- end }}
             {{- end }}
+          {{- if .Values.lvmPlugin.metricsPort }}
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.lvmPlugin.metricsPort }}
+              protocol: TCP
+          {{- end }}
           env:
             - name: OPENEBS_NODE_ID
               valueFrom:
