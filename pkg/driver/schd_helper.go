@@ -24,6 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/strings/slices"
 
+	apis "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
 	"github.com/openebs/lvm-localpv/pkg/builder/nodebuilder"
 	"github.com/openebs/lvm-localpv/pkg/lvm"
 )
@@ -67,7 +68,7 @@ func getVolumeWeightedMap(params *VolumeParams, capacity string) (map[string]int
 			continue
 		}
 		for _, vg := range node.VolumeGroups {
-			if params.VgPattern.MatchString(vg.Name) {
+			if params.VgPattern.MatchString(vg.Name) && vgHasThinPool(params, vg) {
 				nmap[node.Name] += int64(vg.LVCount)
 			}
 		}
@@ -103,13 +104,37 @@ func getCapacityWeightedMap(params *VolumeParams, capacity string) (map[string]i
 			continue
 		}
 		for _, vg := range node.VolumeGroups {
-			if params.VgPattern.MatchString(vg.Name) {
+			if params.VgPattern.MatchString(vg.Name) && vgHasThinPool(params, vg) {
 				nmap[node.Name] += vg.Size.Value() - vg.Free.Value()
 			}
 		}
 	}
 
 	return nmap, nil
+}
+
+// getThinPoolName returns the thin pool used for thin volumes of the given
+// volume group: the one requested in the storage class, else the default
+// "<vg>_thinpool".
+func getThinPoolName(params *VolumeParams, vgName string) string {
+	if params.ThinPoolName != "" {
+		return params.ThinPoolName
+	}
+	return lvm.DefaultThinPoolName(vgName)
+}
+
+// vgHasThinPool returns false if the storage class asks for a specific thin
+// pool and the volume group does not have it.
+func vgHasThinPool(params *VolumeParams, vg apis.VolumeGroup) bool {
+	if params.ThinPoolName == "" || params.ThinPoolName == lvm.DefaultThinPoolName(vg.Name) {
+		return true
+	}
+	for _, pool := range vg.ThinPools {
+		if pool.Name == params.ThinPoolName {
+			return true
+		}
+	}
+	return false
 }
 
 // Goes through all volume groups in the node to determine vg with highest
@@ -129,11 +154,12 @@ func getSpaceWeightedMap(params *VolumeParams, capacity string) (map[string]int6
 	for _, node := range nodeList.Items {
 		var maxFree int64 = 0
 		for _, vg := range node.VolumeGroups {
-			if params.VgPattern.MatchString(vg.Name) {
+			if params.VgPattern.MatchString(vg.Name) && vgHasThinPool(params, vg) {
 				freeCapacity := vg.Free.Value()
 				if params.ThinProvision == lvm.YES {
+					poolName := getThinPoolName(params, vg.Name)
 					for _, thinpool := range vg.ThinPools {
-						if thinpool.Name == vg.Name+"_thinpool" {
+						if thinpool.Name == poolName {
 							freeCapacity += thinpool.Free.Value()
 						}
 					}

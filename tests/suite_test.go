@@ -45,6 +45,10 @@ const (
 	VOLGROUP = "lvmvg"
 	// This is supposed to be the volgroup parameter. This will not be available for provisioning in the lvmnode.
 	NONEXIST_VOLGROUP = "lvmvgn"
+	// LVM tag the driver adds to thin pools it creates. Deliberately a literal
+	// and not lvm.ManagedThinPoolTag: the tag is stored on existing pools, so
+	// changing it must fail this test.
+	MANAGED_THINPOOL_TAG = "openebs.io/managed"
 )
 
 var (

@@ -139,6 +139,12 @@ func (b *Builder) WithThinProvision(thinProvision string) *Builder {
 	return b
 }
 
+// WithThinPoolName sets the name of the thin pool to create the volume on
+func (b *Builder) WithThinPoolName(thinPoolName string) *Builder {
+	b.volume.Object.Spec.ThinPoolName = thinPoolName
+	return b
+}
+
 // WithVolGroup sets volume group name for creating volume
 func (b *Builder) WithVolGroup(vg string) *Builder {
 	if vg == "" {

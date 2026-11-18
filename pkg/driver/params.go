@@ -42,6 +42,9 @@ type VolumeParams struct {
 	Scheduler     string
 	Shared        string
 	ThinProvision string
+	// ThinPoolName is the existing thin pool to create thin volumes on.
+	// Defaults to "<vg>_thinpool" when empty.
+	ThinPoolName string
 	// extra optional metadata passed by external provisioner
 	// if enabled. See --extra-create-metadata flag for more details.
 	// https://github.com/kubernetes-csi/external-provisioner#recommended-optional-arguments
@@ -124,6 +127,7 @@ func NewVolumeParams(m map[string]string) (*VolumeParams, error) {
 		"scheduler":     &params.Scheduler,
 		"shared":        &params.Shared,
 		"thinprovision": &params.ThinProvision,
+		"thinpoolname":  &params.ThinPoolName,
 	}
 	for key, param := range stringParams {
 		value, ok := m[key]
@@ -131,6 +135,10 @@ func NewVolumeParams(m map[string]string) (*VolumeParams, error) {
 			continue
 		}
 		*param = value
+	}
+
+	if params.ThinPoolName != "" && params.ThinProvision != "yes" {
+		return nil, fmt.Errorf("thinPoolName %q requires thinProvision to be \"yes\"", params.ThinPoolName)
 	}
 
 	params.PVCName = m["csi.storage.k8s.io/pvc/name"]

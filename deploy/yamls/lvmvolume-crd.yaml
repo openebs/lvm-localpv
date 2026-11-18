@@ -119,6 +119,13 @@ spec:
                   If not specified, a standard LVM volume will be created.
                   If specified, the new volume will be created using the defined data source.
                 type: string
+              thinPoolName:
+                description: |-
+                  ThinPoolName is the name of an existing thin pool, in the volume group,
+                  on which the thin logical volume is to be created. It is honoured only
+                  when thinProvision is "yes". If not set, the driver uses (and manages)
+                  the default "<volgroup>_thinpool".
+                type: string
               thinProvision:
                 description: |-
                   ThinProvision specifies whether logical volumes can be thinly provisioned.

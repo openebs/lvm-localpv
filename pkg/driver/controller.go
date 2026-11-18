@@ -259,6 +259,14 @@ func validateRestoreRequestFromSnapshot(lvmSnapCr *lvmapi.LVMSnapshot,
 		return status.Errorf(codes.InvalidArgument, "only thin restores supported today.")
 	}
 
+	// a restored volume is always created in the thin pool of the snapshot,
+	// so the storage class can't pick a different one.
+	if params.ThinPoolName != "" {
+		return status.Errorf(codes.InvalidArgument,
+			"thinPoolName can't be set when restoring from snapshot %s: the volume is created in the thin pool of the snapshot",
+			lvmSnapCr.Name)
+	}
+
 	vgPattern := fmt.Sprintf("^%v$", lvmSnapCr.Spec.VolGroup)
 
 	// verify that the volume group of the new volume to be created
@@ -318,6 +326,7 @@ func CreateLVMVolume(ctx context.Context, req *csi.CreateVolumeRequest,
 	var owner string             // owner node where volume is to be created
 	var lvmSnapshotCrName string // snapshot name if volume is to be created from snapshot
 	var volGroup string          // volume group where volume is to be created
+	thinPoolName := params.ThinPoolName
 	// if volume is to be created from snapshot, verify request with snapshot values
 	if req.GetVolumeContentSource() != nil && req.GetVolumeContentSource().GetSnapshot() != nil {
 		snapId := req.GetVolumeContentSource().GetSnapshot().GetSnapshotId()
@@ -336,6 +345,15 @@ func CreateLVMVolume(ctx context.Context, req *csi.CreateVolumeRequest,
 			return nil, err
 		}
 
+		// the restored volume lives in the thin pool of the snapshot, which is
+		// the thin pool of the source volume.
+		srcVol, err := lvm.GetLVMVolume(parts[0])
+		if err != nil {
+			return nil, status.Errorf(codes.NotFound,
+				"source volume %s of snapshot %s not found: %s", parts[0], parts[1], err.Error())
+		}
+		thinPoolName = srcVol.Spec.ThinPoolName
+
 		owner = lvmSnapCr.Spec.OwnerNodeID
 		lvmSnapshotCrName = lvmSnapCr.Name
 		volGroup = lvmSnapCr.Spec.VolGroup
@@ -346,6 +364,11 @@ func CreateLVMVolume(ctx context.Context, req *csi.CreateVolumeRequest,
 		}
 
 		if len(nmap) == 0 {
+			if params.ThinPoolName != "" {
+				return nil, status.Errorf(codes.ResourceExhausted,
+					"Could not find suitable node to schedule the PVC: no volume group matching %q has thin pool %q",
+					params.VgPattern.String(), params.ThinPoolName)
+			}
 			return nil, status.Error(codes.ResourceExhausted, "Could not find suitable node to schedule the PVC")
 		}
 
@@ -380,6 +403,7 @@ func CreateLVMVolume(ctx context.Context, req *csi.CreateVolumeRequest,
 		WithVolumeStatus(lvm.LVMStatusPending).
 		WithShared(params.Shared).
 		WithThinProvision(params.ThinProvision).
+		WithThinPoolName(thinPoolName).
 		WithQoS(QoSParamsCreateVolume(qos)).
 		Build()
 
@@ -969,7 +993,10 @@ func (cs *controller) GetCapacity(
 			if !params.VgPattern.MatchString(vg.Name) {
 				continue
 			}
-			vgThinPoolName := fmt.Sprintf("%s_thinpool", vg.Name)
+			if !vgHasThinPool(params, vg) {
+				continue
+			}
+			vgThinPoolName := getThinPoolName(params, vg.Name)
 			freeCapacity := vg.Free.Value()
 			if params.ThinProvision == lvm.YES {
 				for _, pool := range vg.ThinPools {
