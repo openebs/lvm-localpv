@@ -1,0 +1,1 @@
+declare the node plugin metrics port as a named containerPort in the chart and operator yaml
