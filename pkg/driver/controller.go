@@ -703,6 +703,10 @@ func (cs *controller) ControllerExpandVolume(
 			Build(), nil
 	}
 
+	if err := cs.validateVolumeGroupFreeSpace(vol, updatedSize-volsize); err != nil {
+		return nil, err
+	}
+
 	if err := lvm.ResizeVolume(vol, updatedSize); err != nil {
 		return nil, status.Errorf(
 			codes.Internal,
@@ -715,6 +719,61 @@ func (cs *controller) ControllerExpandVolume(
 		WithCapacityBytes(updatedSize).
 		WithNodeExpansionRequired(true).
 		Build(), nil
+}
+
+// validateVolumeGroupFreeSpace returns an error if the volume group of a thick
+// volume, as last reported in the LVMNode of its owner node, does not have
+// growth bytes free. The new size must not be set on the LVMVolume when
+// lvextend can't allocate it: the node expansion would then keep failing, and
+// once the controller expansion has succeeded, lowering the PVC request no
+// longer recovers the volume.
+func (cs *controller) validateVolumeGroupFreeSpace(vol *lvmapi.LVMVolume, growth int64) error {
+	// a thin volume grows in its thin pool, which can be overprovisioned
+	if vol.Spec.ThinProvision == lvm.YES {
+		return nil
+	}
+
+	key := lvm.LvmNamespace + "/" + vol.Spec.OwnerNodeID
+	node, exists, err := cs.lvmNodeInformer.GetIndexer().GetByKey(key)
+	if err != nil {
+		return status.Errorf(
+			codes.Internal,
+			"ControllerExpandVolume: failed to get LVMNode %s for volume %s, {%s}",
+			key, vol.Name, err.Error(),
+		)
+	}
+	if !exists {
+		return status.Errorf(
+			codes.Unavailable,
+			"ControllerExpandVolume: LVMNode %s of volume %s not found",
+			key, vol.Name,
+		)
+	}
+
+	lvmNode := node.(*lvmapi.LVMNode)
+	for _, vg := range lvmNode.VolumeGroups {
+		if vg.Name != vol.Spec.VolGroup {
+			continue
+		}
+		if growth > vg.Free.Value() {
+			// OutOfRange is a final error for the external resizer, unlike
+			// ResourceExhausted, after which it honours a PVC request that
+			// the user lowers to a size that fits.
+			return status.Errorf(
+				codes.OutOfRange,
+				"ControllerExpandVolume: volume group %s on node %s has %d bytes free, "+
+					"expanding volume %s needs %d bytes",
+				vg.Name, vol.Spec.OwnerNodeID, vg.Free.Value(), vol.Name, growth,
+			)
+		}
+		return nil
+	}
+
+	return status.Errorf(
+		codes.Unavailable,
+		"ControllerExpandVolume: volume group %s of volume %s not found on node %s",
+		vol.Spec.VolGroup, vol.Name, vol.Spec.OwnerNodeID,
+	)
 }
 
 // CreateSnapshot creates a snapshot for given volume
