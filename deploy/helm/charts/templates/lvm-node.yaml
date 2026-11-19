@@ -8,6 +8,9 @@ metadata:
   {{- end }}
   labels:
     {{- include "lvmlocalpv.lvmNode.labels" . | nindent 4 }}
+    {{- with .Values.lvmNode.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   selector:
     matchLabels:

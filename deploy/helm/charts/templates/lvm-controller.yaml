@@ -8,6 +8,9 @@ metadata:
   {{- end }}
   labels:
     {{- include "lvmlocalpv.lvmController.labels" . | nindent 4 }}
+    {{- with .Values.lvmController.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   selector:
     matchLabels:

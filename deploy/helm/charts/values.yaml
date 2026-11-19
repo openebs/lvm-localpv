@@ -181,6 +181,7 @@ lvmController:
   tolerations: []
   topologySpreadConstraints: []
   securityContext: {}
+  labels: {}
   priorityClass:
     create: true
     name: lvm-localpv-csi-controller-critical
