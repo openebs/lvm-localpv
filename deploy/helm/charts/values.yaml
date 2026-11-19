@@ -222,7 +222,7 @@ lvmPlugin:
   # If not set, service will not be created to expose metrics endpoint
   # to serviceMonitor andlisten-address flag will not be set.
   metricsPort: 9500
-  # Comma seperated list of k8s worker node topologies
+  # Comma separated list of k8s worker node topologies
   allowedTopologies: "kubernetes.io/hostname,"
 
 role: openebs-lvm
