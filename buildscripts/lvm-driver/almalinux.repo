@@ -1,0 +1,13 @@
+[almalinux-baseos]
+name=AlmaLinux $releasever BaseOS
+baseurl=https://repo.almalinux.org/almalinux/$releasever/BaseOS/$basearch/os/
+gpgcheck=1
+gpgkey=https://repo.almalinux.org/almalinux/RPM-GPG-KEY-AlmaLinux-$releasever
+includepkgs=xfsprogs e2fsprogs e2fsprogs-libs inih
+
+[epel]
+name=EPEL $releasever
+baseurl=https://dl.fedoraproject.org/pub/epel/$releasever/Everything/$basearch/
+gpgcheck=1
+gpgkey=https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-$releasever
+includepkgs=btrfs-progs

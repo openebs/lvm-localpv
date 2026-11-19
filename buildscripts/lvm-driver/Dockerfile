@@ -1,21 +1,33 @@
-# Copyright 2019-2020 The OpenEBS Authors. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+FROM registry.access.redhat.com/ubi9/ubi-micro:9.9@sha256:dbd325b96bcd432dd42816d31412bdf1dc0fb973b79ed310344bc23c76c068db AS micro
 
-FROM alpine:3.23.5
-RUN apk add --no-cache lvm2 lvm2-extra util-linux device-mapper
-RUN apk add --no-cache btrfs-progs-extra xfsprogs xfsprogs-extra e2fsprogs e2fsprogs-extra
-RUN apk add --no-cache ca-certificates libc6-compat
+# ubi-micro has no package manager: install into a copy of it from ubi, then copy back what changed.
+FROM registry.access.redhat.com/ubi9/ubi:9.9@sha256:e45746866f611d164042b961cd83f1093c4fdb422d9b99fcf23ff951626044f8 AS build
+COPY --from=micro / /rootfs
+COPY almalinux.repo /etc/yum.repos.d/
+# The removed packages are only pulled in via systemd/pam and are never used by the driver.
+RUN dnf -y -q --installroot /rootfs --setopt reposdir=/etc/yum.repos.d --setopt install_weak_deps=0 --nodocs install \
+      lvm2 device-mapper util-linux ca-certificates xfsprogs e2fsprogs btrfs-progs openssl-fips-provider \
+ && rpm --root /rootfs -e --nodeps --noscripts systemd systemd-pam systemd-rpm-macros dbus dbus-broker dbus-common \
+      pam libpwquality cracklib cracklib-dicts shadow-utils libsemanage libdb \
+ && rm -f /rootfs/usr/bin/login /rootfs/usr/bin/su /rootfs/usr/sbin/runuser \
+ && dnf -q --installroot /rootfs clean all
+
+# No udevd in the pod: LVM must create /dev nodes itself and see all host devices.
+# Monitoring off: thin pool autoextend is left to the host's dmeventd and lvm.conf.
+RUN printf 'devices {\n\tuse_devicesfile = 0\n}\nactivation {\n\tudev_sync = 0\n\tudev_rules = 0\n\tmonitoring = 0\n}\n' > /rootfs/etc/lvm/lvmlocal.conf
+
+# Load only the FIPS (+ base) provider, so non-FIPS algorithms can't be fetched even explicitly.
+RUN sed -i -e 's/^default = default_sect$/fips = fips_sect\nbase = base_sect/' \
+      -e 's/^\[default_sect\]$/[fips_sect]\nactivate = 1\n\n[base_sect]/' \
+      -e 's/^\[ evp_properties \]$/&\ndefault_properties = fips=yes/' /rootfs/etc/pki/tls/openssl.cnf
+
+# Rewriting ubi-micro's own files in a new layer fails the Red Hat certification (preflight HasModifiedFiles).
+RUN --mount=from=micro,target=/micro dnf -y -q --setopt install_weak_deps=0 install rsync \
+ && rsync -aH --checksum --compare-dest=/micro/ /rootfs/ /delta/
+
+FROM micro
+COPY --from=build /delta /
+ENV OPENSSL_FORCE_FIPS_MODE=1
 
 ARG DBUILD_DATE
 ARG DBUILD_REPO_URL
