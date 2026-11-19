@@ -103,7 +103,7 @@ helm install openebs-lvmlocalpv openebs-lvmlocalpv/lvm-localpv --namespace opene
 | `lvmPlugin.image.pullPolicy`                        | Image pull policy for openebs-lvm-plugin                                         | `IfNotPresent`                          |
 | `lvmPlugin.image.tag`                               | Image tag for openebs-lvm-plugin, set to the chart version on release            | the chart version                       |
 | `lvmPlugin.metricsPort`                             | The TCP port number used for exposing lvm-metrics                                | `9500`                                  |
-| `lvmPlugin.allowedTopologies`                       | The comma seperated list of allowed node topologies                              | `kubernetes.io/hostname,`               |
+| `lvmPlugin.allowedTopologies`                       | The comma separated list of allowed node topologies                              | `kubernetes.io/hostname,`               |
 | `lvmPlugin.ioLimits.enabled`                        | Set per-GB IOPS limits on the volumes of the lvmnode daemonset                   | `false`                                 |
 | `lvmPlugin.ioLimits.containerRuntime`               | Container runtime of the nodes, used to find the pod cgroup for the IO limits    | `containerd`                            |
 | `lvmPlugin.ioLimits.readIopsPerGB`                  | Read IOPS per GB of volume size, by volume group name prefix, e.g. `vg1-prefix:100,vg2-prefix:200`| `""`                                    |

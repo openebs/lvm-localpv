@@ -20,7 +20,7 @@ OpenEBS Local PV LVM is a [CSI](https://github.com/container-storage-interface/s
 ## Why OpenEBS Local PV LVM?
 
 1. Lightweight, easy to set up storage provisoner for host-local volumes in K8s ecosystem.
-2. Makes LVM stack available to K8s, allowing end users to use the LVM functionalites like snapshot, thin provisioning, resize, etc for their Persistent Volumes.
+2. Makes LVM stack available to K8s, allowing end users to use the LVM functionalities like snapshot, thin provisioning, resize, etc for their Persistent Volumes.
 3. Cloud native, i.e based on CSI spec, hence suitable for all K8s deployments.
 
 ## Architecture
@@ -95,8 +95,8 @@ graph TD;
 > | Distro | Alpine, Arch, CentOS, Debian, Fedora, NixOS, SUSE, Talos, RHEL, Ubuntu |
 > | Kernel | oldest supported kernel is 2.6 |
 > | LVM2 | 2.03.21 |
-> | Min RAM | LVM2 is a kernel native module. It is very efficent and fast. It has no strict memory requirements |
-> Stability | LVM2 is extremly stable and very mature. The Kernel was released ~2005. It exists in most LINUX distros |
+> | Min RAM | LVM2 is a kernel native module. It is very efficient and fast. It has no strict memory requirements |
+> Stability | LVM2 is extremely stable and very mature. The Kernel was released ~2005. It exists in most LINUX distros |
 
 ## Documents
 
@@ -104,7 +104,7 @@ graph TD;
 - [Quickstart](./docs/quickstart.md#setup)
 - [Developer Setup](./docs/developer-setup.md#development-workflow)
 - [Testing](./docs/developer-setup.md#testing)
-- [Contibuting Guidelines](./CONTRIBUTING.md)
+- [Contributing Guidelines](./CONTRIBUTING.md)
 - [Governance](./GOVERNANCE.md)
 - [Changelog](./CHANGELOG.md)
 - [Release Process](./RELEASE.md)
