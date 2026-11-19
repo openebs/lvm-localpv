@@ -101,6 +101,7 @@ jobs:
             DBUILD_REPO_URL=https://github.com/openebs/lvm-localpv
             DBUILD_SITE_URL=https://openebs.io
             BRANCH=${{ env.BRANCH }}
+            IMAGE_TAG=${{ env.IMAGE_TAG }}
 
   release-chart:
     runs-on: ubuntu-22.04

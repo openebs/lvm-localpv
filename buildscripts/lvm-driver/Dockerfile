@@ -32,9 +32,22 @@ ENV OPENSSL_FORCE_FIPS_MODE=1
 ARG DBUILD_DATE
 ARG DBUILD_REPO_URL
 ARG DBUILD_SITE_URL
+ARG IMAGE_TAG
 
+COPY LICENSE /licenses/
 COPY lvm-driver /usr/local/bin/
 
+# Labels required by Red Hat (OpenShift) container certification.
+LABEL name="openebs/lvm-driver" \
+      vendor="OpenEBS" \
+      maintainer="OpenEBS Maintainers" \
+      version="${IMAGE_TAG:-develop}" \
+      release="${IMAGE_TAG:-develop}" \
+      summary="OpenEBS LVM LocalPV CSI Driver" \
+      description="CSI driver that provisions local persistent volumes from LVM volume groups" \
+      url="${DBUILD_SITE_URL}" \
+      io.k8s.display-name="OpenEBS LVM LocalPV Driver" \
+      io.k8s.description="CSI driver that provisions local persistent volumes from LVM volume groups"
 LABEL org.label-schema.name="lvm-driver"
 LABEL org.label-schema.description="OpenEBS LVM LocalPV Driver"
 LABEL org.label-schema.schema-version="1.0"
