@@ -96,7 +96,8 @@ if [ "$GOOS" = "windows" ]; then
     output_name+='.exe'
 fi
 
-env CC="$CC" GOOS="$GOOS" GOARCH="$GOARCH" CGO_ENABLED=0 go build -ldflags \
+# GOFIPS140 embeds the CMVP-validated Go Cryptographic Module (#5247) and enables FIPS mode by default.
+env CC="$CC" GOOS="$GOOS" GOARCH="$GOARCH" CGO_ENABLED=0 GOFIPS140=v1.0.0 go build -ldflags \
     "-X github.com/openebs/lvm-localpv/pkg/version.GitCommit=${GIT_COMMIT} \
     -X main.CtlName='${CTLNAME}' \
     -X github.com/openebs/lvm-localpv/pkg/version.Version=${VERSION} \
