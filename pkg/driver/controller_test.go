@@ -20,6 +20,15 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	lvmapi "github.com/openebs/lvm-localpv/pkg/apis/openebs.io/lvm/v1alpha1"
+	"github.com/openebs/lvm-localpv/pkg/generated/clientset/internalclientset/fake"
+	informers "github.com/openebs/lvm-localpv/pkg/generated/informer/externalversions"
+	"github.com/openebs/lvm-localpv/pkg/lvm"
 )
 
 func TestRoundOff(t *testing.T) {
@@ -93,6 +102,75 @@ func Test_getSnapSize(t *testing.T) {
 			if got := getSnapSize(tt.args.params, tt.args.capacity); got != tt.want {
 				t.Errorf("getSnapSize() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func TestValidateVolumeGroupFreeSpace(t *testing.T) {
+	namespace := lvm.LvmNamespace
+	lvm.LvmNamespace = "openebs"
+	t.Cleanup(func() { lvm.LvmNamespace = namespace })
+
+	lvmNode := &lvmapi.LVMNode{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "node1",
+			Namespace: lvm.LvmNamespace,
+		},
+		VolumeGroups: []lvmapi.VolumeGroup{
+			{
+				Name: "lvmvg",
+				Size: *resource.NewQuantity(50*Gi, resource.BinarySI),
+				Free: *resource.NewQuantity(10*Gi, resource.BinarySI),
+			},
+		},
+	}
+
+	lvmNodeInformer := informers.NewSharedInformerFactory(fake.NewSimpleClientset(), 0).
+		Local().V1alpha1().LVMNodes().Informer()
+	if err := lvmNodeInformer.GetIndexer().Add(lvmNode); err != nil {
+		t.Fatalf("failed to add LVMNode to the informer cache: %v", err)
+	}
+	cs := &controller{lvmNodeInformer: lvmNodeInformer}
+
+	tests := map[string]struct {
+		ownerNode     string
+		volGroup      string
+		thinProvision string
+		growth        int64
+		code          codes.Code
+	}{
+		"growth less than the free space": {
+			ownerNode: "node1", volGroup: "lvmvg", growth: 2 * Gi, code: codes.OK,
+		},
+		"growth equal to the free space": {
+			ownerNode: "node1", volGroup: "lvmvg", growth: 10 * Gi, code: codes.OK,
+		},
+		"growth more than the free space": {
+			ownerNode: "node1", volGroup: "lvmvg", growth: 10*Gi + Mi, code: codes.OutOfRange,
+		},
+		"thin volume growth more than the free space": {
+			ownerNode: "node1", volGroup: "lvmvg", thinProvision: lvm.YES, growth: 20 * Gi, code: codes.OK,
+		},
+		"volume group not on the owner node": {
+			ownerNode: "node1", volGroup: "othervg", growth: Mi, code: codes.Unavailable,
+		},
+		"owner node without LVMNode": {
+			ownerNode: "node2", volGroup: "lvmvg", growth: Mi, code: codes.Unavailable,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			vol := &lvmapi.LVMVolume{
+				ObjectMeta: metav1.ObjectMeta{Name: "pvc-1"},
+				Spec: lvmapi.VolumeInfo{
+					OwnerNodeID:   test.ownerNode,
+					VolGroup:      test.volGroup,
+					ThinProvision: test.thinProvision,
+				},
+			}
+			err := cs.validateVolumeGroupFreeSpace(vol, test.growth)
+			assert.Equal(t, test.code, status.Code(err), "error: %v", err)
 		})
 	}
 }
