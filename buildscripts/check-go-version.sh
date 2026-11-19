@@ -24,6 +24,6 @@ check() {
 }
 
 dockerfile="buildscripts/lvm-driver/Dockerfile.buildx"
-check Go "$dockerfile" "$(sed -n 's/^FROM golang:\([0-9.]*\).*/\1/p' "$ROOT_DIR/$dockerfile" | head -n1)" "$gomod_version" go.mod
+check Go "$dockerfile" "$(sed -n 's/^FROM \(--platform=[^ ]* \)\{0,1\}golang:\([0-9.]*\).*/\2/p' "$ROOT_DIR/$dockerfile" | head -n1)" "$gomod_version" go.mod
 
 exit "$rc"

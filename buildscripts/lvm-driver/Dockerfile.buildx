@@ -1,4 +1,5 @@
-FROM golang:1.26.9-alpine AS build
+# Build stages run natively and cross-build for the target: emulating them under QEMU is very slow.
+FROM --platform=$BUILDPLATFORM golang:1.26.9-alpine AS build
 
 ARG BRANCH
 ARG RELEASE_TAG
@@ -30,11 +31,13 @@ RUN make buildx.csi-driver
 FROM registry.access.redhat.com/ubi9/ubi-micro:9.9@sha256:dbd325b96bcd432dd42816d31412bdf1dc0fb973b79ed310344bc23c76c068db AS micro
 
 # ubi-micro has no package manager: install into a copy of it from ubi, then copy back what changed.
-FROM registry.access.redhat.com/ubi9/ubi:9.9@sha256:e45746866f611d164042b961cd83f1093c4fdb422d9b99fcf23ff951626044f8 AS rootfs
+FROM --platform=$BUILDPLATFORM registry.access.redhat.com/ubi9/ubi:9.9@sha256:e45746866f611d164042b961cd83f1093c4fdb422d9b99fcf23ff951626044f8 AS rootfs
+ARG TARGETARCH
 COPY --from=micro / /rootfs
 COPY buildscripts/lvm-driver/almalinux.repo /etc/yum.repos.d/
 # The removed packages are only pulled in via systemd/pam and are never used by the driver.
-RUN dnf -y -q --installroot /rootfs --setopt reposdir=/etc/yum.repos.d --setopt install_weak_deps=0 --nodocs install \
+RUN arch=$(case "$TARGETARCH" in amd64) echo x86_64;; arm64) echo aarch64;; *) echo "$TARGETARCH";; esac) \
+ && dnf -y -q --installroot /rootfs --forcearch "$arch" --setopt reposdir=/etc/yum.repos.d --setopt install_weak_deps=0 --nodocs install \
       lvm2 device-mapper util-linux ca-certificates xfsprogs e2fsprogs btrfs-progs openssl-fips-provider \
  && rpm --root /rootfs -e --nodeps --noscripts systemd systemd-pam systemd-rpm-macros dbus dbus-broker dbus-common \
       pam libpwquality cracklib cracklib-dicts shadow-utils libsemanage libdb \
