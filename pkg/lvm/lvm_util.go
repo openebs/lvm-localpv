@@ -644,6 +644,8 @@ func DestroyVolume(vol *apis.LVMVolume) error {
 						// Check for prompts directly in the raw output
 						if strings.Contains(content, "Do you really want to remove") {
 							klog.Info("Empty thinpool prompt detected in raw output, responding with 'y'")
+							// Only output after this answer may match a prompt again.
+							partialLine.Reset()
 
 							n, err := ptmx.Write([]byte("y\n"))
 							if err != nil {
