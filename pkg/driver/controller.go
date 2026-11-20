@@ -727,42 +727,52 @@ func (cs *controller) CreateSnapshot(
 
 	klog.Infof("CreateSnapshot volume %s for %s", req.Name, req.SourceVolumeId)
 
-	err := validateSnapshotRequest(req)
+	unlock := cs.volumeLock.LockVolumeWithSnapshot(req.SourceVolumeId, req.Name)
+	defer unlock()
+
+	snap, err := validateSnapshotRequest(req)
 	if err != nil {
 		return nil, err
 	}
 
-	unlock := cs.volumeLock.LockVolumeWithSnapshot(req.SourceVolumeId, req.Name)
-	defer unlock()
-
 	snapTimeStamp := time.Now().Unix()
-	var lvmSnap *lvmapi.LVMSnapshot
-	var restoreSize int64
-	lvmSnap, err = waitForLVMSnapshotReady(ctx, req.Name, cs.driver.config.SnapshotReadyTimeout)
-	if ctx.Err() != nil {
-		return nil, status.Errorf(
-			snapshotWaitErrorCode(ctx.Err()),
-			"failed to handle CreateSnapshotRequest for %s: %s, {%s}",
-			req.SourceVolumeId, req.Name,
-			ctx.Err().Error(),
-		)
-	}
-	if err == nil {
-		if lvmSnap.Spec.ThinProvision {
-			restoreSize = lvmSnap.Status.LvSize.Value()
+	if snap == nil {
+		// If the snapshot does not exist, provision a new LVMSnapshot CR
+		if err = provisionLVMSnapshot(req); err != nil {
+			return nil, err
 		}
-		return csipayload.NewCreateSnapshotResponseBuilder().
-			WithSourceVolumeID(req.SourceVolumeId).
-			WithSnapshotID(req.SourceVolumeId+"@"+req.Name).
-			WithCreationTime(snapTimeStamp, 0).
-			WithReadyToUse(lvmSnap.Status.State == lvm.LVMStatusReady).
-			WithSize(restoreSize).
-			Build(), nil
 	}
 
-	vol, err := lvm.GetLVMVolume(req.SourceVolumeId)
+	// Wait for the LVMSnapshot CR to be ready before proceeding, or otherwise
+	// give up with context cancellation or timeout.
+	snap, err = waitForLVMSnapshotReady(ctx, req.Name, cs.driver.config.SnapshotReadyTimeout)
 	if err != nil {
 		return nil, status.Errorf(
+			snapshotWaitErrorCode(err),
+			"failed to handle CreateSnapshotRequest for %s: %s, {%s}",
+			req.SourceVolumeId, req.Name,
+			err.Error(),
+		)
+	}
+	var restoreSize int64
+	if snap.Spec.ThinProvision {
+		restoreSize = snap.Status.LvSize.Value()
+	}
+
+	return csipayload.NewCreateSnapshotResponseBuilder().
+		WithSourceVolumeID(req.SourceVolumeId).
+		WithSnapshotID(req.SourceVolumeId+"@"+req.Name).
+		WithCreationTime(snapTimeStamp, 0).
+		WithReadyToUse(true).
+		WithSize(restoreSize).
+		Build(), nil
+}
+
+// provisionLVMSnapshot creates the LVMSnapshot CR for the node agent to cut.
+func provisionLVMSnapshot(req *csi.CreateSnapshotRequest) error {
+	vol, err := lvm.GetLVMVolume(req.SourceVolumeId)
+	if err != nil {
+		return status.Errorf(
 			codes.Internal,
 			"CreateSnapshot not able to get volume %s: %s, {%s}",
 			req.SourceVolumeId, req.Name,
@@ -774,7 +784,7 @@ func (cs *controller) CreateSnapshot(
 
 	params, err := NewSnapshotParams(req.GetParameters())
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument,
+		return status.Errorf(codes.InvalidArgument,
 			"failed to parse csi volume params: %v", err)
 	}
 
@@ -792,7 +802,7 @@ func (cs *controller) CreateSnapshot(
 		Build()
 
 	if err != nil {
-		return nil, status.Errorf(
+		return status.Errorf(
 			codes.Internal,
 			"failed to create snapshotobject for %s: %s, {%s}",
 			req.SourceVolumeId, req.Name,
@@ -817,7 +827,7 @@ func (cs *controller) CreateSnapshot(
 	}
 
 	if err != nil {
-		return nil, status.Errorf(
+		return status.Errorf(
 			codes.Internal,
 			"failed to create snapshotobject for %s: %s, {%s}",
 			req.SourceVolumeId, req.Name,
@@ -828,46 +838,33 @@ func (cs *controller) CreateSnapshot(
 	snapObj.Status.State = lvm.LVMStatusPending
 
 	if err := lvm.ProvisionSnapshot(snapObj); err != nil {
-		return nil, status.Errorf(
+		return status.Errorf(
 			codes.Internal,
 			"failed to handle CreateSnapshotRequest for %s: %s, {%s}",
 			req.SourceVolumeId, req.Name,
 			err.Error(),
 		)
 	}
-
-	lvmSnap, err = waitForLVMSnapshotReady(ctx, req.Name, cs.driver.config.SnapshotReadyTimeout)
-	if err != nil {
-		return nil, status.Errorf(
-			snapshotWaitErrorCode(err),
-			"failed to handle CreateSnapshotRequest for %s: %s, {%s}",
-			req.SourceVolumeId, req.Name,
-			err.Error(),
-		)
-	}
-	if lvmSnap.Spec.ThinProvision {
-		restoreSize = lvmSnap.Status.LvSize.Value()
-	}
-
-	return csipayload.NewCreateSnapshotResponseBuilder().
-		WithSourceVolumeID(req.SourceVolumeId).
-		WithSnapshotID(req.SourceVolumeId+"@"+req.Name).
-		WithCreationTime(snapTimeStamp, 0).
-		WithReadyToUse(lvmSnap.Status.State == lvm.LVMStatusReady).
-		WithSize(restoreSize).
-		Build(), nil
+	return nil
 }
 
 var (
 	snapshotReadyPollInitialInterval = 100 * time.Millisecond
 	snapshotReadyPollMaxInterval     = 800 * time.Millisecond
-	getLVMSnapshot                   = lvm.GetLVMSnapshot
+	// Time left before the request deadline to still deliver our own error.
+	snapshotReadyReplyMargin = time.Second
+	getLVMSnapshot           = lvm.GetLVMSnapshot
 )
 
 // waitForLVMSnapshotReady waits until the node agent marks the lvm snapshot Ready,
-// the snapshot is not found, ctx is done or timeout passes. It returns ctx.Err()
-// when ctx is done, and otherwise the last seen lvm snapshot CR object
+// the snapshot is not found, ctx is done or timeout passes, and returns the last
+// seen lvm snapshot CR object. It only returns a nil error once the snapshot is
+// Ready, and an error wrapping ctx.Err() when ctx is done.
 func waitForLVMSnapshotReady(ctx context.Context, snapName string, timeout time.Duration) (*lvmapi.LVMSnapshot, error) {
+	// Time out before the caller does, so that it gets our error and not just its own deadline.
+	if deadline, ok := ctx.Deadline(); ok {
+		timeout = max(min(timeout, time.Until(deadline)-snapshotReadyReplyMargin), 0)
+	}
 	// The node agent never marks a snapshot Failed, so the wait needs its own upper bound.
 	timer := time.NewTimer(timeout)
 	defer timer.Stop()
@@ -880,13 +877,19 @@ func waitForLVMSnapshotReady(ctx context.Context, snapName string, timeout time.
 		if err != nil {
 			klog.Warningf("failed to get lvm snapshot %s, will continue to retry: %v", snapName, err)
 		}
+		var stop error
 		select {
 		case <-ctx.Done():
-			return snap, ctx.Err()
+			stop = ctx.Err()
 		case <-timer.C:
-			klog.Warningf("lvm snapshot %s is not ready after %s", snapName, timeout)
-			return snap, err
+			stop = fmt.Errorf("timed out after %s", timeout)
 		case <-time.After(interval):
+		}
+		if stop != nil {
+			if err == nil {
+				err = fmt.Errorf("it is still %q", snap.Status.State)
+			}
+			return snap, fmt.Errorf("lvm snapshot %s is not ready: %w: %w", snapName, stop, err)
 		}
 		// Back off so that a slow snapshot doesn't eat the client-side rate limit of the controller.
 		interval = min(2*interval, snapshotReadyPollMaxInterval)
@@ -898,6 +901,8 @@ func snapshotWaitErrorCode(err error) codes.Code {
 	if code := status.FromContextError(err).Code(); code != codes.Unknown {
 		return code
 	}
+	// todo: if https://github.com/kubernetes-csi/external-snapshotter/pull/1435 lands we may want
+	// to return a different error here.
 	return codes.ResourceExhausted
 }
 
@@ -1280,12 +1285,14 @@ func (cs *controller) validateVolumeCreateReq(req *csi.CreateVolumeRequest) erro
 	return nil
 }
 
-func validateSnapshotRequest(req *csi.CreateSnapshotRequest) error {
+// validateSnapshotRequest validates the request and returns the LVMSnapshot
+// already created for it, if any.
+func validateSnapshotRequest(req *csi.CreateSnapshotRequest) (*lvmapi.LVMSnapshot, error) {
 	snapName := strings.ToLower(req.GetName())
 	volumeID := strings.ToLower(req.GetSourceVolumeId())
 
 	if snapName == "" || volumeID == "" {
-		return status.Errorf(
+		return nil, status.Errorf(
 			codes.InvalidArgument,
 			"CreateSnapshot error invalid request %s: %s",
 			volumeID, snapName,
@@ -1296,23 +1303,23 @@ func validateSnapshotRequest(req *csi.CreateSnapshotRequest) error {
 
 	if err != nil {
 		if k8serror.IsNotFound(err) {
-			return nil
+			return nil, nil
 		}
-		return status.Errorf(
-			codes.NotFound,
+		return nil, status.Errorf(
+			codes.Internal,
 			"CreateSnapshot error snap %s %s get failed : %s",
 			snapName, volumeID, err.Error(),
 		)
 	}
 
 	if snap.Labels[lvm.LVMVolKey] != volumeID {
-		return status.Errorf(
+		return nil, status.Errorf(
 			codes.AlreadyExists,
 			"CreateSnapshot error snapshot %s already exist for different source vol %s: %s",
 			snapName, snap.Labels[lvm.LVMVolKey], volumeID,
 		)
 	}
-	return nil
+	return snap, nil
 }
 
 // LabelIndexName add prefix for label index.

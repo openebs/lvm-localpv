@@ -1,0 +1,3 @@
+only reply to CreateSnapshot once the snapshot is cut
+
+CreateSnapshot no longer replies readyToUse=false while the LVMSnapshot is still Pending, which could leave the VolumeSnapshot unready forever and let backup tools such as velero unfreeze the application before the snapshot was taken; if the snapshot isn't cut within --snapshot-ready-timeout, or before the call's deadline, it returns a retryable error and csi-snapshotter retries until it is, deferring deletion of the VolumeSnapshot until then
