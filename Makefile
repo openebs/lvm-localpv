@@ -243,9 +243,9 @@ lvm-driver-image: lvm-driver
 	@echo "--------------------------------"
 	@echo "+ Generating ${CSI_DRIVER} image"
 	@echo "--------------------------------"
-	@cp bin/${CSI_DRIVER}/${CSI_DRIVER} buildscripts/${CSI_DRIVER}/
+	@cp bin/${CSI_DRIVER}/${CSI_DRIVER} LICENSE buildscripts/${CSI_DRIVER}/
 	cd buildscripts/${CSI_DRIVER} && docker build -t ${IMAGE_ORG}/${CSI_DRIVER}:${IMAGE_TAG} ${DBUILD_ARGS} . && docker tag ${IMAGE_ORG}/${CSI_DRIVER}:${IMAGE_TAG} quay.io/${IMAGE_ORG}/${CSI_DRIVER}:${IMAGE_TAG}
-	@rm buildscripts/${CSI_DRIVER}/${CSI_DRIVER}
+	@rm buildscripts/${CSI_DRIVER}/${CSI_DRIVER} buildscripts/${CSI_DRIVER}/LICENSE
 
 .PHONY: fio-image
 fio-image:
