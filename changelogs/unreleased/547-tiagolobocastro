@@ -1,0 +1,4 @@
+answer the thinpool lvremove prompt only once
+
+the node agent kept writing 'y' to lvremove after answering its prompt, flooding
+the log when the last thin volume of a pool was deleted
