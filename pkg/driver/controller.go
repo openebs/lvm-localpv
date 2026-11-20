@@ -66,6 +66,9 @@ type controller struct {
 	lvmNodeInformer cache.SharedIndexInformer
 
 	leakProtection *csipv.LeakProtectionController
+
+	volumeLock *volumeLock
+
 	csi.UnimplementedControllerServer
 }
 
@@ -75,6 +78,7 @@ func NewController(d *CSIDriver) csi.ControllerServer {
 	ctrl := &controller{
 		driver:       d,
 		capabilities: newControllerCapabilities(),
+		volumeLock:   newVolumeLock(),
 	}
 
 	if err := ctrl.init(); err != nil {
@@ -728,10 +732,21 @@ func (cs *controller) CreateSnapshot(
 		return nil, err
 	}
 
+	unlock := cs.volumeLock.LockVolumeWithSnapshot(req.SourceVolumeId, req.Name)
+	defer unlock()
+
 	snapTimeStamp := time.Now().Unix()
 	var lvmSnap *lvmapi.LVMSnapshot
 	var restoreSize int64
-	lvmSnap, err = waitForLVMSnapshotReady(req.Name)
+	lvmSnap, err = waitForLVMSnapshotReady(ctx, req.Name, cs.driver.config.SnapshotReadyTimeout)
+	if ctx.Err() != nil {
+		return nil, status.Errorf(
+			snapshotWaitErrorCode(ctx.Err()),
+			"failed to handle CreateSnapshotRequest for %s: %s, {%s}",
+			req.SourceVolumeId, req.Name,
+			ctx.Err().Error(),
+		)
+	}
 	if err == nil {
 		if lvmSnap.Spec.ThinProvision {
 			restoreSize = lvmSnap.Status.LvSize.Value()
@@ -821,10 +836,10 @@ func (cs *controller) CreateSnapshot(
 		)
 	}
 
-	lvmSnap, err = waitForLVMSnapshotReady(req.Name)
+	lvmSnap, err = waitForLVMSnapshotReady(ctx, req.Name, cs.driver.config.SnapshotReadyTimeout)
 	if err != nil {
 		return nil, status.Errorf(
-			codes.ResourceExhausted,
+			snapshotWaitErrorCode(err),
 			"failed to handle CreateSnapshotRequest for %s: %s, {%s}",
 			req.SourceVolumeId, req.Name,
 			err.Error(),
@@ -843,23 +858,47 @@ func (cs *controller) CreateSnapshot(
 		Build(), nil
 }
 
-// waitForLVMSnapshotReady waits for lvm snapshot to be ready and returns
-// the lvm snapshot CR object
-func waitForLVMSnapshotReady(snapName string) (*lvmapi.LVMSnapshot, error) {
-	var err error
-	var snap *lvmapi.LVMSnapshot
-	for i := 0; i < 20; i++ {
-		snap, err = lvm.GetLVMSnapshot(snapName)
-		if k8serror.IsNotFound(err) {
+var (
+	snapshotReadyPollInitialInterval = 100 * time.Millisecond
+	snapshotReadyPollMaxInterval     = 800 * time.Millisecond
+	getLVMSnapshot                   = lvm.GetLVMSnapshot
+)
+
+// waitForLVMSnapshotReady waits until the node agent marks the lvm snapshot Ready,
+// the snapshot is not found, ctx is done or timeout passes. It returns ctx.Err()
+// when ctx is done, and otherwise the last seen lvm snapshot CR object
+func waitForLVMSnapshotReady(ctx context.Context, snapName string, timeout time.Duration) (*lvmapi.LVMSnapshot, error) {
+	// The node agent never marks a snapshot Failed, so the wait needs its own upper bound.
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+	interval := snapshotReadyPollInitialInterval
+	for {
+		snap, err := getLVMSnapshot(snapName)
+		if k8serror.IsNotFound(err) || (err == nil && snap.Status.State == lvm.LVMStatusReady) {
 			return snap, err
-		} else if err == nil {
-			if snap.Status.State == lvm.LVMStatusReady {
-				break
-			}
 		}
-		time.Sleep(time.Duration(100 * time.Millisecond))
+		if err != nil {
+			klog.Warningf("failed to get lvm snapshot %s, will continue to retry: %v", snapName, err)
+		}
+		select {
+		case <-ctx.Done():
+			return snap, ctx.Err()
+		case <-timer.C:
+			klog.Warningf("lvm snapshot %s is not ready after %s", snapName, timeout)
+			return snap, err
+		case <-time.After(interval):
+		}
+		// Back off so that a slow snapshot doesn't eat the client-side rate limit of the controller.
+		interval = min(2*interval, snapshotReadyPollMaxInterval)
 	}
-	return snap, err
+}
+
+// snapshotWaitErrorCode maps an error of waitForLVMSnapshotReady to a grpc code
+func snapshotWaitErrorCode(err error) codes.Code {
+	if code := status.FromContextError(err).Code(); code != codes.Unknown {
+		return code
+	}
+	return codes.ResourceExhausted
 }
 
 func getSnapSize(params *SnapshotParams, capacity int64) int64 {
@@ -899,6 +938,9 @@ func (cs *controller) DeleteSnapshot(
 			"failed to get the snapshot name, Manual intervention required",
 		)
 	}
+
+	unlock := cs.volumeLock.LockVolumeWithSnapshot(snapshotID[0], snapshotID[1])
+	defer unlock()
 
 	if err := lvm.DeleteSnapshot(snapshotID[1]); err != nil {
 		return nil, status.Errorf(

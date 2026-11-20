@@ -139,6 +139,11 @@ dumpControllerLogs() {
   printf "\n\n"
   kubectl logs --tail="${NR}" "$ControllerPOD" -n "$OPENEBS_NAMESPACE" -c openebs-lvm-plugin
   printf "\n\n"
+  for container in csi-snapshotter snapshot-controller; do
+    echo "--- $container logs"
+    kubectl logs --tail="${NR}" "$ControllerPOD" -n "$OPENEBS_NAMESPACE" -c "$container" || true
+    printf "\n\n"
+  done
 }
 
 dump_logs() {
