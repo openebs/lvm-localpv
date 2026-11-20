@@ -111,7 +111,7 @@ helm install openebs-lvmlocalpv openebs-lvmlocalpv/lvm-localpv --namespace opene
 | `lvmNode.annotations`                               | Annotations for lvmnode daemonset metadata                                       | `""`                                    |
 | `lvmNode.podAnnotations`                            | Annotations for lvmnode daemonset's pods metadata                                | `""`                                    |
 | `lvmNode.resources`                                 | Resource and request and limit for lvmnode daemonset containers                  | `""`                                    |
-| `lvmNode.labels`                                    | Labels for lvmnode daemonset metadata                                            | `""`                                    |
+| `lvmNode.extraLabels`                               | Extra labels for lvmnode daemonset metadata                                      | `{}`                                    |
 | `lvmNode.podLabels`                                 | Appends labels to the lvmnode daemonset pods                                     | `""`                                    |
 | `lvmNode.nodeSelector`                              | Nodeselector for lvmnode daemonset pods                                          | `""`                                    |
 | `lvmNode.tolerations`                               | lvmnode daemonset's pod toleration values                                        | `""`                                    |
@@ -142,7 +142,7 @@ helm install openebs-lvmlocalpv openebs-lvmlocalpv/lvm-localpv --namespace opene
 | `lvmController.annotations`                         | Annotations for lvm localpv controller deployment metadata                       | `""`                                    |
 | `lvmController.podAnnotations`                      | Annotations for lvm localpv controller deployment's pods metadata                | `""`                                    |
 | `lvmController.resources`                           | Resource and request and limit for lvm localpv controller deployment containers  | `""`                                    |
-| `lvmController.labels`                              | Labels for lvm localpv controller deployment metadata                            | `""`                                    |
+| `lvmController.extraLabels`                         | Extra labels for lvm localpv controller deployment metadata                      | `{}`                                    |
 | `lvmController.podLabels`                           | Appends labels to the lvm localpv controller deployment pods                     | `""`                                    |
 | `lvmController.nodeSelector`                        | Nodeselector for lvm localpv controller deployment pods                          | `""`                                    |
 | `lvmController.tolerations`                         | lvm localpv controller deployment's pod toleration values                        | `""`                                    |

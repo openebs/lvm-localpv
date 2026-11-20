@@ -83,7 +83,7 @@ lvmNode:
   nodeSelector: {}
   tolerations: []
   securityContext: {}
-  labels: {}
+  extraLabels: {}
   priorityClass:
     create: true
     name: lvm-localpv-csi-node-critical
@@ -175,7 +175,7 @@ lvmController:
   tolerations: []
   topologySpreadConstraints: []
   securityContext: {}
-  labels: {}
+  extraLabels: {}
   priorityClass:
     create: true
     name: lvm-localpv-csi-controller-critical

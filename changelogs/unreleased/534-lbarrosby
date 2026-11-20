@@ -1,1 +1,1 @@
-render lvmNode.labels and lvmController.labels on the node daemonset and controller deployment metadata
+render lvmNode.extraLabels and lvmController.extraLabels on the node daemonset and controller deployment metadata

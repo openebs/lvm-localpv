@@ -8,7 +8,7 @@ metadata:
   {{- end }}
   labels:
     {{- include "lvmlocalpv.lvmController.labels" . | nindent 4 }}
-    {{- with .Values.lvmController.labels }}
+    {{- with .Values.lvmController.extraLabels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
 spec:
