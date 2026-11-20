@@ -1,0 +1,4 @@
+build the lvm-driver image on UBI 9 with FIPS 140-3 validated crypto
+
+OpenSSL only loads the RHEL FIPS provider and the driver is built with the Go
+FIPS 140-3 module; the image also carries the OpenShift certification labels
