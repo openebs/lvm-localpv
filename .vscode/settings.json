@@ -23,5 +23,8 @@
     "[nix]": {
         "editor.tabSize": 2,
         "editor.insertSpaces": true
-    }
+    },
+    "nixEnvSelector.nixFile": "${workspaceFolder}/shell.nix",
+    "nixEnvSelector.useFlakes": false
 }
+
