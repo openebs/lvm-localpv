@@ -254,6 +254,11 @@ fio-image:
 	@echo "--------------------------------"
 	cd buildscripts/fio && docker build -t ${IMAGE_ORG}/fio:latest ${DBUILD_ARGS} .
 
+# Red Hat container certification checks on the lvm-driver-image build.
+.PHONY: preflight
+preflight: lvm-driver-image
+	./buildscripts/preflight.sh docker-daemon:${IMAGE_ORG}/${CSI_DRIVER}:${IMAGE_TAG}
+
 .PHONY: image-tag
 image-tag:
 	@echo ${IMAGE_TAG}
