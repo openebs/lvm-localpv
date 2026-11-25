@@ -17,6 +17,7 @@ limitations under the License.
 package lvm
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -50,6 +51,9 @@ func extractRateValues(rateVals *[]string) (map[string]uint64, error) {
 	}
 	for _, kv := range *rateVals {
 		parts := strings.Split(kv, ":")
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("rate limit %q is not in <vg-prefix>:<value> form", kv)
+		}
 		key := parts[0]
 		value, err := strconv.ParseUint(parts[1], 10, 64)
 		if err != nil {
