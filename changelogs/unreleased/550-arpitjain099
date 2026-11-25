@@ -1,0 +1,3 @@
+do not panic when an io rate limit flag entry has no value
+
+an entry such as the second half of --riops-per-gb="lvmvg1:50,lvmvg2" made SetIORateLimits panic at startup instead of taking the existing warn-and-ignore path
