@@ -235,3 +235,5 @@ Filesystem                                                       Size  Used Avai
 
 ```
 As we can see the volume mount point /datadir is showing that it has been resized.
+
+**Note**: A thick provisioned volume can only grow into the free space of its volume group. The controller compares the growth with the free space of the volume group in the `LVMNode` of the node the volume is on, and refuses an expansion that does not fit with an `OutOfRange` error. The PV and the PVC then keep their current capacity, and the volume can still be mounted. The expansion goes through on a later retry once the volume group has been extended or space has been freed, and on Kubernetes versions with recovery from expansion failure, the PVC request can instead be lowered to a size that fits. A thin provisioned volume grows in its thin pool, which can be overprovisioned, so its expansion is not checked against the free space of the volume group.

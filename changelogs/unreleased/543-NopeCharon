@@ -1,0 +1,1 @@
+refuse a thick volume expansion that does not fit in the free space of its volume group, instead of recording a size that the node expansion can't allocate
