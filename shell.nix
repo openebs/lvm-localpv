@@ -4,11 +4,12 @@ let
   pkgs = import sources.nixpkgs { };
   go = import ./nix/go.nix { inherit pkgs; };
   chart = import ./nix/chart.nix { inherit pkgs; };
+  preflight = import ./nix/preflight.nix { inherit pkgs; };
 in
 pkgs.mkShell {
   name = "lvm-shell";
   inputsFrom = [ go ];
-  buildInputs = chart.buildInputs ++ (with pkgs; [
+  buildInputs = chart.buildInputs ++ preflight.buildInputs ++ (with pkgs; [
     git
     kubectl
     gnumake

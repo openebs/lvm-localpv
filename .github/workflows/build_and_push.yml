@@ -23,6 +23,7 @@ jobs:
   tests:
     needs: ["lint"]
     permissions:
+      actions: read
       contents: read
       id-token: write
     uses: ./.github/workflows/tests.yml
@@ -92,17 +93,27 @@ jobs:
         with:
           context: .
           file: ./buildscripts/lvm-driver/Dockerfile.buildx
-          push: true
           sbom: true
           provenance: mode=max
           platforms: linux/amd64, linux/arm64
           tags: |
             ${{ steps.docker_meta.outputs.tags }}
+          # Push, and also export the same build for the BDD tests to run.
+          outputs: |
+            type=registry
+            type=oci,dest=${{ runner.temp }}/lvm-driver.tar
           build-args: |
             DBUILD_DATE=${{ steps.date.outputs.DATE }}
             DBUILD_REPO_URL=https://github.com/openebs/lvm-localpv
             DBUILD_SITE_URL=https://openebs.io
             BRANCH=${{ env.BRANCH }}
+            IMAGE_TAG=${{ env.IMAGE_TAG }}
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: lvm-driver-image
+          path: ${{ runner.temp }}/lvm-driver.tar
+          retention-days: 1
 
   release-chart:
     runs-on: ubuntu-latest

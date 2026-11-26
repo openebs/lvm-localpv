@@ -35,9 +35,11 @@ jobs:
           fail_ci_if_error: true
           dry_run: true
 
+  # Runs the image from the caller's csi-driver multi-arch build (the lvm-driver-image artifact).
   bdd-tests:
-    runs-on: cncf-ubuntu-8-32-x86
+    runs-on: ${{ matrix.runner }}
     permissions:
+      actions: read
       contents: read
       id-token: write
     needs: ["unit-tests"]
@@ -45,19 +47,52 @@ jobs:
       fail-fast: true
       matrix:
         kubernetes: [v1.34.3]
+        runner: [cncf-ubuntu-8-32-x86, cncf-ubuntu-8-32-arm]
     steps:
       - uses: actions/checkout@v7
 
       - uses: ./.github/actions/setup-go
-
-      - name: Build images locally
-        run: make lvm-driver-image fio-image
 
       - uses: ./.github/actions/setup-minikube
         with:
           kubernetes-version: ${{ matrix.kubernetes }}
 
       - run: make bootstrap
+
+      # csi-driver runs in parallel in the caller workflow, so poll this run until it has uploaded the image.
+      - name: Wait for lvm-driver image
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const run = { ...context.repo, run_id: context.runId };
+            for (let i = 0; i < 90; i++) {
+              const { data: { total_count } } = await github.rest.actions.listWorkflowRunArtifacts({ ...run, name: "lvm-driver-image" });
+              if (total_count > 0) return;
+              const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, run);
+              const build = jobs.find((job) => job.name === "csi-driver");
+              if (build?.conclusion && build.conclusion !== "success") {
+                core.setFailed(`csi-driver ${build.conclusion}`);
+                return;
+              }
+              await new Promise((resolve) => setTimeout(resolve, 20000));
+            }
+            core.setFailed("Timed out waiting for the lvm-driver-image artifact");
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: lvm-driver-image
+          path: ${{ runner.temp }}
+
+      # skopeo picks the runner's platform out of the multi-arch OCI archive.
+      # The archive has one entry per pushed name (same image), so select one by its tag, if tagged.
+      - name: Load lvm-driver image and build fio image
+        run: |
+          archive=${{ runner.temp }}/lvm-driver.tar
+          ref=$(tar -xOf "$archive" index.json | jq -r '.manifests[0].annotations["org.opencontainers.image.ref.name"] // empty')
+          tag=$(awk -F': ' '/^version:/ {print $2}' deploy/helm/charts/Chart.yaml)
+          skopeo copy "oci-archive:$archive${ref:+:$ref}" docker-daemon:openebs/lvm-driver:$tag
+          docker image inspect -f '{{.Architecture}}' openebs/lvm-driver:$tag
+          make fio-image
 
       - env:
           OPENEBS_NAMESPACE: "openebs"
