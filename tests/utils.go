@@ -894,16 +894,12 @@ func verifyPVForPVC(shouldExist bool, pvcName string) {
 
 // IsPVDeletedEventually checks if the PV is deleted or not eventually
 func IsPVDeletedEventually(shouldExist bool, pvName string) bool {
-	shouldPVExist := gomega.BeFalse()
-	if shouldExist {
-		shouldPVExist = gomega.BeTrue()
-	}
 	return gomega.Eventually(func() bool {
 		_, err := PVClient.Get(pvName, metav1.GetOptions{})
 		return k8serrors.IsNotFound(err)
 	},
 		120, 10).
-		Should(shouldPVExist)
+		Should(gomega.Equal(!shouldExist))
 }
 
 func getGeneratedVolName(pvc *corev1.PersistentVolumeClaim) string {

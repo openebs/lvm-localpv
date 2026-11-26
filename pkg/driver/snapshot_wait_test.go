@@ -87,22 +87,41 @@ func TestWaitForLVMSnapshotReady_TimesOutWithLastState(t *testing.T) {
 	start := time.Now()
 	snap, err := waitForLVMSnapshotReady(context.Background(), "snap-1", testSnapshotReadyTimeout)
 
-	assert.NoError(t, err)
+	assert.ErrorContains(t, err, `is still "Pending"`)
 	assert.Equal(t, lvm.LVMStatusPending, snap.Status.State)
 	assert.GreaterOrEqual(t, time.Since(start), testSnapshotReadyTimeout)
+}
+
+func TestWaitForLVMSnapshotReady_TimesOutBeforeContextDeadline(t *testing.T) {
+	fakeSnapshotGetter(t, func(int) (string, error) {
+		return lvm.LVMStatusPending, nil
+	})
+	origMargin := snapshotReadyReplyMargin
+	t.Cleanup(func() { snapshotReadyReplyMargin = origMargin })
+	snapshotReadyReplyMargin = 100 * time.Millisecond
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
+	defer cancel()
+
+	_, err := waitForLVMSnapshotReady(ctx, "snap-1", testSnapshotReadyTimeout)
+
+	assert.ErrorContains(t, err, `is still "Pending"`)
+	assert.NoError(t, ctx.Err())
 }
 
 func TestWaitForLVMSnapshotReady_ReturnsContextError(t *testing.T) {
 	fakeSnapshotGetter(t, func(int) (string, error) {
 		return lvm.LVMStatusPending, nil
 	})
-	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	time.AfterFunc(50*time.Millisecond, cancel)
 
 	start := time.Now()
 	_, err := waitForLVMSnapshotReady(ctx, "snap-1", testSnapshotReadyTimeout)
 
-	assert.ErrorIs(t, err, context.DeadlineExceeded)
+	assert.ErrorIs(t, err, context.Canceled)
+	assert.ErrorContains(t, err, `is still "Pending"`)
+	assert.Equal(t, codes.Canceled, snapshotWaitErrorCode(err))
 	assert.Less(t, time.Since(start), testSnapshotReadyTimeout)
 }
 
