@@ -1,0 +1,1 @@
+keep the snapshot and its finalizer when lvs fails during snapshot deletion, instead of leaking the snapshot LV
