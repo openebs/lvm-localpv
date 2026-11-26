@@ -238,6 +238,15 @@ func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo, podLVInfo *PodLVInfo)
 
 	mounter := &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: utilexec.New()}
 
+	// NodePublishVolume must be idempotent: kubelet calls it again for an already
+	// published volume after a restart, and a second bind mount would stack on the first.
+	if mounted, err := isBlockTargetMounted(mounter, target); err != nil {
+		return status.Errorf(codes.Internal, "Could not check if %q is mounted: %v", target, err)
+	} else if mounted {
+		klog.Infof("NodePublishVolume block device %s is already mounted at %s", devicePath, target)
+		return nil
+	}
+
 	// Create the mount point as a file since bind mount device node requires it to be a file
 	err := makeFile(target)
 	if err != nil {
@@ -273,6 +282,19 @@ func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo, podLVInfo *PodLVInfo)
 		}
 	}
 	return nil
+}
+
+// isBlockTargetMounted reports whether target already is a mount point.
+// A target that does not exist yet is not mounted.
+func isBlockTargetMounted(mounter mount.Interface, target string) (bool, error) {
+	mounted, err := mounter.IsMountPoint(target)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return mounted, nil
 }
 
 func setIOLimits(vol *apis.LVMVolume, podLVInfo *PodLVInfo, devicePath string) error {
