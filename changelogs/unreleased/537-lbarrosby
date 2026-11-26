@@ -1,0 +1,1 @@
+report volume groups that hold an inactive thin pool instead of failing the lvmnode sync, with no free space for that pool
