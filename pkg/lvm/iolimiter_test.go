@@ -69,3 +69,36 @@ func TestExtractingIoLimits(t *testing.T) {
 		}
 	}
 }
+
+// A malformed rate entry must not take the node plugin down. run() in
+// cmd/main.go calls SetIORateLimits right after flag parsing, and setValues
+// already treats an unusable rate list as non-fatal: it logs a warning and
+// falls back to an empty map. pflag's StringSlice splits on commas, so
+// --riops-per-gb="lvmvg1:50,lvmvg2" yields an entry with no colon in it and
+// a trailing comma yields an empty one.
+func TestSetIORateLimitsSurvivesMalformedRate(t *testing.T) {
+	// SetIORateLimits applies a config once per process, so put the package
+	// back the way a freshly started plugin would find it.
+	reset := func() {
+		rwlock.Lock()
+		set = false
+		rwlock.Unlock()
+	}
+	reset()
+	t.Cleanup(reset)
+
+	cfg := &config.Config{
+		SetIOLimits:     true,
+		RIopsLimitPerGB: &[]string{"lvmvg1:50", "lvmvg2"},
+		WIopsLimitPerGB: &[]string{"lvmvg1:70", ""},
+		RBpsLimitPerGB:  nil,
+		WBpsLimitPerGB:  nil,
+	}
+
+	assert.NotPanics(t, func() { SetIORateLimits(cfg) })
+
+	// A bad entry discards that whole list, which is what setValues already
+	// does when strconv.ParseUint fails, so no rate is applied.
+	assert.Equal(t, uint64(0), GetRIopsPerGB("lvmvg1"))
+	assert.Equal(t, uint64(0), GetWIopsPerGB("lvmvg1"))
+}
